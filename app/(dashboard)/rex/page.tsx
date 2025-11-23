@@ -1,12 +1,10 @@
-import { Suspense } from 'react'
+import { Suspense } from 'next'
 import Link from 'next/link'
-import { prisma } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { RexCard } from '@/components/rex/rex-card'
 import { RexFilters } from '@/components/rex/rex-filters'
-import type { Prisma } from '@prisma/client'
 
 interface PageProps {
   searchParams: {
@@ -20,59 +18,67 @@ interface PageProps {
 }
 
 export default async function RexPage({ searchParams }: PageProps) {
-  const user = await getCurrentUser()
-  if (!user || !user.sdisId) redirect('/login')
+  const supabase = await createClient()
 
-  const sdisId = user.sdisId as string
+  // Auth check
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Get user data with SDIS
+  const { data: userData } = await supabase
+    .from('users')
+    .select('sdis_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.sdis_id) {
+    throw new Error('User not associated with a SDIS')
+  }
 
   const page = Number(searchParams.page) || 1
   const pageSize = 10
+  const offset = (page - 1) * pageSize
 
-  // Build where clause
-  const where: Prisma.REXWhereInput = {
-    sdisId,
+  // Build query
+  let query = supabase
+    .from('rex')
+    .select(`
+      *,
+      author:users!rex_author_id_fkey(name, email),
+      comments(count)
+    `, { count: 'exact' })
+    .eq('sdis_id', userData.sdis_id)
 
-    ...(searchParams.q && {
-      OR: [
-        { title: { contains: searchParams.q, mode: 'insensitive' } },
-        { description: { contains: searchParams.q, mode: 'insensitive' } },
-      ],
-    }),
-    ...(searchParams.type && { type: searchParams.type as any }),
-    ...(searchParams.category && { category: searchParams.category as any }),
-    ...(searchParams.status && { status: searchParams.status as any }),
+  // Filters
+  if (searchParams.q) {
+    query = query.or(`title.ilike.%${searchParams.q}%,description.ilike.%${searchParams.q}%`)
+  }
+  if (searchParams.type) {
+    query = query.eq('type', searchParams.type)
+  }
+  if (searchParams.category) {
+    query = query.eq('category', searchParams.category)
+  }
+  if (searchParams.status) {
+    query = query.eq('status', searchParams.status)
   }
 
-  // Build orderBy
-  let orderBy: Prisma.REXOrderByWithRelationInput = { createdAt: 'desc' }
-  if (searchParams.sort === 'oldest') orderBy = { createdAt: 'asc' }
-  if (searchParams.sort === 'views') orderBy = { views: 'desc' }
+  // Sort
+  const sortOrder = searchParams.sort === 'oldest' ? 'asc' : 'desc'
+  const sortColumn = searchParams.sort === 'views' ? 'views' : 'created_at'
+  query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
 
-  // Fetch data
-  const [rex, totalCount] = await Promise.all([
-    prisma.rEX.findMany({
-      where,
-      include: {
-        author: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-      },
-      orderBy,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.rEX.count({ where }),
-  ])
+  // Pagination
+  query = query.range(offset, offset + pageSize - 1)
 
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const { data: rex, error, count } = await query
+
+  if (error) {
+    console.error('Error fetching REX:', error)
+    throw error
+  }
+
+  const totalPages = count ? Math.ceil(count / pageSize) : 0
 
   return (
     <div>
@@ -81,7 +87,7 @@ export default async function RexPage({ searchParams }: PageProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Retours d&apos;Expérience</h1>
-            <p className="text-gray-500 text-sm">{totalCount} REX disponibles</p>
+            <p className="text-gray-500 text-sm">{count || 0} REX disponibles</p>
           </div>
           <div className="flex items-center space-x-4">
             <form action="/dashboard/rex" method="get">
@@ -110,7 +116,7 @@ export default async function RexPage({ searchParams }: PageProps) {
         <RexFilters />
 
         {/* REX List */}
-        {rex.length === 0 ? (
+        {!rex || rex.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -124,7 +130,13 @@ export default async function RexPage({ searchParams }: PageProps) {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {rex.map((r) => (
-              <RexCard key={r.id} rex={r} />
+              <RexCard 
+                key={r.id} 
+                rex={{
+                  ...r,
+                  _count: { comments: r.comments?.[0]?.count || 0 }
+                }} 
+              />
             ))}
           </div>
         )}
@@ -133,7 +145,7 @@ export default async function RexPage({ searchParams }: PageProps) {
         {totalPages > 1 && (
           <div className="mt-8 flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, totalCount)} sur {totalCount} REX
+              Affichage de {offset + 1} à {Math.min(offset + pageSize, count || 0)} sur {count || 0} REX
             </div>
             <div className="flex space-x-2">
               {page > 1 && (

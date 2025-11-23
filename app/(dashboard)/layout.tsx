@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { LogoutButton } from '@/components/auth/logout-button'
@@ -8,11 +8,20 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = await getCurrentUser()
+  const supabase = await createClient()
   
+  // Auth check
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     redirect('/login')
   }
+
+  // Get user data
+  const { data: userData } = await supabase
+    .from('users')
+    .select('name, role')
+    .eq('id', user.id)
+    .single()
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -58,11 +67,11 @@ export default async function DashboardLayout({
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 mb-2">
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
-              {user.name?.substring(0, 2).toUpperCase()}
+              {userData?.name?.substring(0, 2).toUpperCase() || 'U'}
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-gray-900">{user.name}</div>
-              <div className="text-xs text-gray-500">{user.role}</div>
+              <div className="text-sm font-semibold text-gray-900">{userData?.name || user.email}</div>
+              <div className="text-xs text-gray-500">{userData?.role || 'AGENT'}</div>
             </div>
           </div>
           <LogoutButton />
