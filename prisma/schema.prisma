@@ -1,0 +1,257 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ===== UTILISATEURS & AUTHENTIFICATION =====
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String?   // Null si SSO
+  role          Role      @default(AGENT)
+  sdisId        String
+  sdis          SDIS      @relation(fields: [sdisId], references: [id])
+  
+  // Relations
+  rexCreated    REX[]     @relation("RexAuthor")
+  comments      Comment[]
+  sessions      Session[]
+  accounts      Account[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  @@index([email])
+  @@index([sdisId])
+  @@map("users")
+}
+
+enum Role {
+  ADMIN        // Admin plateforme
+  SDIS_ADMIN   // Admin SDIS
+  OFFICER      // Officier
+  AGENT        // Agent / SP
+  VIEWER       // Lecture seule
+}
+
+model SDIS {
+  id            String   @id @default(cuid())
+  code          String   @unique // Ex: "SDIS06"
+  name          String   // Ex: "SDIS des Alpes-Maritimes"
+  department    String   // "06"
+  region        String   // "PACA"
+  
+  // Configuration
+  logo          String?
+  primaryColor  String   @default("#ef4444")
+  settings      Json     @default("{}")
+  
+  // Relations
+  users         User[]
+  rex           REX[]
+  
+  // Abonnement
+  plan          Plan     @default(STARTER)
+  stripeId      String?  @unique
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([code])
+  @@map("sdis")
+}
+
+enum Plan {
+  TRIAL        // 30 jours gratuit
+  STARTER      // 99€/mois
+  PROFESSIONAL // 299€/mois
+  ENTERPRISE   // Custom
+}
+
+// ===== REX (RETOURS D'EXPÉRIENCE) =====
+
+model REX {
+  id                String   @id @default(cuid())
+  
+  // Métadonnées
+  title             String
+  description       String   @db.Text
+  type              RexType
+  severity          Severity
+  status            Status   @default(DRAFT)
+  
+  // Détails intervention
+  interventionDate  DateTime
+  location          String
+  coordinates       Json?    // { lat, lng }
+  
+  // Contexte
+  context           String   @db.Text
+  actions           String   @db.Text
+  outcome           String   @db.Text
+  lessons           String   @db.Text
+  recommendations   String   @db.Text
+  
+  // Tags & Catégories
+  tags              String[] // ["incendie", "feu de forêt"]
+  category          Category
+  
+  // Media
+  attachments       Attachment[]
+  
+  // Relations
+  authorId          String
+  author            User     @relation("RexAuthor", fields: [authorId], references: [id])
+  sdisId            String
+  sdis              SDIS     @relation(fields: [sdisId], references: [id])
+  comments          Comment[]
+  
+  // Analytics
+  views             Int      @default(0)
+  
+  // AI Analysis
+  aiSummary         String?  @db.Text
+  aiKeywords        String[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  publishedAt       DateTime?
+  
+  @@index([sdisId])
+  @@index([authorId])
+  @@index([status])
+  @@index([type])
+  @@index([category])
+  @@index([interventionDate])
+  @@map("rex")
+}
+
+enum RexType {
+  INCIDENT
+  ACCIDENT
+  NEAR_MISS       // Presque accident
+  GOOD_PRACTICE
+  INNOVATION
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Category {
+  FIRE              // Incendie
+  RESCUE            // Secours à personne
+  HAZMAT            // Matières dangereuses
+  WATER_RESCUE      // Sauvetage aquatique
+  ROAD_ACCIDENT     // Accident de la route
+  NATURAL_DISASTER  // Catastrophe naturelle
+  TECHNICAL         // Intervention technique
+  OTHER
+}
+
+// ===== PIÈCES JOINTES =====
+
+model Attachment {
+  id            String   @id @default(cuid())
+  
+  name          String
+  type          String   // image/jpeg, application/pdf
+  size          Int      // Bytes
+  url           String   // UploadThing URL
+  key           String   // UploadThing key
+  
+  rexId         String
+  rex           REX      @relation(fields: [rexId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([rexId])
+  @@map("attachments")
+}
+
+// ===== COMMENTAIRES =====
+
+model Comment {
+  id            String   @id @default(cuid())
+  
+  content       String   @db.Text
+  
+  // Relations
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id])
+  rexId         String
+  rex           REX      @relation(fields: [rexId], references: [id], onDelete: Cascade)
+  
+  // Thread (réponses)
+  parentId      String?
+  parent        Comment? @relation("CommentThread", fields: [parentId], references: [id])
+  replies       Comment[] @relation("CommentThread")
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([rexId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// ===== AUTHENTIFICATION (NextAuth.js) =====
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
