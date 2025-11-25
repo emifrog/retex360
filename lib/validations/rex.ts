@@ -60,7 +60,7 @@ export const RexFormSchema = z.object({
   type: RexTypeEnum,
 
   date: z.date({
-    required_error: "La date de l'événement est requise",
+    error: "La date de l'événement est requise",
   }),
 
   location: z
@@ -112,7 +112,7 @@ export const RexFormSchema = z.object({
   gravity: RexGravityEnum,
 
   // Visibilité et partage
-  visibility: RexVisibilityEnum.default("PRIVE"),
+  visibility: RexVisibilityEnum,
 
   // Tags et catégorisation
   tags: z
