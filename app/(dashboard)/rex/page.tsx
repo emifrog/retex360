@@ -140,8 +140,8 @@ export default async function RexPage({ searchParams }: PageProps) {
                 Consultez et partagez les REX de votre SDIS
               </p>
             </div>
-            <Link href="/dashboard/rex/new">
-              <Button className="w-full sm:w-auto">
+            <Link href="/rex/new">
+              <Button className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau REX
               </Button>
@@ -201,8 +201,8 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
             : 'Commencez par créer votre premier retour d\'expérience pour partager vos connaissances'}
         </p>
         {!hasFilters && (
-          <Link href="/dashboard/rex/new">
-            <Button>
+          <Link href="/rex/new">
+            <Button className="bg-red-600 hover:bg-red-700">
               <Plus className="w-4 h-4 mr-2" />
               Créer un REX
             </Button>

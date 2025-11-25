@@ -134,13 +134,13 @@ export default async function RexDetailPage({ params }: PageProps) {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard/rex" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <Link href="/rex" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
               <ArrowLeft className="h-5 w-5" />
               <span className="hidden sm:inline">Retour à la liste</span>
             </Link>
             <div className="flex items-center gap-2">
               {isAuthor && (
-                <Link href={`/dashboard/rex/${rex.id}/edit`}>
+                <Link href={`/rex/${rex.id}/edit`}>
                   <Button variant="outline" size="sm">
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier

@@ -27,7 +27,7 @@ export function RexCard({ rex, variant = 'default' }: RexCardProps) {
   const isCompact = variant === 'compact'
 
   return (
-    <Link href={`/dashboard/rex/${rex.id}`} className="block group">
+    <Link href={`/rex/${rex.id}`} className="block group">
       <article className={cn(
         'bg-white rounded-xl border border-gray-200 transition-all duration-200',
         'hover:shadow-lg hover:border-gray-300 hover:-translate-y-0.5',
