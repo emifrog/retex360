@@ -1,8 +1,8 @@
-# MEMO-OPS 🚒
+# RETEX360 🚒
 
 **Plateforme de Retours d'Expérience (REX) pour les Services Départementaux d'Incendie et de Secours (SDIS)**
 
-MEMO-OPS est une application web moderne permettant aux pompiers de partager, consulter et analyser les retours d'expérience opérationnels entre différents SDIS.
+RETEX360 est une application web moderne permettant aux pompiers de partager, consulter et analyser les retours d'expérience opérationnels entre différents SDIS.
 
 ---
 

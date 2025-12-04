@@ -54,10 +54,10 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
           </div>
           <div>
             <h1 className="text-lg font-bold bg-gradient-to-r from-white to-primary bg-clip-text text-transparent tracking-wider">
-              MEMO-OPS
+              RETEX360
             </h1>
             <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
-              Plateforme RETEX
+              Plateforme
             </p>
           </div>
         </Link>

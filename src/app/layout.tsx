@@ -10,7 +10,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MEMO-OPS | Plateforme RETEX Collaborative",
+  title: "RETEX360 | Plateforme Collaborative",
   description: "Plateforme collaborative de capitalisation et partage des Retours d'Expérience (RETEX) pour les SDIS français",
 };
 

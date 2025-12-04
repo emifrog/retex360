@@ -26,7 +26,7 @@ export default function AuthLayout({
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold">REX Platform</h1>
+              <h1 className="text-xl font-bold">RETEX360 Platform</h1>
               <p className="text-xs text-white/70">Retours d&apos;Expérience SDIS</p>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function AuthLayout({
               <CheckCircle className="w-5 h-5 mt-0.5 text-white/90" />
               <div>
                 <h3 className="font-semibold">Recherche intelligente</h3>
-                <p className="text-sm text-white/70">Trouvez instantanément les REX pertinents avec l&apos;IA</p>
+                <p className="text-sm text-white/70">Trouvez instantanément les retex pertinents avec l&apos;IA</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -69,7 +69,7 @@ export default function AuthLayout({
 
         {/* Footer */}
         <div className="text-sm text-white/60">
-          © 2025 REX Platform • Sécurisé et conforme RGPD
+          © 2025 RETEX360 Platform • Sécurisé et conforme RGPD
         </div>
       </div>
 

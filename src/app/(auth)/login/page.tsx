@@ -135,9 +135,14 @@ export default function LoginPage() {
             Google
           </Button>
           <Button variant="outline" type="button" className="h-11">
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z" />
+
+<svg className="mr-2 h-4 w-4" viewBox="0 0 129 129" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#F25022" d="M0,0h61.3v61.3H0V0z"/>
+              <path fill="#7FBA00" d="M67.7,0H129v61.3H67.7V0z"/>
+              <path fill="#00A4EF" d="M0,67.7h61.3V129H0V67.7z"/>
+              <path fill="#FFB900" d="M67.7,67.7H129V129H67.7V67.7z"/>
             </svg>
+
             Microsoft
           </Button>
         </div>
