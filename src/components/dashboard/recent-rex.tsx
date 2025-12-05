@@ -2,65 +2,7 @@ import Link from 'next/link';
 import { Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-// Données de démo
-const DEMO_REX = [
-  {
-    id: '1',
-    title: "Feu d'entrepôt chimique - Zone industrielle Carros",
-    date: '2024-11-15',
-    sdis: 'SDIS 06',
-    type: 'Incendie industriel',
-    severity: 'critique' as const,
-    validated: true,
-    views: 234,
-    tags: ['NRBC', 'POI', 'multi-sites'],
-  },
-  {
-    id: '2',
-    title: 'Effondrement parking souterrain - Nice Centre',
-    date: '2024-10-28',
-    sdis: 'SDIS 06',
-    type: 'Sauvetage déblaiement',
-    severity: 'majeur' as const,
-    validated: true,
-    views: 189,
-    tags: ['USAR', 'cynophile', 'extraction'],
-  },
-  {
-    id: '3',
-    title: "Feux de forêt simultanés - Massif de l'Estérel",
-    date: '2024-08-12',
-    sdis: 'SDIS 83',
-    type: 'FDF',
-    severity: 'critique' as const,
-    validated: true,
-    views: 456,
-    tags: ['colonnes', 'coordination', 'aérien'],
-  },
-  {
-    id: '4',
-    title: 'Accident TMD A8 - Produit inconnu',
-    date: '2024-09-05',
-    sdis: 'SDIS 06',
-    type: 'NRBC',
-    severity: 'majeur' as const,
-    validated: true,
-    views: 312,
-    tags: ['TMD', 'périmètre', 'décontamination'],
-  },
-  {
-    id: '5',
-    title: 'Noyade collective plage Antibes',
-    date: '2024-07-22',
-    sdis: 'SDIS 06',
-    type: 'SAV',
-    severity: 'significatif' as const,
-    validated: false,
-    views: 45,
-    tags: ['SAV', 'afflux', 'coordination secours'],
-  },
-];
+import { createClient } from '@/lib/supabase/server';
 
 const severityColors = {
   critique: 'bg-red-500',
@@ -68,10 +10,60 @@ const severityColors = {
   significatif: 'bg-yellow-500',
 };
 
-export function RecentRex() {
+type Severity = 'critique' | 'majeur' | 'significatif';
+
+interface RexFromDB {
+  id: string;
+  title: string;
+  intervention_date: string;
+  type: string;
+  severity: Severity;
+  status: string;
+  views_count: number;
+  tags: string[];
+  sdis: { code: string; name: string } | null;
+}
+
+export async function RecentRex() {
+  const supabase = await createClient();
+  
+  const { data: rexList } = await supabase
+    .from('rex')
+    .select(`
+      id,
+      title,
+      intervention_date,
+      type,
+      severity,
+      status,
+      views_count,
+      tags,
+      sdis:sdis_id(code, name)
+    `)
+    .in('status', ['validated', 'pending'])
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Transform the data to handle the sdis relation
+  const recentRex: RexFromDB[] = (rexList || []).map((rex) => ({
+    ...rex,
+    sdis: Array.isArray(rex.sdis) ? rex.sdis[0] : rex.sdis,
+  })) as RexFromDB[];
+
+  if (recentRex.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-8 text-center">
+        <p className="text-muted-foreground">Aucun RETEX disponible</p>
+        <Link href="/rex/new" className="text-primary hover:underline text-sm mt-2 inline-block">
+          Créer le premier RETEX →
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {DEMO_REX.map((rex) => (
+      {recentRex.map((rex) => (
         <Link
           key={rex.id}
           href={`/rex/${rex.id}`}
@@ -99,7 +91,7 @@ export function RecentRex() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {rex.validated && (
+              {rex.status === 'validated' && (
                 <Badge
                   variant="outline"
                   className="bg-green-500/10 text-green-500 border-green-500/30 text-[10px]"
@@ -107,9 +99,17 @@ export function RecentRex() {
                   ✓ Validé
                 </Badge>
               )}
+              {rex.status === 'pending' && (
+                <Badge
+                  variant="outline"
+                  className="bg-orange-500/10 text-orange-500 border-orange-500/30 text-[10px]"
+                >
+                  En attente
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Eye className="w-3 h-3" />
-                {rex.views}
+                {rex.views_count}
               </span>
             </div>
           </div>
@@ -119,8 +119,8 @@ export function RecentRex() {
           </h3>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>{rex.sdis}</span>
-            <span>{new Date(rex.date).toLocaleDateString('fr-FR')}</span>
+            <span>SDIS {rex.sdis?.code}</span>
+            <span>{new Date(rex.intervention_date).toLocaleDateString('fr-FR')}</span>
             <div className="flex gap-1.5 ml-auto">
               {rex.tags.slice(0, 2).map((tag) => (
                 <span
