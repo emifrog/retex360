@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Liste des SDIS (UUIDs valides RFC 4122 v4)
 const SDIS_LIST = [
@@ -49,6 +50,7 @@ function SubmitButton() {
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [sdisId, setSdisId] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -124,7 +126,7 @@ export default function RegisterPage() {
             <Input
               id="password"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               required
               className="bg-background/50"
@@ -135,11 +137,21 @@ export default function RegisterPage() {
             <Input
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               required
               className="bg-background/50"
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="showPassword"
+              checked={showPassword}
+              onCheckedChange={(checked) => setShowPassword(checked === true)}
+            />
+            <label htmlFor="showPassword" className="text-sm text-muted-foreground cursor-pointer">
+              Afficher les mots de passe
+            </label>
           </div>
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">

@@ -33,6 +33,7 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -71,11 +72,21 @@ export default function LoginPage() {
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
             required
             className="h-11"
           />
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="showPassword"
+              checked={showPassword}
+              onCheckedChange={(checked) => setShowPassword(checked === true)}
+            />
+            <label htmlFor="showPassword" className="text-sm text-muted-foreground cursor-pointer">
+              Afficher le mot de passe
+            </label>
+          </div>
         </div>
 
         {/* Remember me & Forgot password */}
