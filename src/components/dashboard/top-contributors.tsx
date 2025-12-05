@@ -17,7 +17,7 @@ const rankColors = {
 
 export function TopContributors() {
   return (
-    <div className="bg-card/80 border border-border rounded-xl p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <Trophy className="w-5 h-5 text-yellow-500" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

@@ -97,6 +97,15 @@
   --sidebar-accent-foreground: #b91c1c;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #b91c1c;
+  
+  /* Light mode specific */
+  --card-alpha: rgba(255, 255, 255, 0.8);
+  --purple-bg: rgba(147, 51, 234, 0.1);
+  --purple-border: rgba(147, 51, 234, 0.2);
+  --red-bg: rgba(239, 68, 68, 0.1);
+  --red-border: rgba(239, 68, 68, 0.3);
+  --blue-bg: rgba(59, 130, 246, 0.1);
+  --blue-border: rgba(59, 130, 246, 0.3);
 }
 
 /* Dark Tactical Theme */
@@ -150,6 +159,15 @@
   --sidebar-accent-foreground: #f87171;
   --sidebar-border: rgba(255, 255, 255, 0.05);
   --sidebar-ring: #b91c1c;
+  
+  /* Dark mode specific */
+  --card-alpha: rgba(20, 20, 28, 0.8);
+  --purple-bg: rgba(168, 85, 247, 0.1);
+  --purple-border: rgba(168, 85, 247, 0.2);
+  --red-bg: rgba(239, 68, 68, 0.1);
+  --red-border: rgba(239, 68, 68, 0.3);
+  --blue-bg: rgba(59, 130, 246, 0.1);
+  --blue-border: rgba(59, 130, 246, 0.3);
 }
 
 @layer base {

@@ -56,7 +56,7 @@ export function StatsCards({
       {stats.map((stat) => (
         <div
           key={stat.key}
-          className="relative bg-card/80 border border-border rounded-xl p-5 overflow-hidden"
+          className="relative bg-card border border-border rounded-xl p-5 overflow-hidden"
         >
           {/* Top accent line */}
           <div

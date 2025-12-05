@@ -41,7 +41,7 @@ const insightConfig = {
 
 export function AiInsights() {
   return (
-    <div className="bg-card/80 border border-purple-500/20 rounded-xl p-5">
+    <div className="bg-card border border-purple-500/30 rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="w-5 h-5 text-purple-500" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

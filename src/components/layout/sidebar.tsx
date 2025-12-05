@@ -81,7 +81,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
           </div>
           {!collapsed && (
             <div>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-white to-primary bg-clip-text text-transparent tracking-wider">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent tracking-wider">
                 RETEX360
               </h1>
               <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
@@ -194,7 +194,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
       {/* AI Insight Card */}
       {!collapsed ? (
         <div className="p-3">
-          <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+          <div className="p-4 bg-accent border border-primary/20 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-purple-500" />
               <p className="text-xs text-primary font-semibold">INSIGHT IA</p>
@@ -209,7 +209,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center cursor-pointer">
+                <div className="p-3 bg-accent border border-primary/20 rounded-lg flex items-center justify-center cursor-pointer">
                   <Sparkles className="w-4 h-4 text-purple-500" />
                 </div>
               </TooltipTrigger>

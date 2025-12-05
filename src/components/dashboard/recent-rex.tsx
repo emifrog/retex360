@@ -75,7 +75,7 @@ export function RecentRex() {
         <Link
           key={rex.id}
           href={`/rex/${rex.id}`}
-          className="block bg-card/80 border border-border hover:border-primary/40 rounded-xl p-4 transition-all"
+          className="block bg-card border border-border hover:border-primary/40 rounded-xl p-4 transition-all"
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">

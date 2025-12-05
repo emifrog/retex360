@@ -38,7 +38,7 @@ export default function DashboardPage() {
           <TopContributors />
 
           {/* Quick Actions */}
-          <div className="bg-card/80 border border-border rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
               Actions rapides
             </h3>
