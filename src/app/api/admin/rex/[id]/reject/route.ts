@@ -51,8 +51,8 @@ export async function POST(
       // Create notification for author
       await supabase.from('notifications').insert({
         user_id: rex.author_id,
-        type: 'validation',
-        title: 'REX rejeté',
+        type: 'rejection',
+        title: 'RETEX rejeté',
         content: reason
           ? `Votre REX "${rex.title}" a été rejeté. Raison : ${reason}`
           : `Votre REX "${rex.title}" a été rejeté. Veuillez le modifier et le soumettre à nouveau.`,

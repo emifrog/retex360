@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Search, LogOut, User, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, LogOut, User, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationCenter } from '@/components/notifications/notification-center';
 import type { Profile, Sdis } from '@/types';
 
 interface HeaderProps {
   user?: (Profile & { sdis: Sdis }) | null;
-  notificationCount?: number;
 }
 
-export function Header({ user, notificationCount = 0 }: HeaderProps) {
+export function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   const initials = user?.full_name
     ?.split(' ')
@@ -40,9 +48,10 @@ export function Header({ user, notificationCount = 0 }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Recherche sémantique : type d'intervention, contexte, enseignements..."
+            placeholder="Recherche : type d'intervention, contexte..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
             className="pl-10 bg-background/50 border-border"
           />
         </div>
@@ -64,14 +73,7 @@ export function Header({ user, notificationCount = 0 }: HeaderProps) {
         <ThemeToggle />
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          {notificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-              {notificationCount > 9 ? '9+' : notificationCount}
-            </span>
-          )}
-        </Button>
+        <NotificationCenter userId={user?.id || null} />
 
         {/* User Menu */}
         <DropdownMenu>

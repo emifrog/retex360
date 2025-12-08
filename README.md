@@ -28,8 +28,11 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 
 ### 📋 Liste & Recherche
 - **Liste paginée** des REX avec vue grille/liste
-- **Filtres avancés** : type, gravité, statut, SDIS
-- **Recherche textuelle** en temps réel
+- **Page de recherche avancée** `/search` avec :
+  - Recherche full-text (titre, description, contexte)
+  - Filtres : type, SDIS, sévérité, statut, période, tags
+  - Résultats paginés avec tri
+- **Recherche rapide** dans le header
 - **Recherche sémantique** avec OpenAI embeddings
 - **Statistiques** en haut de liste (total, validés, en attente, brouillons)
 
@@ -77,11 +80,18 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Recherche sémantique** avec embeddings vectoriels
 
 ### 🔔 Notifications
-- **Notifications en temps réel** (Supabase Realtime)
-- **Types** : Mention, Commentaire, Validation, Favori, Système
-- **Cloche avec badge** de notifications non lues
-- **Marquer comme lu** (individuel ou tout)
-- **Triggers automatiques** pour mentions et validations
+- **Notifications en temps réel** (Supabase Realtime WebSocket)
+- **Types** : Mention, Commentaire, Validation, Rejet, Nouveau REX
+- **Centre de notifications** avec popover dans le header
+- **Badge animé** pour les non-lues
+- **Actions** : marquer lu, tout marquer lu, supprimer
+- **Liens cliquables** vers les RETEX concernés
+
+### 🎨 Interface
+- **Sidebar collapsible** avec tooltips
+- **Thème clair/sombre** avec toggle
+- **Design responsive** adapté mobile
+- **Affichage/masquage mot de passe** sur login/register
 
 ---
 
@@ -144,10 +154,12 @@ src/
 │   └── notifications/    # Cloche de notifications
 ├── lib/
 │   ├── supabase/         # Clients Supabase
-│   ├── hooks/            # Hooks React personnalisés
 │   ├── actions/          # Server Actions
 │   ├── validators/       # Schémas Zod
+│   ├── notifications.ts  # Service notifications
 │   └── openai.ts         # Client OpenRouter/OpenAI
+├── hooks/                # Hooks React personnalisés
+│   └── use-notifications.ts
 ├── types/                # Types TypeScript
 └── supabase/
     └── migrations/       # Scripts SQL
@@ -165,8 +177,8 @@ src/
 
 ### 1. Cloner le projet
 ```bash
-git clone <repo-url>
-cd memo-ops
+git clone https://github.com/votre-username/retex360.git
+cd retex360
 npm install
 ```
 
@@ -257,7 +269,7 @@ Dans les settings du projet Vercel, ajouter :
 | `SUPABASE_SERVICE_ROLE_KEY` | Clé service role Supabase |
 | `OPENROUTER_API_KEY` | Clé API OpenRouter (optionnel) |
 | `OPENAI_API_KEY` | Clé API OpenAI (optionnel) |
-| `NEXT_PUBLIC_APP_URL` | URL de production (ex: https://memo-ops.vercel.app) |
+| `NEXT_PUBLIC_APP_URL` | URL de production (ex: https://retex360.vercel.app) |
 
 ### 3. Déployer
 Vercel déploiera automatiquement à chaque push sur `main`.

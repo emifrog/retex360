@@ -85,9 +85,49 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // TODO: Create notifications for mentioned users
+    // Get REX info and commenter info for notifications
+    const { data: rex } = await supabase
+      .from('rex')
+      .select('author_id, title')
+      .eq('id', rexId)
+      .single();
+
+    const { data: commenter } = await supabase
+      .from('profiles')
+      .select('full_name, grade')
+      .eq('id', user.id)
+      .single();
+
+    const commenterName = commenter?.grade 
+      ? `${commenter.grade} ${commenter.full_name}`
+      : commenter?.full_name || 'Un utilisateur';
+
+    // Notify REX author if someone else comments
+    if (rex && rex.author_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: rex.author_id,
+        type: 'comment',
+        title: `${commenterName} a commenté votre RETEX`,
+        content: rex.title,
+        link: `/rex/${rexId}#comments`,
+      });
+    }
+
+    // Notify mentioned users
     if (mentions && mentions.length > 0) {
-      // Future: Insert notifications for each mentioned user
+      const mentionNotifications = mentions
+        .filter((mentionedId: string) => mentionedId !== user.id) // Don't notify self
+        .map((mentionedId: string) => ({
+          user_id: mentionedId,
+          type: 'mention',
+          title: `${commenterName} vous a mentionné`,
+          content: content.trim().slice(0, 100) + (content.length > 100 ? '...' : ''),
+          link: `/rex/${rexId}#comments`,
+        }));
+
+      if (mentionNotifications.length > 0) {
+        await supabase.from('notifications').insert(mentionNotifications);
+      }
     }
 
     return NextResponse.json({ data: comment }, { status: 201 });

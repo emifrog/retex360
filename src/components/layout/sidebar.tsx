@@ -15,6 +15,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,7 @@ import {
 
 const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
+  { name: 'Recherche', href: '/search', icon: Search },
   { name: 'Liste REX', href: '/rex', icon: FileText },
   { name: 'Nouveau REX', href: '/rex/new', icon: PlusCircle },
   { name: 'Favoris', href: '/favorites', icon: Star },
