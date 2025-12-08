@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +38,10 @@ const navigation = [
 const adminNavigation = [
   { name: 'Validation', href: '/validation', icon: CheckCircle, badge: true },
   { name: 'Paramètres', href: '/settings', icon: Settings },
+];
+
+const bottomNavigation = [
+  { name: 'À propos', href: '/about', icon: Info },
 ];
 
 interface SidebarProps {
@@ -223,6 +228,46 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
           </TooltipProvider>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <div className="border-t border-border p-3">
+        <TooltipProvider delayDuration={0}>
+          {bottomNavigation.map((item) => {
+            const isActive = pathname === item.href;
+            const linkContent = (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                  isActive
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                  collapsed && 'justify-center px-2'
+                )}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                {!collapsed && <span className="text-sm">{item.name}</span>}
+              </Link>
+            );
+
+            if (collapsed) {
+              return (
+                <Tooltip key={item.name}>
+                  <TooltipTrigger asChild>
+                    {linkContent}
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return linkContent;
+          })}
+        </TooltipProvider>
+      </div>
     </aside>
   );
 }

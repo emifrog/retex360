@@ -136,12 +136,12 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             <label className="text-sm font-medium text-muted-foreground">
               Type d&apos;intervention
             </label>
-            <Select value={type} onValueChange={setType}>
+            <Select value={type || 'all'} onValueChange={(v) => setType(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 {REX_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
@@ -156,12 +156,12 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             <label className="text-sm font-medium text-muted-foreground">
               SDIS
             </label>
-            <Select value={sdis} onValueChange={setSdis}>
+            <Select value={sdis || 'all'} onValueChange={(v) => setSdis(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous les SDIS" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les SDIS</SelectItem>
+                <SelectItem value="all">Tous les SDIS</SelectItem>
                 {sdisList.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     SDIS {s.code} - {s.name}
@@ -176,12 +176,12 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             <label className="text-sm font-medium text-muted-foreground">
               Sévérité
             </label>
-            <Select value={severity} onValueChange={setSeverity}>
+            <Select value={severity || 'all'} onValueChange={(v) => setSeverity(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Toutes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes les sévérités</SelectItem>
+                <SelectItem value="all">Toutes les sévérités</SelectItem>
                 {SEVERITIES.map((s) => (
                   <SelectItem key={s} value={s}>
                     {severityLabels[s]}
@@ -196,12 +196,12 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             <label className="text-sm font-medium text-muted-foreground">
               Statut
             </label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status || 'all'} onValueChange={(v) => setStatus(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les statuts</SelectItem>
+                <SelectItem value="all">Tous les statuts</SelectItem>
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
                     {statusLabels[s]}
