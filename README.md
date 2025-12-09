@@ -92,6 +92,17 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Thème clair/sombre** avec toggle
 - **Design responsive** adapté mobile
 - **Affichage/masquage mot de passe** sur login/register
+- **Page À propos** avec présentation du projet
+
+### 👥 Administration
+- **Gestion des utilisateurs** `/admin/users`
+  - Liste avec recherche et filtres
+  - Modification des rôles (user, validator, admin, super_admin)
+  - Statistiques par rôle
+- **Permissions** :
+  - Admin : gère les utilisateurs de son SDIS
+  - Super Admin : accès à tous les SDIS
+- **Compte démo** disponible pour la hiérarchie
 
 ---
 
@@ -137,7 +148,11 @@ src/
 │   │   │   ├── [id]/     # Détail & édition REX
 │   │   │   └── new/
 │   │   ├── favorites/
+│   │   ├── search/
+│   │   ├── about/
 │   │   └── admin/
+│   │       ├── users/
+│   │       └── validation/
 │   └── api/              # API Routes
 │       ├── rex/
 │       ├── comments/
@@ -151,7 +166,9 @@ src/
 │   ├── comments/         # Système de commentaires
 │   ├── dashboard/        # Dashboard & graphiques
 │   ├── favorites/        # Liste des favoris
-│   └── notifications/    # Cloche de notifications
+│   ├── notifications/    # Cloche de notifications
+│   ├── admin/            # Gestion utilisateurs
+│   └── search/           # Recherche avancée
 ├── lib/
 │   ├── supabase/         # Clients Supabase
 │   ├── actions/          # Server Actions
@@ -239,6 +256,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 | `POST` | `/api/notifications` | Marquer comme lu |
 | `POST` | `/api/search` | Recherche sémantique |
 | `POST` | `/api/ai/analyze` | Analyse IA d'un REX |
+| `PUT` | `/api/admin/users/role` | Modifier le rôle d'un utilisateur |
 
 ---
 
@@ -257,7 +275,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 ### 1. Connecter le repo GitHub
 1. Aller sur [vercel.com](https://vercel.com)
 2. Cliquer sur "Add New Project"
-3. Importer le repository GitHub `memo-ops`
+3. Importer le repository GitHub `retex360`
 
 ### 2. Configurer les variables d'environnement
 Dans les settings du projet Vercel, ajouter :
@@ -281,14 +299,32 @@ Dans Supabase Dashboard > Authentication > URL Configuration :
 
 ---
 
+## 🔐 Compte Démo
+
+Un compte démo est disponible pour tester l'application en lecture seule :
+
+| Champ | Valeur |
+|-------|--------|
+| **Email** | `demo@retex360.fr` |
+| **Mot de passe** | `Demo2025!` |
+| **Rôle** | Utilisateur (lecture seule) |
+
+> Ce compte permet de consulter les RETEX sans pouvoir les modifier ou accéder aux fonctions d'administration.
+
+---
+
 ## 📈 Roadmap
 
+- [x] Recherche avancée avec filtres
+- [x] Notifications temps réel
+- [x] Gestion des utilisateurs
+- [x] Page À propos
+- [ ] Intelligence Artificielle (analyse de patterns)
 - [ ] Application mobile (React Native)
 - [ ] Export Excel/CSV
 - [ ] Intégration cartographique
 - [ ] Statistiques avancées par SDIS
 - [ ] Mode hors-ligne (PWA)
-- [ ] Intégration ANTARES
 
 ---
 

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Search,
   Info,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +37,8 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { name: 'Validation', href: '/validation', icon: CheckCircle, badge: true },
+  { name: 'Validation', href: '/admin/validation', icon: CheckCircle, badge: true },
+  { name: 'Utilisateurs', href: '/admin/users', icon: Users },
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
