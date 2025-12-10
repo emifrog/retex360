@@ -24,7 +24,6 @@ export async function PUT(request: NextRequest) {
         full_name: full_name.trim(),
         grade: grade || null,
         sdis_id: sdis_id || null,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
 

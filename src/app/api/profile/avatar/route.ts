@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .update({ 
         avatar_url: publicUrl,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
 

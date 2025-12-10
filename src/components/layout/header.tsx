@@ -98,11 +98,11 @@ export function Header({ user }: HeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <User className="mr-2 h-4 w-4" />
               Profil
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Paramètres
             </DropdownMenuItem>
