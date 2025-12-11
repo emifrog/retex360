@@ -11,7 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "RETEX360 | Plateforme Collaborative",
-  description: "Plateforme collaborative de capitalisation et partage des Retours d'Expérience (RETEX) pour les SDIS français",
+  description: "Plateforme collaborative des Retours d'Expérience (RETEX) pour les SDIS français",
 };
 
 export default function RootLayout({
