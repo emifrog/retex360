@@ -6,7 +6,7 @@ const openrouter = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   defaultHeaders: {
     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'X-Title': 'MEMO-OPS',
+    'X-Title': 'RETEX360',
   },
 });
 
@@ -36,7 +36,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        'X-Title': 'MEMO-OPS',
+        'X-Title': 'RETEX360',
       },
       body: JSON.stringify({
         model: 'openai/text-embedding-3-small',

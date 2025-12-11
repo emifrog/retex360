@@ -50,6 +50,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
+    // Link attachments to the new REX
+    if (body.attachmentIds && body.attachmentIds.length > 0) {
+      const { error: attachError } = await supabase
+        .from('rex_attachments')
+        .update({ rex_id: rex.id })
+        .in('id', body.attachmentIds)
+        .eq('uploaded_by', user.id);
+
+      if (attachError) {
+        console.error('Error linking attachments:', attachError);
+      }
+    }
+
     return NextResponse.json(rex, { status: 201 });
   } catch (error) {
     console.error('Error:', error);

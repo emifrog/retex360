@@ -1,5 +1,5 @@
 -- ============================================
--- MEMO-OPS Database Schema
+-- RETEX360 Database Schema
 -- Plateforme RETEX Collaborative pour SDIS
 -- ============================================
 

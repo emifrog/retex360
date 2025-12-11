@@ -72,7 +72,7 @@ export default function MemoOpsApp() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               letterSpacing: '2px'
-            }}>MEMO-OPS</h1>
+            }}>RETEX360</h1>
             <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', letterSpacing: '3px', textTransform: 'uppercase' }}>
               Plateforme RETEX Collaborative
             </p>

@@ -323,7 +323,7 @@ export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            MEMO-OPS - Plateforme RETEX Collaborative
+            RETEX360 - Plateforme RETEX Collaborative
           </Text>
           <Text
             style={styles.pageNumber}

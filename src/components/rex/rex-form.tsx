@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import type { RexInput } from '@/lib/validators/rex';
 import { REX_TYPES, SEVERITIES, VISIBILITIES } from '@/types';
 import { TiptapEditor } from './tiptap-editor';
+import { ImageUpload } from './image-upload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,6 +45,14 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    id: string;
+    file_name: string;
+    file_type: string;
+    file_size: number;
+    storage_path: string;
+    url: string;
+  }[]>([]);
 
   const {
     register,
@@ -89,7 +98,11 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       const response = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, status }),
+        body: JSON.stringify({ 
+          ...data, 
+          status,
+          attachmentIds: uploadedFiles.map(f => f.id),
+        }),
       });
 
       if (!response.ok) {
@@ -325,6 +338,22 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               placeholder="Quels sont les enseignements à retenir de cette intervention ?"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Attachments */}
+      <Card className="border-border/50 bg-card/80">
+        <CardHeader>
+          <CardTitle className="text-lg">Pièces jointes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ImageUpload
+            rexId={rexId}
+            files={uploadedFiles}
+            onFilesChange={setUploadedFiles}
+            maxFiles={10}
+            maxSizeMB={5}
+          />
         </CardContent>
       </Card>
 
