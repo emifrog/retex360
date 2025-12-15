@@ -24,7 +24,10 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Édition de REX** (auteur ou admin)
 - **Suppression de REX** avec confirmation
 - **Export PDF** des REX
-- **Pièces jointes** téléchargeables
+- **Pièces jointes** avec upload drag & drop
+  - Images (JPG, PNG, GIF, WebP) et PDF
+  - Prévisualisation des images
+  - Max 5 Mo par fichier, 10 fichiers max
 
 ### 📋 Liste & Recherche
 - **Liste paginée** des REX avec vue grille/liste
@@ -93,6 +96,10 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Design responsive** adapté mobile
 - **Affichage/masquage mot de passe** sur login/register
 - **Page À propos** avec présentation du projet
+- **Page Paramètres** `/settings`
+  - Modification du profil (nom, grade, SDIS)
+  - Upload d'avatar
+  - Changement de mot de passe
 
 ### 👥 Administration
 - **Gestion des utilisateurs** `/admin/users`
@@ -124,6 +131,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **API Routes** Next.js
 - **OpenRouter API** (LLM multi-modèles)
 - **OpenAI API** (embeddings)
+- **Sentry** (monitoring erreurs)
 
 ### Base de données
 - **PostgreSQL** avec extensions :
@@ -213,6 +221,12 @@ OPENROUTER_API_KEY=sk-or-v1-xxx
 # OpenAI (optionnel, pour embeddings)
 OPENAI_API_KEY=sk-xxx
 
+# Sentry (monitoring)
+NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+SENTRY_ORG=votre-org
+SENTRY_PROJECT=retex360
+SENTRY_AUTH_TOKEN=sntrys_xxx
+
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -257,6 +271,11 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 | `POST` | `/api/search` | Recherche sémantique |
 | `POST` | `/api/ai/analyze` | Analyse IA d'un REX |
 | `PUT` | `/api/admin/users/role` | Modifier le rôle d'un utilisateur |
+| `PUT` | `/api/profile` | Modifier son profil |
+| `PUT` | `/api/profile/password` | Changer son mot de passe |
+| `POST` | `/api/profile/avatar` | Upload d'avatar |
+| `POST` | `/api/rex/attachments` | Upload pièce jointe REX |
+| `DELETE` | `/api/rex/attachments/[id]` | Supprimer pièce jointe |
 
 ---
 
@@ -287,6 +306,10 @@ Dans les settings du projet Vercel, ajouter :
 | `SUPABASE_SERVICE_ROLE_KEY` | Clé service role Supabase |
 | `OPENROUTER_API_KEY` | Clé API OpenRouter (optionnel) |
 | `OPENAI_API_KEY` | Clé API OpenAI (optionnel) |
+| `NEXT_PUBLIC_SENTRY_DSN` | DSN Sentry pour le monitoring |
+| `SENTRY_ORG` | Organisation Sentry |
+| `SENTRY_PROJECT` | Projet Sentry |
+| `SENTRY_AUTH_TOKEN` | Token d'authentification Sentry |
 | `NEXT_PUBLIC_APP_URL` | URL de production (ex: https://retex360.vercel.app) |
 
 ### 3. Déployer
@@ -319,6 +342,9 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Notifications temps réel
 - [x] Gestion des utilisateurs
 - [x] Page À propos
+- [x] Page Paramètres utilisateur
+- [x] Upload d'images pour les REX
+- [x] Monitoring Sentry
 - [ ] Intelligence Artificielle (analyse de patterns)
 - [ ] Application mobile (React Native)
 - [ ] Export Excel/CSV

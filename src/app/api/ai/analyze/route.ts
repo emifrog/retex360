@@ -1,8 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { chatCompletion, OPENROUTER_MODELS } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { aiAnalysisSchema } from '@/lib/validators/api';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting (strict for AI - expensive operations)
+  const ip = getClientIp(request);
+  const rateLimitResult = await rateLimiters.ai.limit(ip);
+  
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult.reset);
+  }
+
   try {
     const supabase = await createClient();
 
@@ -12,11 +22,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { rexId, type } = body;
 
-    if (!rexId) {
-      return NextResponse.json({ error: 'ID du REX requis' }, { status: 400 });
+    // Validation Zod
+    const validated = aiAnalysisSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
     }
+
+    const { rexId, type } = validated.data;
 
     // Fetch the REX
     const { data: rex, error } = await supabase

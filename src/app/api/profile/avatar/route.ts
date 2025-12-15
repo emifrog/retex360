@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const ip = getClientIp(request);
+  const rateLimitResult = await rateLimiters.upload.limit(ip);
+  
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult.reset);
+  }
+
   try {
     const supabase = await createClient();
 

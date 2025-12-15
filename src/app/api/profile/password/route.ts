@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { passwordChangeSchema } from '@/lib/validators/api';
 
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { newPassword } = await request.json();
+    const body = await request.json();
+
+    // Validation Zod
+    const validated = passwordChangeSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
+    }
 
     // Check auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -12,17 +22,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Validate new password
-    if (!newPassword || newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'Le mot de passe doit contenir au moins 8 caractères' },
-        { status: 400 }
-      );
-    }
-
     // Update password using Supabase Auth
     const { error } = await supabase.auth.updateUser({
-      password: newPassword,
+      password: validated.data.newPassword,
     });
 
     if (error) {

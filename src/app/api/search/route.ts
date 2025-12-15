@@ -1,8 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateEmbedding } from '@/lib/openai';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { searchSchema } from '@/lib/validators/api';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Rate limiting
+  const ip = getClientIp(request);
+  const rateLimitResult = await rateLimiters.search.limit(ip);
+  
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult.reset);
+  }
+
   try {
     const supabase = await createClient();
 
@@ -11,11 +21,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
 
-    const { query, limit = 10 } = await request.json();
+    const body = await request.json();
 
-    if (!query || query.trim().length === 0) {
-      return NextResponse.json({ message: 'Query requise' }, { status: 400 });
+    // Validation Zod
+    const validated = searchSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { message: validated.error.issues[0].message },
+        { status: 400 }
+      );
     }
+
+    const { query, limit } = validated.data;
 
     // Generate embedding for the search query
     const queryEmbedding = await generateEmbedding(query);

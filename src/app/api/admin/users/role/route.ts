@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { ROLES } from '@/types';
+import { roleUpdateSchema } from '@/lib/validators/api';
 
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { userId, role } = await request.json();
+    const body = await request.json();
 
-    // Validate role
-    if (!ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Rôle invalide' }, { status: 400 });
+    // Validation Zod
+    const validated = roleUpdateSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
     }
+
+    const { userId, role } = validated.data;
 
     // Check auth and admin role
     const { data: { user }, error: authError } = await supabase.auth.getUser();
