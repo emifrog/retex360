@@ -125,6 +125,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **React Hook Form** + Zod (formulaires)
 - **Sonner** (notifications toast)
 - **date-fns** (dates)
+- **next/image** (optimisation images)
 
 ### Backend
 - **Supabase** (PostgreSQL, Auth, Storage, Realtime)
@@ -132,6 +133,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **OpenRouter API** (LLM multi-modèles)
 - **OpenAI API** (embeddings)
 - **Sentry** (monitoring erreurs)
+- **Upstash Redis** (rate limiting, optionnel)
 
 ### Base de données
 - **PostgreSQL** avec extensions :
@@ -283,7 +285,8 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 
 - **Authentification** Supabase Auth (JWT)
 - **Row Level Security** sur toutes les tables
-- **Validation** des données avec Zod
+- **Validation Zod** sur toutes les API
+- **Rate limiting** sur les API sensibles (auth, upload, search, AI)
 - **Permissions** vérifiées côté serveur
 - **Variables d'environnement** pour les secrets
 
@@ -311,6 +314,8 @@ Dans les settings du projet Vercel, ajouter :
 | `SENTRY_PROJECT` | Projet Sentry |
 | `SENTRY_AUTH_TOKEN` | Token d'authentification Sentry |
 | `NEXT_PUBLIC_APP_URL` | URL de production (ex: https://retex360.vercel.app) |
+| `UPSTASH_REDIS_REST_URL` | URL Upstash Redis (optionnel, rate limiting) |
+| `UPSTASH_REDIS_REST_TOKEN` | Token Upstash Redis (optionnel) |
 
 ### 3. Déployer
 Vercel déploiera automatiquement à chaque push sur `main`.
@@ -345,6 +350,9 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Page Paramètres utilisateur
 - [x] Upload d'images pour les REX
 - [x] Monitoring Sentry
+- [x] Rate limiting & validation Zod
+- [x] Lazy loading images (next/image)
+- [x] Pagination infinie (scroll infini)
 - [ ] Intelligence Artificielle (analyse de patterns)
 - [ ] Application mobile (React Native)
 - [ ] Export Excel/CSV

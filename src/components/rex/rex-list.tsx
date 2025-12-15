@@ -93,10 +93,24 @@ export function RexList() {
     }
   }, []);
 
+  // Fetch user favorites
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const response = await fetch('/api/favorites');
+      if (response.ok) {
+        const data = await response.json();
+        setFavorites(new Set(data.favorites || []));
+      }
+    } catch (error) {
+      console.error('Favorites error:', error);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchRex(1, false);
-  }, [fetchRex]);
+    fetchFavorites();
+  }, [fetchRex, fetchFavorites]);
 
   useEffect(() => {
     fetchStats();
