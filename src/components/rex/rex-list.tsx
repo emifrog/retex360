@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RexCard } from './rex-card';
 import { RexFilters, type FilterState } from './rex-filters';
-import { Button } from '@/components/ui/button';
 import { FileText, CheckCircle, Clock, FileEdit, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -14,13 +13,6 @@ interface RexWithRelations extends Rex {
   sdis?: Pick<Sdis, 'code' | 'name'>;
 }
 
-interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
 interface Stats {
   total: number;
   validated: number;
@@ -28,27 +20,35 @@ interface Stats {
   draft: number;
 }
 
+const LIMIT = 12;
+
 export function RexList() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [rexList, setRexList] = useState<RexWithRelations[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-  });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Stats>({ total: 0, validated: 0, pending: 0, draft: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchRex = useCallback(async () => {
-    setIsLoading(true);
+  // Fetch REX data
+  const fetchRex = useCallback(async (pageNum: number, append: boolean = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
       const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
+        page: pageNum.toString(),
+        limit: LIMIT.toString(),
       });
 
       if (searchQuery) params.set('search', searchQuery);
@@ -60,16 +60,27 @@ export function RexList() {
       if (!response.ok) throw new Error('Erreur de chargement');
 
       const data = await response.json();
-      setRexList(data.data || []);
-      setPagination(data.pagination);
+      const newItems = data.data || [];
+      
+      if (append) {
+        setRexList(prev => [...prev, ...newItems]);
+      } else {
+        setRexList(newItems);
+      }
+      
+      setTotal(data.pagination.total);
+      setHasMore(pageNum < data.pagination.totalPages);
+      setPage(pageNum);
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error('Erreur lors du chargement des REX');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [pagination.page, pagination.limit, searchQuery, filters]);
+  }, [searchQuery, filters]);
 
+  // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
       const response = await fetch('/api/rex/stats');
@@ -82,27 +93,52 @@ export function RexList() {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchRex();
+    fetchRex(1, false);
   }, [fetchRex]);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+          fetchRex(page + 1, true);
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoading, isLoadingMore, page, fetchRex]);
+
+  // Reset on search/filter change
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setRexList([]);
+    setPage(1);
+    setHasMore(true);
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setRexList([]);
+    setPage(1);
+    setHasMore(true);
   };
 
   const toggleFavorite = async (id: string) => {
@@ -168,94 +204,73 @@ export function RexList() {
       {/* Results count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {pagination.total} résultat{pagination.total > 1 ? 's' : ''}
-          {isLoading && <Loader2 className="w-4 h-4 ml-2 inline animate-spin" />}
+          {total} résultat{total > 1 ? 's' : ''}
+          {rexList.length > 0 && total > rexList.length && (
+            <span className="ml-1">({rexList.length} affichés)</span>
+          )}
         </p>
       </div>
 
-      {/* Rex Grid/List */}
-      {isLoading ? (
+      {/* Initial Loading */}
+      {isLoading && rexList.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div
-          className={cn(
-            view === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-3'
+        <>
+          {/* Rex Grid/List */}
+          <div
+            className={cn(
+              view === 'grid'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                : 'space-y-3'
+            )}
+          >
+            {rexList.map((rex) => (
+              <RexCard
+                key={rex.id}
+                rex={rex}
+                onFavorite={toggleFavorite}
+                isFavorite={favorites.has(rex.id)}
+              />
+            ))}
+          </div>
+
+          {/* Empty state */}
+          {!isLoading && rexList.length === 0 && (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Aucun REX trouvé</h3>
+              <p className="text-sm text-muted-foreground">
+                Essayez de modifier vos critères de recherche
+              </p>
+            </div>
           )}
-        >
-          {rexList.map((rex) => (
-            <RexCard
-              key={rex.id}
-              rex={rex}
-              onFavorite={toggleFavorite}
-              isFavorite={favorites.has(rex.id)}
-            />
-          ))}
-        </div>
-      )}
 
-      {/* Empty state */}
-      {!isLoading && rexList.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">Aucun REX trouvé</h3>
-          <p className="text-sm text-muted-foreground">
-            Essayez de modifier vos critères de recherche
-          </p>
-        </div>
-      )}
+          {/* Load more trigger */}
+          {hasMore && (
+            <div
+              ref={loadMoreRef}
+              className="flex items-center justify-center py-8"
+            >
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Chargement...</span>
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-          >
-            Précédent
-          </Button>
-          
-          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-            let pageNum: number;
-            if (pagination.totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (pagination.page <= 3) {
-              pageNum = i + 1;
-            } else if (pagination.page >= pagination.totalPages - 2) {
-              pageNum = pagination.totalPages - 4 + i;
-            } else {
-              pageNum = pagination.page - 2 + i;
-            }
-            
-            return (
-              <Button
-                key={pageNum}
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(pageNum)}
-                className={cn(
-                  pagination.page === pageNum && 'bg-primary text-primary-foreground'
-                )}
-              >
-                {pageNum}
-              </Button>
-            );
-          })}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages}
-          >
-            Suivant
-          </Button>
-        </div>
+          {/* End of list */}
+          {!hasMore && rexList.length > 0 && (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                Tous les REX ont été chargés
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

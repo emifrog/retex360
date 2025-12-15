@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Upload, X, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -188,11 +189,14 @@ export function ImageUpload({
               className="relative group overflow-hidden bg-muted/50"
             >
               {isImage(file.file_type) ? (
-                <div className="aspect-square">
-                  <img
+                <div className="aspect-square relative">
+                  <Image
                     src={file.url}
                     alt={file.file_name}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
+                    loading="lazy"
                   />
                 </div>
               ) : (
