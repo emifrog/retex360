@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Font,
 } from '@react-pdf/renderer';
-import type { Rex, Sdis, Profile } from '@/types';
+import type { Rex, Sdis, Profile, FocusThematique, ProductionType } from '@/types';
 
 // Register font (optional - uses default if not available)
 Font.register({
@@ -154,6 +154,99 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#6b7280',
   },
+  productionTypeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginBottom: 15,
+  },
+  productionTypeSignalement: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  productionTypePex: {
+    backgroundColor: '#dbeafe',
+    borderWidth: 1,
+    borderColor: '#93c5fd',
+  },
+  productionTypeRetex: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+  },
+  productionTypeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  focusSection: {
+    marginBottom: 15,
+    padding: 12,
+    backgroundColor: '#f9fafb',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  focusTheme: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#b91c1c',
+    marginBottom: 6,
+  },
+  focusContent: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.5,
+  },
+  twoColumnContainer: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 20,
+  },
+  column: {
+    flex: 1,
+  },
+  elementFavorable: {
+    backgroundColor: '#ecfdf5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10b981',
+    padding: 10,
+    marginBottom: 10,
+  },
+  elementDefavorable: {
+    backgroundColor: '#fef2f2',
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef4444',
+    padding: 10,
+    marginBottom: 10,
+  },
+  elementTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  elementContent: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.5,
+  },
+  annexeHeader: {
+    backgroundColor: '#b91c1c',
+    padding: 10,
+    marginBottom: 20,
+  },
+  annexeTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  annexeSubtitle: {
+    color: '#ffffff',
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -181,6 +274,7 @@ interface RexPdfTemplateProps {
     author?: Profile;
     sdis?: Sdis;
   };
+  anonymize?: boolean;
 }
 
 // Helper to strip HTML tags
@@ -195,7 +289,7 @@ function stripHtml(html: string | null | undefined): string {
     .trim();
 }
 
-export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
+export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) {
   const severityLabel = {
     critique: 'CRITIQUE',
     majeur: 'MAJEUR',
@@ -216,6 +310,30 @@ export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
   };
 
   const severityStyles = getSeverityStyles(rex.severity);
+
+  const getProductionTypeStyles = (type: ProductionType) => {
+    switch (type) {
+      case 'signalement':
+        return { badge: styles.productionTypeSignalement, label: 'SIGNALEMENT' };
+      case 'pex':
+        return { badge: styles.productionTypePex, label: 'PEX - Point d\'Étape eXpérience' };
+      case 'retex':
+      default:
+        return { badge: styles.productionTypeRetex, label: 'RETEX - Retour d\'Expérience' };
+    }
+  };
+
+  const productionTypeStyles = getProductionTypeStyles(rex.type_production || 'retex');
+
+  const focusThematiques = (rex.focus_thematiques as unknown as FocusThematique[]) || [];
+
+  const getAuthorDisplay = () => {
+    if (!rex.author) return '';
+    if (anonymize) {
+      return rex.author.grade || 'Agent';
+    }
+    return rex.author.full_name || '';
+  };
 
   return (
     <Document>
@@ -241,6 +359,11 @@ export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
           </View>
         </View>
 
+        {/* Production Type Badge */}
+        <View style={[styles.productionTypeBadge, productionTypeStyles.badge]}>
+          <Text style={styles.productionTypeText}>{productionTypeStyles.label}</Text>
+        </View>
+
         {/* Title */}
         <Text style={styles.title}>{rex.title}</Text>
 
@@ -264,7 +387,7 @@ export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
           {rex.author && (
             <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
               <Text style={[styles.metaText, styles.metaTextDefault]}>
-                {rex.author.full_name}
+                {getAuthorDisplay()}
               </Text>
             </View>
           )}
@@ -303,6 +426,84 @@ export function RexPdfTemplate({ rex }: RexPdfTemplateProps) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Enseignements</Text>
             <Text style={styles.sectionContent}>{stripHtml(rex.lessons_learned)}</Text>
+          </View>
+        )}
+
+        {/* DGSCGC Fields - Message d'ambiance */}
+        {rex.message_ambiance && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Message d&apos;ambiance</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.message_ambiance)}</Text>
+          </View>
+        )}
+
+        {/* SITAC */}
+        {rex.sitac && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>SITAC - Situation Tactique</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.sitac)}</Text>
+          </View>
+        )}
+
+        {/* Éléments favorables/défavorables */}
+        {(rex.elements_favorables || rex.elements_defavorables) && (
+          <View style={styles.twoColumnContainer}>
+            {rex.elements_favorables && (
+              <View style={[styles.column, styles.elementFavorable]}>
+                <Text style={[styles.elementTitle, { color: '#059669' }]}>✓ Éléments favorables</Text>
+                <Text style={styles.elementContent}>{stripHtml(rex.elements_favorables)}</Text>
+              </View>
+            )}
+            {rex.elements_defavorables && (
+              <View style={[styles.column, styles.elementDefavorable]}>
+                <Text style={[styles.elementTitle, { color: '#dc2626' }]}>✗ Éléments défavorables</Text>
+                <Text style={styles.elementContent}>{stripHtml(rex.elements_defavorables)}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Focus Thématiques */}
+        {focusThematiques.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Focus Thématiques (Annexe F - DGSCGC)</Text>
+            {focusThematiques.map((focus, index) => (
+              <View key={index} style={styles.focusSection}>
+                <Text style={styles.focusTheme}>{focus.theme}</Text>
+                {focus.constats && (
+                  <View style={{ marginBottom: 6 }}>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold' }]}>Constats :</Text>
+                    <Text style={styles.focusContent}>{focus.constats}</Text>
+                  </View>
+                )}
+                {focus.points_forts && (
+                  <View style={{ marginBottom: 6 }}>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#059669' }]}>Points forts :</Text>
+                    <Text style={styles.focusContent}>{focus.points_forts}</Text>
+                  </View>
+                )}
+                {focus.points_amelioration && (
+                  <View style={{ marginBottom: 6 }}>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#dc2626' }]}>Points d&apos;amélioration :</Text>
+                    <Text style={styles.focusContent}>{focus.points_amelioration}</Text>
+                  </View>
+                )}
+                {focus.propositions && (
+                  <View>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#2563eb' }]}>Propositions :</Text>
+                    <Text style={styles.focusContent}>{focus.propositions}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Documentation opérationnelle */}
+        {rex.documentation_operationnelle && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Documentation opérationnelle</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.documentation_operationnelle)}</Text>
           </View>
         )}
 

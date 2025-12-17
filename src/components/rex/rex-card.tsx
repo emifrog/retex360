@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { Eye, Star, Calendar, MapPin } from 'lucide-react';
+import { Eye, Star, Calendar, MapPin, Zap, FileText, ClipboardList } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { Rex, Sdis, Profile } from '@/types';
+import type { Rex, Sdis, Profile, ProductionType } from '@/types';
 
 interface RexCardProps {
   rex: Rex & {
@@ -13,6 +13,24 @@ interface RexCardProps {
   onFavorite?: (id: string) => void;
   isFavorite?: boolean;
 }
+
+const productionTypeConfig: Record<ProductionType, { label: string; icon: typeof Zap; className: string }> = {
+  signalement: {
+    label: 'Signalement',
+    icon: Zap,
+    className: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30',
+  },
+  pex: {
+    label: 'PEX',
+    icon: FileText,
+    className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  },
+  retex: {
+    label: 'RETEX',
+    icon: ClipboardList,
+    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+  },
+};
 
 const severityConfig = {
   critique: {
@@ -60,6 +78,8 @@ const statusConfig = {
 export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
   const severity = severityConfig[rex.severity];
   const status = statusConfig[rex.status];
+  const productionType = productionTypeConfig[rex.type_production || 'retex'];
+  const ProductionIcon = productionType.icon;
 
   return (
     <div className="bg-card/80 border border-border hover:border-primary/40 rounded-xl p-5 transition-all group">
@@ -83,6 +103,10 @@ export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Badge variant="outline" className={cn('text-[10px]', productionType.className)}>
+            <ProductionIcon className="w-3 h-3 mr-1" />
+            {productionType.label}
+          </Badge>
           <Badge variant="outline" className={cn('text-[10px]', status.className)}>
             {status.label}
           </Badge>

@@ -13,6 +13,8 @@ import { ExportPdfButton } from './export-pdf-button';
 import { AttachmentsList } from './attachments-list';
 import { ValidationActions } from './validation-actions';
 import { AiAnalysis } from './ai-analysis';
+import { PromotionButton } from './promotion-button';
+import { CompletionIndicator } from './completion-indicator';
 import {
   ArrowLeft,
   Calendar,
@@ -23,10 +25,13 @@ import {
   CheckCircle,
   Clock,
   Building2,
+  Zap,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { Rex, Sdis, Profile } from '@/types';
+import type { Rex, Sdis, Profile, ProductionType } from '@/types';
 
 interface Attachment {
   id: string;
@@ -79,6 +84,24 @@ const statusConfig = {
   archived: { label: 'Archivé', icon: Clock, color: 'text-gray-400' },
 };
 
+const productionTypeConfig: Record<ProductionType, { label: string; icon: typeof Zap; className: string }> = {
+  signalement: {
+    label: 'Signalement',
+    icon: Zap,
+    className: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30',
+  },
+  pex: {
+    label: 'PEX',
+    icon: FileText,
+    className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  },
+  retex: {
+    label: 'RETEX',
+    icon: ClipboardList,
+    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+  },
+};
+
 export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
   const router = useRouter();
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
@@ -87,6 +110,8 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
   const severity = severityConfig[rex.severity];
   const status = statusConfig[rex.status];
   const StatusIcon = status.icon;
+  const productionType = productionTypeConfig[rex.type_production || 'retex'];
+  const ProductionIcon = productionType.icon;
 
   const isAuthor = currentUser?.id === rex.author_id;
   const canEdit = isAuthor || currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
@@ -159,6 +184,13 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
             <div className="space-y-3 flex-1">
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn('flex items-center gap-1', productionType.className)}
+                >
+                  <ProductionIcon className="w-3 h-3" />
+                  {productionType.label}
+                </Badge>
                 <Badge
                   variant="outline"
                   className={cn(severity.bgColor, severity.textColor, severity.borderColor)}
@@ -235,6 +267,23 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
                 <Share2 className="w-4 h-4" />
               </Button>
               <ExportPdfButton rexId={rex.id} rexTitle={rex.title} />
+              {canEdit && rex.type_production !== 'retex' && (
+                <PromotionButton
+                  rexId={rex.id}
+                  currentType={rex.type_production || 'retex'}
+                  rexData={{
+                    title: rex.title,
+                    intervention_date: rex.intervention_date,
+                    type: rex.type,
+                    severity: rex.severity,
+                    description: rex.description || '',
+                    context: rex.context || '',
+                    means_deployed: rex.means_deployed || '',
+                    lessons_learned: rex.lessons_learned || '',
+                    focus_thematiques: (rex.focus_thematiques as unknown) as import('@/types').FocusThematique[] || [],
+                  }}
+                />
+              )}
               {canEdit && (
                 <Link href={`/rex/${rex.id}/edit`}>
                   <Button variant="outline" size="sm">
@@ -275,6 +324,29 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
               ))}
             </div>
           )}
+
+          {/* Completion Indicator */}
+          <CompletionIndicator
+            typeProduction={rex.type_production || 'retex'}
+            data={{
+              title: rex.title,
+              intervention_date: rex.intervention_date,
+              type: rex.type,
+              severity: rex.severity,
+              description: rex.description || '',
+              context: rex.context || '',
+              means_deployed: rex.means_deployed || '',
+              difficulties: rex.difficulties || '',
+              lessons_learned: rex.lessons_learned || '',
+              message_ambiance: rex.message_ambiance || '',
+              sitac: rex.sitac || '',
+              elements_favorables: rex.elements_favorables || '',
+              elements_defavorables: rex.elements_defavorables || '',
+              documentation_operationnelle: rex.documentation_operationnelle || '',
+              focus_thematiques: (rex.focus_thematiques as unknown) as import('@/types').FocusThematique[] || [],
+            }}
+            variant="detailed"
+          />
         </CardContent>
       </Card>
 

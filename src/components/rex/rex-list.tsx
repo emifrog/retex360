@@ -55,6 +55,7 @@ export function RexList() {
       if (filters.type) params.set('type', filters.type);
       if (filters.severity) params.set('severity', filters.severity);
       if (filters.status) params.set('status', filters.status);
+      if (filters.type_production) params.set('type_production', filters.type_production);
 
       const response = await fetch(`/api/rex?${params}`);
       if (!response.ok) throw new Error('Erreur de chargement');

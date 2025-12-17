@@ -89,6 +89,14 @@ export async function PUT(
         tags: body.tags || [],
         status: body.status,
         updated_at: new Date().toISOString(),
+        // DGSCGC fields
+        type_production: body.type_production,
+        message_ambiance: body.message_ambiance || null,
+        sitac: body.sitac || null,
+        elements_favorables: body.elements_favorables || null,
+        elements_defavorables: body.elements_defavorables || null,
+        documentation_operationnelle: body.documentation_operationnelle || null,
+        focus_thematiques: body.focus_thematiques || [],
       })
       .eq('id', id)
       .select()

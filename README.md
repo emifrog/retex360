@@ -21,9 +21,22 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - Difficultés rencontrées, enseignements
   - Tags personnalisés
   - Visibilité (SDIS, Inter-SDIS, Public)
+- **Workflow à 3 niveaux** (Mémento DGSCGC septembre 2022)
+  - **Signalement** : Remontée rapide d'un événement
+  - **PEX** : Partage d'Expérience (synthèse factuelle, max 4 pages)
+  - **RETEX** : Retour d'Expérience complet avec plan d'actions
+  - Promotion progressive Signalement → PEX → RETEX
+  - Indicateur de complétion des champs requis/recommandés
+- **Champs DGSCGC enrichis**
+  - Message d'ambiance, SITAC
+  - Éléments favorables/défavorables
+  - Focus thématiques (Annexe F)
+  - Documentation opérationnelle
 - **Édition de REX** (auteur ou admin)
 - **Suppression de REX** avec confirmation
 - **Export PDF** des REX
+  - Export standard ou anonymisé (noms → grades)
+  - Mise en page professionnelle DGSCGC
 - **Pièces jointes** avec upload drag & drop
   - Images (JPG, PNG, GIF, WebP) et PDF
   - Prévisualisation des images
@@ -54,6 +67,8 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 
 ### ✅ Workflow de Validation
 - **Statuts** : Brouillon, En attente, Validé, Archivé
+- **Types de production** : Signalement, PEX, RETEX
+- **Bouton de promotion** avec checklist des champs requis
 - **Interface admin** pour valider/rejeter
 - **Commentaires de rejet** pour l'auteur
 - **Historique de validation** avec nom du validateur
@@ -240,6 +255,7 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 1. supabase/migrations/001_initial_schema.sql
 -- 2. supabase/migrations/002_semantic_search.sql
 -- 3. supabase/migrations/003_notifications.sql
+-- 4. supabase/migrations/004_dgscgc_fields.sql
 ```
 
 ### 4. Lancer le serveur
@@ -258,6 +274,8 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 | `GET` | `/api/rex` | Liste des REX (paginée, filtrée) |
 | `POST` | `/api/rex` | Créer un REX |
 | `GET` | `/api/rex/[id]` | Détail d'un REX |
+| `GET` | `/api/rex/[id]/pdf` | Export PDF d'un REX (?anonymize=true) |
+| `POST` | `/api/rex/[id]/promote` | Promouvoir un REX (Signalement→PEX→RETEX) |
 | `PUT` | `/api/rex/[id]` | Modifier un REX |
 | `DELETE` | `/api/rex/[id]` | Supprimer un REX |
 | `GET` | `/api/rex/stats` | Statistiques des REX |
@@ -353,6 +371,10 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Rate limiting & validation Zod
 - [x] Lazy loading images (next/image)
 - [x] Pagination infinie (scroll infini)
+- [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
+- [x] Champs enrichis selon mémento DGSCGC
+- [x] Export PDF anonymisé
+- [x] Indicateur de complétion des REX
 - [ ] Intelligence Artificielle (analyse de patterns)
 - [ ] Application mobile (React Native)
 - [ ] Export Excel/CSV

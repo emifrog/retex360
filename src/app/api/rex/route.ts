@@ -41,6 +41,14 @@ export async function POST(request: Request) {
         status: body.status || 'draft',
         author_id: user.id,
         sdis_id: profile.sdis_id,
+        // DGSCGC fields
+        type_production: body.type_production || 'retex',
+        message_ambiance: body.message_ambiance || null,
+        sitac: body.sitac || null,
+        elements_favorables: body.elements_favorables || null,
+        elements_defavorables: body.elements_defavorables || null,
+        documentation_operationnelle: body.documentation_operationnelle || null,
+        focus_thematiques: body.focus_thematiques || [],
       })
       .select()
       .single();
@@ -86,6 +94,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const severity = searchParams.get('severity');
+    const typeProduction = searchParams.get('type_production');
     const search = searchParams.get('search');
 
     let query = supabase
@@ -96,6 +105,7 @@ export async function GET(request: Request) {
     if (status) query = query.eq('status', status);
     if (type) query = query.eq('type', type);
     if (severity) query = query.eq('severity', severity);
+    if (typeProduction) query = query.eq('type_production', typeProduction);
     if (search) query = query.ilike('title', `%${search}%`);
 
     // Pagination

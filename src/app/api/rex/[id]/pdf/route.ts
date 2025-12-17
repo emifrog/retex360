@@ -9,6 +9,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const anonymize = searchParams.get('anonymize') === 'true';
+    
     const supabase = await createClient();
 
     // Fetch REX with author and SDIS
@@ -31,7 +34,10 @@ export async function GET(
 
     // Generate PDF
     const pdfBuffer = await renderToBuffer(
-      RexPdfTemplate({ rex: rex as Parameters<typeof RexPdfTemplate>[0]['rex'] })
+      RexPdfTemplate({ 
+        rex: rex as Parameters<typeof RexPdfTemplate>[0]['rex'],
+        anonymize,
+      })
     );
 
     // Convert Buffer to Uint8Array for NextResponse compatibility

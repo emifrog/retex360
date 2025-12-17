@@ -89,6 +89,14 @@ export type Database = {
           validated_at: string | null;
           created_at: string;
           updated_at: string;
+          // DGSCGC fields
+          type_production: 'signalement' | 'pex' | 'retex';
+          message_ambiance: string | null;
+          sitac: string | null;
+          elements_favorables: string | null;
+          elements_defavorables: string | null;
+          documentation_operationnelle: string | null;
+          focus_thematiques: Json | null;
         };
         Insert: {
           id?: string;
@@ -114,6 +122,14 @@ export type Database = {
           validated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          // DGSCGC fields
+          type_production?: 'signalement' | 'pex' | 'retex';
+          message_ambiance?: string | null;
+          sitac?: string | null;
+          elements_favorables?: string | null;
+          elements_defavorables?: string | null;
+          documentation_operationnelle?: string | null;
+          focus_thematiques?: Json | null;
         };
         Update: {
           id?: string;
@@ -139,6 +155,14 @@ export type Database = {
           validated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          // DGSCGC fields
+          type_production?: 'signalement' | 'pex' | 'retex';
+          message_ambiance?: string | null;
+          sitac?: string | null;
+          elements_favorables?: string | null;
+          elements_defavorables?: string | null;
+          documentation_operationnelle?: string | null;
+          focus_thematiques?: Json | null;
         };
       };
       rex_attachments: {

@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import type { RexInput } from '@/lib/validators/rex';
-import { REX_TYPES, SEVERITIES, VISIBILITIES } from '@/types';
+import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique } from '@/types';
 import { TiptapEditor } from './tiptap-editor';
 import { ImageUpload } from './image-upload';
+import { ProductionTypePicker } from './production-type-picker';
+import { FocusThematiqueEditor } from './focus-thematique-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -18,13 +20,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Save, Send, X, Plus } from 'lucide-react';
+import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface RexFormData {
+  title: string;
+  intervention_date: string;
+  type: string;
+  severity: string;
+  visibility: string;
+  type_production: ProductionType;
+  description: string;
+  context: string;
+  means_deployed: string;
+  difficulties: string;
+  lessons_learned: string;
+  message_ambiance: string;
+  sitac: string;
+  elements_favorables: string;
+  elements_defavorables: string;
+  documentation_operationnelle: string;
+  focus_thematiques: FocusThematique[];
+  tags: string[];
+}
+
 interface RexFormProps {
-  initialData?: Partial<RexInput>;
+  initialData?: Partial<RexFormData>;
   rexId?: string;
   mode?: 'create' | 'edit';
 }
@@ -45,6 +73,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(['context', 'analysis'])
+  );
   const [uploadedFiles, setUploadedFiles] = useState<{
     id: string;
     file_name: string;
@@ -60,23 +91,44 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     setValue,
     watch,
     formState: { errors },
-  } = useForm({
+  } = useForm<RexFormData>({
     defaultValues: {
       title: initialData?.title || '',
       intervention_date: initialData?.intervention_date || '',
-      type: initialData?.type || undefined,
-      severity: initialData?.severity || undefined,
+      type: initialData?.type || '',
+      severity: initialData?.severity || '',
       visibility: initialData?.visibility || 'sdis',
+      type_production: initialData?.type_production || 'retex',
       description: initialData?.description || '',
       context: initialData?.context || '',
       means_deployed: initialData?.means_deployed || '',
       difficulties: initialData?.difficulties || '',
       lessons_learned: initialData?.lessons_learned || '',
+      message_ambiance: initialData?.message_ambiance || '',
+      sitac: initialData?.sitac || '',
+      elements_favorables: initialData?.elements_favorables || '',
+      elements_defavorables: initialData?.elements_defavorables || '',
+      documentation_operationnelle: initialData?.documentation_operationnelle || '',
+      focus_thematiques: initialData?.focus_thematiques || [],
       tags: initialData?.tags || [],
     },
   });
 
+  const typeProduction = watch('type_production');
   const tags = watch('tags') || [];
+  const focusThematiques = watch('focus_thematiques') || [];
+
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -89,7 +141,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     setValue('tags', tags.filter((tag) => tag !== tagToRemove));
   };
 
-  const onSubmit = async (data: Record<string, unknown>, status: 'draft' | 'pending') => {
+  const isFieldRequired = (field: string): boolean => {
+    const requiredByType: Record<ProductionType, string[]> = {
+      signalement: ['title', 'intervention_date', 'type', 'severity', 'description'],
+      pex: ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned'],
+      retex: ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned', 'focus_thematiques'],
+    };
+    return requiredByType[typeProduction]?.includes(field) || false;
+  };
+
+  const onSubmit = async (data: RexFormData, status: 'draft' | 'pending') => {
     setIsSubmitting(true);
     try {
       const endpoint = mode === 'edit' ? `/api/rex/${rexId}` : '/api/rex';
@@ -129,15 +190,31 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
 
   return (
     <form className="space-y-6">
+      {/* Production Type Picker */}
+      <Card className="border-border/50 bg-card/80">
+        <CardContent className="pt-6">
+          <ProductionTypePicker
+            value={typeProduction}
+            onChange={(value) => setValue('type_production', value)}
+            disabled={isSubmitting}
+          />
+        </CardContent>
+      </Card>
+
       {/* Basic Info */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-lg">Informations générales</CardTitle>
+          <CardDescription>
+            Informations de base sur l&apos;intervention
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Intitulé de l&apos;intervention *</Label>
+            <Label htmlFor="title">
+              Intitulé de l&apos;intervention {isFieldRequired('title') && <span className="text-destructive">*</span>}
+            </Label>
             <Input
               id="title"
               {...register('title')}
@@ -152,24 +229,25 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Date */}
             <div className="space-y-2">
-              <Label htmlFor="intervention_date">Date d&apos;intervention *</Label>
+              <Label htmlFor="intervention_date">
+                Date d&apos;intervention {isFieldRequired('intervention_date') && <span className="text-destructive">*</span>}
+              </Label>
               <Input
                 id="intervention_date"
                 type="date"
                 {...register('intervention_date')}
                 className="bg-background/50"
               />
-              {errors.intervention_date && (
-                <p className="text-sm text-destructive">{errors.intervention_date.message}</p>
-              )}
             </div>
 
             {/* Type */}
             <div className="space-y-2">
-              <Label>Type d&apos;intervention *</Label>
+              <Label>
+                Type d&apos;intervention {isFieldRequired('type') && <span className="text-destructive">*</span>}
+              </Label>
               <Select
                 value={watch('type')}
-                onValueChange={(value) => setValue('type', value as typeof REX_TYPES[number])}
+                onValueChange={(value) => setValue('type', value)}
               >
                 <SelectTrigger className="bg-background/50">
                   <SelectValue placeholder="Sélectionner..." />
@@ -182,17 +260,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.type && (
-                <p className="text-sm text-destructive">{errors.type.message}</p>
-              )}
             </div>
 
             {/* Severity */}
             <div className="space-y-2">
-              <Label>Niveau de criticité *</Label>
+              <Label>
+                Niveau de criticité {isFieldRequired('severity') && <span className="text-destructive">*</span>}
+              </Label>
               <Select
                 value={watch('severity')}
-                onValueChange={(value) => setValue('severity', value as typeof SEVERITIES[number])}
+                onValueChange={(value) => setValue('severity', value)}
               >
                 <SelectTrigger className="bg-background/50">
                   <SelectValue placeholder="Sélectionner..." />
@@ -215,9 +292,6 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.severity && (
-                <p className="text-sm text-destructive">{errors.severity.message}</p>
-              )}
             </div>
           </div>
 
@@ -226,7 +300,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
             <Label>Visibilité</Label>
             <Select
               value={watch('visibility')}
-              onValueChange={(value) => setValue('visibility', value as typeof VISIBILITIES[number])}
+              onValueChange={(value) => setValue('visibility', value)}
             >
               <SelectTrigger className="bg-background/50 w-full md:w-1/3">
                 <SelectValue />
@@ -280,71 +354,250 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         </CardContent>
       </Card>
 
-      {/* Content Sections */}
+      {/* Synthèse */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
-          <CardTitle className="text-lg">Contenu du RETEX</CardTitle>
+          <CardTitle className="text-lg">Synthèse</CardTitle>
+          <CardDescription>
+            Description générale de l&apos;intervention
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Description */}
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Synthèse *</Label>
+            <Label>
+              Description {isFieldRequired('description') && <span className="text-destructive">*</span>}
+            </Label>
             <TiptapEditor
               content={watch('description') || ''}
               onChange={(content) => setValue('description', content)}
               placeholder="Décrivez brièvement l'intervention et ses enjeux principaux..."
             />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
-          </div>
-
-          {/* Context */}
-          <div className="space-y-2">
-            <Label>Contexte opérationnel</Label>
-            <TiptapEditor
-              content={watch('context') || ''}
-              onChange={(content) => setValue('context', content)}
-              placeholder="Décrivez le contexte de l'intervention (lieu, conditions, situation initiale)..."
-            />
-          </div>
-
-          {/* Means Deployed */}
-          <div className="space-y-2">
-            <Label>Moyens engagés</Label>
-            <TiptapEditor
-              content={watch('means_deployed') || ''}
-              onChange={(content) => setValue('means_deployed', content)}
-              placeholder="Listez les moyens humains et matériels engagés..."
-            />
-          </div>
-
-          {/* Difficulties */}
-          <div className="space-y-2">
-            <Label>Difficultés rencontrées</Label>
-            <TiptapEditor
-              content={watch('difficulties') || ''}
-              onChange={(content) => setValue('difficulties', content)}
-              placeholder="Décrivez les difficultés et obstacles rencontrés..."
-            />
-          </div>
-
-          {/* Lessons Learned */}
-          <div className="space-y-2">
-            <Label>Enseignements</Label>
-            <TiptapEditor
-              content={watch('lessons_learned') || ''}
-              onChange={(content) => setValue('lessons_learned', content)}
-              placeholder="Quels sont les enseignements à retenir de cette intervention ?"
-            />
           </div>
         </CardContent>
       </Card>
+
+      {/* Section Contexte - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Collapsible
+          open={expandedSections.has('context')}
+          onOpenChange={() => toggleSection('context')}
+        >
+          <Card className="border-border/50 bg-card/80">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Contexte opérationnel</CardTitle>
+                    <CardDescription>
+                      Message d&apos;ambiance, situation tactique, moyens engagés
+                    </CardDescription>
+                  </div>
+                  {expandedSections.has('context') ? (
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-6 pt-0">
+                {/* Message d'ambiance - Recommandé pour RETEX */}
+                {typeProduction === 'retex' && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      Message d&apos;ambiance
+                      <Badge variant="outline" className="text-xs font-normal">Recommandé</Badge>
+                    </Label>
+                    <TiptapEditor
+                      content={watch('message_ambiance') || ''}
+                      onChange={(content) => setValue('message_ambiance', content)}
+                      placeholder="Perception du premier COS à son arrivée, 'bande sons' ou expression de sa perception SLLX..."
+                    />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Selon l&apos;Annexe F du mémento DGSCGC
+                    </p>
+                  </div>
+                )}
+
+                {/* SITAC - Recommandé pour RETEX */}
+                {typeProduction === 'retex' && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      SITAC (Situation Tactique)
+                      <Badge variant="outline" className="text-xs font-normal">Recommandé</Badge>
+                    </Label>
+                    <TiptapEditor
+                      content={watch('sitac') || ''}
+                      onChange={(content) => setValue('sitac', content)}
+                      placeholder="Description de la situation tactique, cartographie, représentation schématique du bâtiment..."
+                    />
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Contexte */}
+                <div className="space-y-2">
+                  <Label>
+                    Contexte opérationnel {isFieldRequired('context') && <span className="text-destructive">*</span>}
+                  </Label>
+                  <TiptapEditor
+                    content={watch('context') || ''}
+                    onChange={(content) => setValue('context', content)}
+                    placeholder="Décrivez le contexte de l'intervention (lieu, conditions, situation initiale)..."
+                  />
+                </div>
+
+                {/* Moyens engagés */}
+                <div className="space-y-2">
+                  <Label>
+                    Moyens engagés {isFieldRequired('means_deployed') && <span className="text-destructive">*</span>}
+                  </Label>
+                  <TiptapEditor
+                    content={watch('means_deployed') || ''}
+                    onChange={(content) => setValue('means_deployed', content)}
+                    placeholder="Listez les moyens humains et matériels engagés..."
+                  />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {/* Section Analyse - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Collapsible
+          open={expandedSections.has('analysis')}
+          onOpenChange={() => toggleSection('analysis')}
+        >
+          <Card className="border-border/50 bg-card/80">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Analyse</CardTitle>
+                    <CardDescription>
+                      Éléments favorables/défavorables, difficultés, enseignements
+                    </CardDescription>
+                  </div>
+                  {expandedSections.has('analysis') ? (
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-6 pt-0">
+                {/* Éléments favorables */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Éléments favorables
+                    <Badge variant="outline" className="text-xs font-normal bg-green-500/10 text-green-600 border-green-500/30">
+                      Facilitateurs
+                    </Badge>
+                  </Label>
+                  <TiptapEditor
+                    content={watch('elements_favorables') || ''}
+                    onChange={(content) => setValue('elements_favorables', content)}
+                    placeholder="Éléments facilitateurs pour la gestion de l'intervention..."
+                  />
+                </div>
+
+                {/* Éléments défavorables */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Éléments défavorables
+                    <Badge variant="outline" className="text-xs font-normal bg-red-500/10 text-red-600 border-red-500/30">
+                      Perturbateurs
+                    </Badge>
+                  </Label>
+                  <TiptapEditor
+                    content={watch('elements_defavorables') || ''}
+                    onChange={(content) => setValue('elements_defavorables', content)}
+                    placeholder="Éléments perturbateurs et déstabilisants pour la gestion de l'intervention..."
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Difficultés */}
+                <div className="space-y-2">
+                  <Label>Difficultés rencontrées</Label>
+                  <TiptapEditor
+                    content={watch('difficulties') || ''}
+                    onChange={(content) => setValue('difficulties', content)}
+                    placeholder="Décrivez les difficultés et obstacles rencontrés..."
+                  />
+                </div>
+
+                {/* Enseignements */}
+                <div className="space-y-2">
+                  <Label>
+                    Enseignements {isFieldRequired('lessons_learned') && <span className="text-destructive">*</span>}
+                  </Label>
+                  <TiptapEditor
+                    content={watch('lessons_learned') || ''}
+                    onChange={(content) => setValue('lessons_learned', content)}
+                    placeholder="Quels sont les enseignements à retenir de cette intervention ?"
+                  />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {/* Focus Thématiques - Requis pour RETEX */}
+      {typeProduction === 'retex' && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-lg">Focus thématiques</CardTitle>
+            <CardDescription>
+              Analyse détaillée par thème selon le mémento DGSCGC
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FocusThematiqueEditor
+              value={focusThematiques}
+              onChange={(value) => setValue('focus_thematiques', value)}
+              disabled={isSubmitting}
+              required={isFieldRequired('focus_thematiques')}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documentation opérationnelle - Visible pour RETEX */}
+      {typeProduction === 'retex' && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-lg">Documentation opérationnelle</CardTitle>
+            <CardDescription>
+              Références bibliographiques (GNR, GDO, GTO, RO...)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TiptapEditor
+              content={watch('documentation_operationnelle') || ''}
+              onChange={(content) => setValue('documentation_operationnelle', content)}
+              placeholder="Listez les références documentaires utilisées ou à consulter..."
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attachments */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-lg">Pièces jointes</CardTitle>
+          <CardDescription>
+            Photos, schémas, documents complémentaires
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ImageUpload
@@ -358,7 +611,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-3 sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg border border-border/50">
         <Button
           type="button"
           variant="outline"

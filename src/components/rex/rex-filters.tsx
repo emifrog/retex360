@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { REX_TYPES, SEVERITIES, STATUSES } from '@/types';
+import { REX_TYPES, SEVERITIES, STATUSES, PRODUCTION_TYPES, PRODUCTION_TYPE_CONFIG } from '@/types';
 
 interface RexFiltersProps {
   onSearch: (query: string) => void;
@@ -25,6 +25,7 @@ export interface FilterState {
   type?: string;
   severity?: string;
   status?: string;
+  type_production?: string;
   sdis?: string;
 }
 
@@ -120,7 +121,24 @@ export function RexFilters({
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Select
+              value={filters.type_production || ''}
+              onValueChange={(value) => handleFilterChange('type_production', value)}
+            >
+              <SelectTrigger className="bg-background/50">
+                <SelectValue placeholder="Type de production" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tous les types</SelectItem>
+                {PRODUCTION_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {PRODUCTION_TYPE_CONFIG[type].shortLabel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select
               value={filters.type || ''}
               onValueChange={(value) => handleFilterChange('type', value)}
