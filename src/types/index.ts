@@ -108,3 +108,98 @@ export const PRODUCTION_TYPE_CONFIG = {
     requiredFields: ['title', 'intervention_date', 'type', 'description', 'context', 'means_deployed', 'lessons_learned', 'focus_thematiques'],
   },
 } as const;
+
+// ============================================================================
+// Chiffres clés de l'intervention
+// ============================================================================
+
+export interface BilanHumain {
+  victimes_decedees?: number;
+  victimes_urgence_absolue?: number;
+  victimes_urgence_relative?: number;
+  impliques?: number;
+}
+
+export interface KeyFigures {
+  nb_sp_engages?: number;
+  duree_intervention?: string;
+  nb_vehicules?: number;
+  bilan_humain?: BilanHumain;
+  sdis_impliques?: string[];
+  surface_sinistree?: string;
+  nb_personnes_evacuees?: number;
+  nb_lances?: number;
+  debit_eau?: string;
+}
+
+// ============================================================================
+// Timeline chronologique
+// ============================================================================
+
+export const TIMELINE_EVENT_TYPES = [
+  'alerte',
+  'arrivee',
+  'action',
+  'message_radio',
+  'fin',
+  'autre',
+] as const;
+
+export type TimelineEventType = (typeof TIMELINE_EVENT_TYPES)[number];
+
+export const TIMELINE_EVENT_CONFIG = {
+  alerte: { label: 'Alerte', icon: 'Bell', color: 'text-red-500', bgColor: 'bg-red-500' },
+  arrivee: { label: 'Arrivée', icon: 'MapPin', color: 'text-blue-500', bgColor: 'bg-blue-500' },
+  action: { label: 'Action', icon: 'Zap', color: 'text-amber-500', bgColor: 'bg-amber-500' },
+  message_radio: { label: 'Message radio', icon: 'Radio', color: 'text-purple-500', bgColor: 'bg-purple-500' },
+  fin: { label: 'Fin', icon: 'CheckCircle', color: 'text-green-500', bgColor: 'bg-green-500' },
+  autre: { label: 'Autre', icon: 'Circle', color: 'text-gray-500', bgColor: 'bg-gray-500' },
+} as const;
+
+export interface TimelineEvent {
+  id: string;
+  heure: string;
+  titre: string;
+  description?: string;
+  type: TimelineEventType;
+}
+
+// ============================================================================
+// Prescriptions catégorisées
+// ============================================================================
+
+export const PRESCRIPTION_CATEGORIES = [
+  'operations',
+  'prevention',
+  'formation',
+  'technique',
+  'autre',
+] as const;
+
+export type PrescriptionCategory = (typeof PRESCRIPTION_CATEGORIES)[number];
+
+export const PRESCRIPTION_CATEGORY_CONFIG = {
+  operations: { label: 'Opérations', icon: 'Target', color: 'text-red-600', bgColor: 'bg-red-500/10' },
+  prevention: { label: 'Prévention-Prévision', icon: 'Shield', color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
+  formation: { label: 'Formation', icon: 'GraduationCap', color: 'text-purple-600', bgColor: 'bg-purple-500/10' },
+  technique: { label: 'Technique', icon: 'Wrench', color: 'text-amber-600', bgColor: 'bg-amber-500/10' },
+  autre: { label: 'Autre', icon: 'MoreHorizontal', color: 'text-gray-600', bgColor: 'bg-gray-500/10' },
+} as const;
+
+export const PRESCRIPTION_STATUSES = ['a_faire', 'en_cours', 'fait'] as const;
+export type PrescriptionStatus = (typeof PRESCRIPTION_STATUSES)[number];
+
+export const PRESCRIPTION_STATUS_CONFIG = {
+  a_faire: { label: 'À faire', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  en_cours: { label: 'En cours', color: 'text-amber-600', bgColor: 'bg-amber-100' },
+  fait: { label: 'Fait', color: 'text-green-600', bgColor: 'bg-green-100' },
+} as const;
+
+export interface Prescription {
+  id: string;
+  categorie: PrescriptionCategory;
+  description: string;
+  responsable?: string;
+  echeance?: string;
+  statut?: PrescriptionStatus;
+}

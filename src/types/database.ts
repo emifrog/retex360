@@ -97,6 +97,9 @@ export type Database = {
           elements_defavorables: string | null;
           documentation_operationnelle: string | null;
           focus_thematiques: Json | null;
+          key_figures: Json | null;
+          chronologie: Json | null;
+          prescriptions: Json | null;
         };
         Insert: {
           id?: string;
@@ -130,6 +133,9 @@ export type Database = {
           elements_defavorables?: string | null;
           documentation_operationnelle?: string | null;
           focus_thematiques?: Json | null;
+          key_figures?: Json | null;
+          chronologie?: Json | null;
+          prescriptions?: Json | null;
         };
         Update: {
           id?: string;
@@ -163,6 +169,9 @@ export type Database = {
           elements_defavorables?: string | null;
           documentation_operationnelle?: string | null;
           focus_thematiques?: Json | null;
+          key_figures?: Json | null;
+          chronologie?: Json | null;
+          prescriptions?: Json | null;
         };
       };
       rex_attachments: {

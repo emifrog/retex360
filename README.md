@@ -32,11 +32,27 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - Éléments favorables/défavorables
   - Focus thématiques (Annexe F)
   - Documentation opérationnelle
+- **Chiffres clés de l'intervention**
+  - SP engagés, durée, véhicules, bilan humain
+  - SDIS impliqués, surface sinistrée, personnes évacuées
+  - Affichage en infographie avec icônes
+- **Timeline chronologique**
+  - Événements horodatés (alerte, arrivée, actions, fin)
+  - Types colorés : alerte, arrivée, action, message radio, fin
+  - Affichage vertical avec ligne de connexion
+- **Prescriptions catégorisées**
+  - Catégories : Opérations, Prévention, Formation, Technique
+  - Statuts : À faire, En cours, Fait
+  - Responsable et échéance optionnels
 - **Édition de REX** (auteur ou admin)
 - **Suppression de REX** avec confirmation
 - **Export PDF** des REX
   - Export standard ou anonymisé (noms → grades)
   - Mise en page professionnelle DGSCGC
+  - Chiffres clés en infographie
+  - Timeline chronologique colorée
+  - Prescriptions groupées par catégorie
+  - Header avec logo SDIS et type de production
 - **Pièces jointes** avec upload drag & drop
   - Images (JPG, PNG, GIF, WebP) et PDF
   - Prévisualisation des images
@@ -256,6 +272,8 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 2. supabase/migrations/002_semantic_search.sql
 -- 3. supabase/migrations/003_notifications.sql
 -- 4. supabase/migrations/004_dgscgc_fields.sql
+-- 5. supabase/migrations/005_key_figures.sql
+-- 6. supabase/migrations/006_timeline_prescriptions.sql
 ```
 
 ### 4. Lancer le serveur
@@ -375,7 +393,11 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF anonymisé
 - [x] Indicateur de complétion des REX
-- [ ] Intelligence Artificielle (analyse de patterns)
+- [x] Chiffres clés de l'intervention (infographie)
+- [x] Timeline chronologique des événements
+- [x] Prescriptions catégorisées avec suivi
+- [x] Export PDF professionnel avec infographies
+- [x] Intelligence Artificielle (analyse de patterns, synthèse, suggestions, tags)
 - [ ] Application mobile (React Native)
 - [ ] Export Excel/CSV
 - [ ] Intégration cartographique

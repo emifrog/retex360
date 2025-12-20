@@ -15,6 +15,9 @@ import { ValidationActions } from './validation-actions';
 import { AiAnalysis } from './ai-analysis';
 import { PromotionButton } from './promotion-button';
 import { CompletionIndicator } from './completion-indicator';
+import { KeyFigures } from './key-figures';
+import { InterventionTimeline } from './intervention-timeline';
+import { PrescriptionsList } from './prescriptions-list';
 import {
   ArrowLeft,
   Calendar,
@@ -350,6 +353,14 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
         </CardContent>
       </Card>
 
+      {/* Key Figures */}
+      {rex.key_figures && Object.keys(rex.key_figures).length > 0 && (
+        <KeyFigures
+          data={(rex.key_figures as unknown) as import('@/types').KeyFigures}
+          variant="detailed"
+        />
+      )}
+
       {/* Content Sections */}
       {rex.description && (
         <Card className="border-border/50 bg-card/80">
@@ -393,6 +404,14 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
         </Card>
       )}
 
+      {/* Timeline chronologique */}
+      {rex.chronologie && Array.isArray(rex.chronologie) && rex.chronologie.length > 0 && (
+        <InterventionTimeline
+          events={(rex.chronologie as unknown) as import('@/types').TimelineEvent[]}
+          variant="vertical"
+        />
+      )}
+
       {rex.difficulties && (
         <Card className="border-border/50 bg-card/80">
           <CardHeader>
@@ -419,6 +438,13 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* Prescriptions */}
+      {rex.prescriptions && Array.isArray(rex.prescriptions) && rex.prescriptions.length > 0 && (
+        <PrescriptionsList
+          prescriptions={(rex.prescriptions as unknown) as import('@/types').Prescription[]}
+        />
       )}
 
       {/* Attachments */}

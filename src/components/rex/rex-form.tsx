@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique } from '@/types';
+import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique, type KeyFigures, type TimelineEvent, type Prescription } from '@/types';
 import { TiptapEditor } from './tiptap-editor';
 import { ImageUpload } from './image-upload';
 import { ProductionTypePicker } from './production-type-picker';
 import { FocusThematiqueEditor } from './focus-thematique-editor';
+import { KeyFiguresEditor } from './key-figures-editor';
+import { TimelineEditor } from './timeline-editor';
+import { PrescriptionsEditor } from './prescriptions-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,6 +51,9 @@ interface RexFormData {
   elements_defavorables: string;
   documentation_operationnelle: string;
   focus_thematiques: FocusThematique[];
+  key_figures: KeyFigures;
+  chronologie: TimelineEvent[];
+  prescriptions: Prescription[];
   tags: string[];
 }
 
@@ -110,6 +116,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       elements_defavorables: initialData?.elements_defavorables || '',
       documentation_operationnelle: initialData?.documentation_operationnelle || '',
       focus_thematiques: initialData?.focus_thematiques || [],
+      key_figures: initialData?.key_figures || {},
+      chronologie: initialData?.chronologie || [],
+      prescriptions: initialData?.prescriptions || [],
       tags: initialData?.tags || [],
     },
   });
@@ -117,6 +126,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const typeProduction = watch('type_production');
   const tags = watch('tags') || [];
   const focusThematiques = watch('focus_thematiques') || [];
+  const keyFigures = watch('key_figures') || {};
+  const chronologie = watch('chronologie') || [];
+  const prescriptions = watch('prescriptions') || [];
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -354,6 +366,14 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         </CardContent>
       </Card>
 
+      {/* Chiffres clés */}
+      <Card className="border-border/50 bg-card/80 overflow-hidden">
+        <KeyFiguresEditor
+          value={keyFigures}
+          onChange={(value) => setValue('key_figures', value)}
+        />
+      </Card>
+
       {/* Synthèse */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
@@ -552,6 +572,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         </Collapsible>
       )}
 
+      {/* Timeline chronologique - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Card className="border-border/50 bg-card/80 overflow-hidden">
+          <TimelineEditor
+            value={chronologie}
+            onChange={(value) => setValue('chronologie', value)}
+          />
+        </Card>
+      )}
+
       {/* Focus Thématiques - Requis pour RETEX */}
       {typeProduction === 'retex' && (
         <Card className="border-border/50 bg-card/80">
@@ -569,6 +599,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               required={isFieldRequired('focus_thematiques')}
             />
           </CardContent>
+        </Card>
+      )}
+
+      {/* Prescriptions - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Card className="border-border/50 bg-card/80 overflow-hidden">
+          <PrescriptionsEditor
+            value={prescriptions}
+            onChange={(value) => setValue('prescriptions', value)}
+          />
         </Card>
       )}
 

@@ -97,6 +97,9 @@ export async function PUT(
         elements_defavorables: body.elements_defavorables || null,
         documentation_operationnelle: body.documentation_operationnelle || null,
         focus_thematiques: body.focus_thematiques || [],
+        key_figures: body.key_figures || {},
+        chronologie: body.chronologie || [],
+        prescriptions: body.prescriptions || [],
       })
       .eq('id', id)
       .select()

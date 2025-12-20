@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Font,
 } from '@react-pdf/renderer';
-import type { Rex, Sdis, Profile, FocusThematique, ProductionType } from '@/types';
+import type { Rex, Sdis, Profile, FocusThematique, ProductionType, KeyFigures, BilanHumain, TimelineEvent, Prescription } from '@/types';
+import { TIMELINE_EVENT_CONFIG, PRESCRIPTION_CATEGORY_CONFIG } from '@/types';
 
 // Register font (optional - uses default if not available)
 Font.register({
@@ -247,6 +248,105 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
+  keyFiguresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+    gap: 8,
+  },
+  keyFigureCard: {
+    width: '18%',
+    padding: 8,
+    backgroundColor: '#f9fafb',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  keyFigureValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 2,
+  },
+  keyFigureLabel: {
+    fontSize: 7,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  keyFigureSubValue: {
+    fontSize: 6,
+    color: '#9ca3af',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  timelineContainer: {
+    marginBottom: 20,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
+    marginTop: 3,
+  },
+  timelineContent: {
+    flex: 1,
+  },
+  timelineHeure: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#6b7280',
+    marginBottom: 2,
+  },
+  timelineTitre: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  timelineDescription: {
+    fontSize: 9,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  prescriptionContainer: {
+    marginBottom: 20,
+  },
+  prescriptionCategory: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 6,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  prescriptionItem: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    paddingLeft: 10,
+  },
+  prescriptionBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
+    marginTop: 4,
+  },
+  prescriptionText: {
+    flex: 1,
+    fontSize: 9,
+    color: '#374151',
+  },
+  prescriptionMeta: {
+    fontSize: 8,
+    color: '#9ca3af',
+    marginTop: 2,
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -326,6 +426,66 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
   const productionTypeStyles = getProductionTypeStyles(rex.type_production || 'retex');
 
   const focusThematiques = (rex.focus_thematiques as unknown as FocusThematique[]) || [];
+  const keyFigures = (rex.key_figures as unknown as KeyFigures) || {};
+  const chronologie = (rex.chronologie as unknown as TimelineEvent[]) || [];
+  const prescriptions = (rex.prescriptions as unknown as Prescription[]) || [];
+
+  const getTimelineColor = (type: string): string => {
+    const colors: Record<string, string> = {
+      alerte: '#ef4444',
+      arrivee: '#3b82f6',
+      action: '#f59e0b',
+      message_radio: '#8b5cf6',
+      fin: '#22c55e',
+      autre: '#6b7280',
+    };
+    return colors[type] || '#6b7280';
+  };
+
+  const groupPrescriptionsByCategory = () => {
+    const grouped: Record<string, Prescription[]> = {};
+    prescriptions.forEach((p) => {
+      if (!grouped[p.categorie]) {
+        grouped[p.categorie] = [];
+      }
+      grouped[p.categorie].push(p);
+    });
+    return grouped;
+  };
+
+  const getPrescriptionStatusColor = (status?: string): string => {
+    switch (status) {
+      case 'fait': return '#22c55e';
+      case 'en_cours': return '#f59e0b';
+      default: return '#9ca3af';
+    }
+  };
+
+  const formatBilanHumain = (bilan: BilanHumain | undefined): string => {
+    if (!bilan) return '';
+    const parts: string[] = [];
+    if (bilan.victimes_decedees) parts.push(`${bilan.victimes_decedees} DCD`);
+    if (bilan.victimes_urgence_absolue) parts.push(`${bilan.victimes_urgence_absolue} UA`);
+    if (bilan.victimes_urgence_relative) parts.push(`${bilan.victimes_urgence_relative} UR`);
+    if (bilan.impliques) parts.push(`${bilan.impliques} impl.`);
+    return parts.join(' / ');
+  };
+
+  const getBilanTotal = (bilan: BilanHumain | undefined): number => {
+    if (!bilan) return 0;
+    return (bilan.victimes_decedees || 0) + 
+           (bilan.victimes_urgence_absolue || 0) + 
+           (bilan.victimes_urgence_relative || 0) + 
+           (bilan.impliques || 0);
+  };
+
+  const hasKeyFigures = keyFigures && (
+    keyFigures.nb_sp_engages ||
+    keyFigures.duree_intervention ||
+    keyFigures.nb_vehicules ||
+    keyFigures.bilan_humain ||
+    keyFigures.sdis_impliques?.length
+  );
 
   const getAuthorDisplay = () => {
     if (!rex.author) return '';
@@ -342,19 +502,23 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
         <View style={styles.header}>
           <View style={styles.logo}>
             <View style={styles.logoBox}>
-              <Text style={styles.logoText}>M</Text>
+              <Text style={styles.logoText}>{rex.sdis?.code || 'M'}</Text>
             </View>
             <View>
-              <Text style={styles.brandName}>MEMO-OPS</Text>
-              <Text style={styles.brandSubtitle}>RETOUR D&apos;EXPÉRIENCE</Text>
+              <Text style={styles.brandName}>
+                {rex.sdis ? `SDIS ${rex.sdis.code}` : 'MEMO-OPS'}
+              </Text>
+              <Text style={styles.brandSubtitle}>
+                {rex.sdis?.name || 'RETOUR D\'EXPÉRIENCE'}
+              </Text>
             </View>
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.date}>
-              Généré le {new Date().toLocaleDateString('fr-FR')}
+              Document généré le {new Date().toLocaleDateString('fr-FR')}
             </Text>
-            <Text style={styles.date}>
-              {rex.sdis ? `SDIS ${rex.sdis.code}` : ''}
+            <Text style={[styles.date, { fontWeight: 'bold', marginTop: 4 }]}>
+              {productionTypeStyles.label}
             </Text>
           </View>
         </View>
@@ -393,6 +557,44 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
           )}
         </View>
 
+        {/* Key Figures */}
+        {hasKeyFigures && (
+          <View style={styles.keyFiguresContainer}>
+            {keyFigures.nb_sp_engages && (
+              <View style={styles.keyFigureCard}>
+                <Text style={styles.keyFigureValue}>{keyFigures.nb_sp_engages}</Text>
+                <Text style={styles.keyFigureLabel}>SP engagés</Text>
+              </View>
+            )}
+            {keyFigures.duree_intervention && (
+              <View style={styles.keyFigureCard}>
+                <Text style={styles.keyFigureValue}>{keyFigures.duree_intervention}</Text>
+                <Text style={styles.keyFigureLabel}>Durée</Text>
+              </View>
+            )}
+            {getBilanTotal(keyFigures.bilan_humain) > 0 && (
+              <View style={styles.keyFigureCard}>
+                <Text style={styles.keyFigureValue}>{getBilanTotal(keyFigures.bilan_humain)}</Text>
+                <Text style={styles.keyFigureLabel}>Bilan humain</Text>
+                <Text style={styles.keyFigureSubValue}>{formatBilanHumain(keyFigures.bilan_humain)}</Text>
+              </View>
+            )}
+            {keyFigures.nb_vehicules && (
+              <View style={styles.keyFigureCard}>
+                <Text style={styles.keyFigureValue}>{keyFigures.nb_vehicules}</Text>
+                <Text style={styles.keyFigureLabel}>Véhicules</Text>
+              </View>
+            )}
+            {keyFigures.sdis_impliques && keyFigures.sdis_impliques.length > 0 && (
+              <View style={styles.keyFigureCard}>
+                <Text style={styles.keyFigureValue}>{keyFigures.sdis_impliques.length}</Text>
+                <Text style={styles.keyFigureLabel}>SDIS impliqués</Text>
+                <Text style={styles.keyFigureSubValue}>{keyFigures.sdis_impliques.join(', ')}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Sections */}
         {rex.description && (
           <View style={styles.section}>
@@ -415,6 +617,27 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
           </View>
         )}
 
+        {/* Timeline chronologique */}
+        {chronologie.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Chronologie de l&apos;intervention</Text>
+            <View style={styles.timelineContainer}>
+              {chronologie.map((event, index) => (
+                <View key={index} style={styles.timelineItem}>
+                  <View style={[styles.timelineDot, { backgroundColor: getTimelineColor(event.type) }]} />
+                  <View style={styles.timelineContent}>
+                    <Text style={styles.timelineHeure}>{event.heure} - {TIMELINE_EVENT_CONFIG[event.type]?.label || event.type}</Text>
+                    <Text style={styles.timelineTitre}>{event.titre}</Text>
+                    {event.description && (
+                      <Text style={styles.timelineDescription}>{event.description}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {rex.difficulties && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Difficultés rencontrées</Text>
@@ -426,6 +649,37 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Enseignements</Text>
             <Text style={styles.sectionContent}>{stripHtml(rex.lessons_learned)}</Text>
+          </View>
+        )}
+
+        {/* Prescriptions */}
+        {prescriptions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Prescriptions</Text>
+            <View style={styles.prescriptionContainer}>
+              {Object.entries(groupPrescriptionsByCategory()).map(([category, items]) => (
+                <View key={category} style={{ marginBottom: 10 }}>
+                  <Text style={styles.prescriptionCategory}>
+                    {PRESCRIPTION_CATEGORY_CONFIG[category as keyof typeof PRESCRIPTION_CATEGORY_CONFIG]?.label || category}
+                  </Text>
+                  {items.map((prescription, index) => (
+                    <View key={index} style={styles.prescriptionItem}>
+                      <View style={[styles.prescriptionBullet, { backgroundColor: getPrescriptionStatusColor(prescription.statut) }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.prescriptionText}>{prescription.description}</Text>
+                        {(prescription.responsable || prescription.echeance) && (
+                          <Text style={styles.prescriptionMeta}>
+                            {prescription.responsable && `Responsable: ${prescription.responsable}`}
+                            {prescription.responsable && prescription.echeance && ' • '}
+                            {prescription.echeance && `Échéance: ${new Date(prescription.echeance).toLocaleDateString('fr-FR')}`}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
