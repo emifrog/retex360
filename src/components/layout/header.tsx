@@ -17,13 +17,16 @@ import {
 import { logout } from '@/lib/actions/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationCenter } from '@/components/notifications/notification-center';
+import { MobileSidebar } from './mobile-sidebar';
 import type { Profile, Sdis } from '@/types';
 
 interface HeaderProps {
   user?: (Profile & { sdis: Sdis }) | null;
+  isAdmin?: boolean;
+  pendingCount?: number;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, isAdmin = false, pendingCount = 0 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
@@ -41,9 +44,24 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2) || 'U';
 
   return (
-    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-6">
+    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
+      {/* Mobile Menu */}
+      <div className="flex items-center gap-3">
+        <MobileSidebar isAdmin={isAdmin} pendingCount={pendingCount} />
+        
+        {/* Logo mobile */}
+        <div className="md:hidden flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-red-900 rounded-lg flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <span className="font-bold text-sm">RETEX360</span>
+        </div>
+      </div>
+
       {/* Search */}
-      <div className="flex-1 max-w-xl">
+      <div className="flex-1 max-w-xl mx-4 hidden sm:block">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -58,10 +76,10 @@ export function Header({ user }: HeaderProps) {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
-        {/* SDIS Badge */}
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* SDIS Badge - Hidden on mobile */}
         {user?.sdis && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-md">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-md">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs text-green-500 font-medium">
               {user.sdis.code} Connecté

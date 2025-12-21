@@ -57,7 +57,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
 
   return (
     <aside className={cn(
-      'bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 relative',
+      'bg-sidebar border-r border-sidebar-border flex-col transition-all duration-300 relative hidden md:flex',
       collapsed ? 'w-[72px]' : 'w-60'
     )}>
       {/* Toggle Button */}

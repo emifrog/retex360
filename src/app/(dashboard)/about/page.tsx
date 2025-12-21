@@ -10,7 +10,11 @@ import {
   Zap,
   Globe,
   Lock,
-  Sparkles
+  Sparkles,
+  Clock,
+  ClipboardCheck,
+  BarChart3,
+  FileDown,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +66,34 @@ const features = [
     description: 'Partagez les enseignements entre départements pour une amélioration continue nationale.',
     color: 'text-cyan-500',
     bgColor: 'bg-cyan-500/10',
+  },
+  {
+    icon: BarChart3,
+    title: 'Chiffres clés',
+    description: 'Visualisez les données essentielles : SP engagés, durée, bilan humain, véhicules en infographie.',
+    color: 'text-indigo-500',
+    bgColor: 'bg-indigo-500/10',
+  },
+  {
+    icon: Clock,
+    title: 'Timeline chronologique',
+    description: 'Retracez le déroulement de l\'intervention avec des événements horodatés et colorés.',
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'Prescriptions',
+    description: 'Plan d\'actions catégorisé avec suivi des responsables et échéances.',
+    color: 'text-teal-500',
+    bgColor: 'bg-teal-500/10',
+  },
+  {
+    icon: FileDown,
+    title: 'Export PDF professionnel',
+    description: 'Générez des documents PDF avec infographies, timeline et mise en page DGSCGC.',
+    color: 'text-rose-500',
+    bgColor: 'bg-rose-500/10',
   },
 ];
 
@@ -137,6 +169,22 @@ export default function AboutPage() {
           Chaque RETEX partagé est une opportunité d&apos;apprentissage pour l&apos;ensemble de la communauté. 
           Qu&apos;il s&apos;agisse d&apos;un incendie urbain, d&apos;une intervention NRBC, d&apos;un accident de la route 
           ou d&apos;un feu de forêt, les leçons apprises peuvent faire la différence lors des prochaines missions.
+        </p>
+        <div className="flex flex-wrap gap-3 mt-6">
+          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 px-4 py-2">
+            Signalement
+          </Badge>
+          <span className="text-muted-foreground self-center">→</span>
+          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 px-4 py-2">
+            PEX (Partage d&apos;Expérience)
+          </Badge>
+          <span className="text-muted-foreground self-center">→</span>
+          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 px-4 py-2">
+            RETEX complet
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mt-3">
+          Workflow progressif conforme au mémento DGSCGC de septembre 2022
         </p>
       </section>
 

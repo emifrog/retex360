@@ -34,8 +34,8 @@ export function RexByTypeChart({ data = DEFAULT_DATA }: RexByTypeChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[250px] min-w-0">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Pie
                 data={data}

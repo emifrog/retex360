@@ -126,3 +126,29 @@ CREATE TRIGGER trigger_notify_on_validation
   AFTER UPDATE ON rex
   FOR EACH ROW
   EXECUTE FUNCTION notify_on_validation();
+
+-- ============================================================================
+-- REALTIME CONFIGURATION
+-- ============================================================================
+-- Enable realtime for notifications table
+-- This allows the frontend to subscribe to INSERT/UPDATE/DELETE events
+
+-- Add table to realtime publication
+-- Note: This requires the supabase_realtime publication to exist
+-- If it doesn't exist, create it first
+DO $$
+BEGIN
+  -- Check if publication exists
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
+  ) THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+END $$;
+
+-- Add notifications table to the realtime publication
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+
+-- Grant necessary permissions for realtime
+GRANT SELECT ON notifications TO authenticated;
+GRANT UPDATE ON notifications TO authenticated;
