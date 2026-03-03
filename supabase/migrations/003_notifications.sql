@@ -1,10 +1,11 @@
 -- Notifications table
+-- NOTE: Uses 'content' column to match 001_initial_schema.sql and app code
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('mention', 'comment', 'validation', 'favorite', 'system')),
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('mention', 'comment', 'validation', 'rejection', 'favorite', 'new_rex', 'system')),
+  title TEXT,
+  content TEXT,
   link TEXT,
   rex_id UUID REFERENCES rex(id) ON DELETE CASCADE,
   is_read BOOLEAN DEFAULT FALSE,
@@ -39,22 +40,25 @@ CREATE POLICY "System can insert notifications"
   ON notifications FOR INSERT
   WITH CHECK (true);
 
+-- Drop old function signature before recreating with renamed parameter
+DROP FUNCTION IF EXISTS create_notification(UUID, TEXT, TEXT, TEXT, TEXT, UUID);
+
 -- Function to create a notification
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
   p_type TEXT,
   p_title TEXT,
-  p_message TEXT,
+  p_content TEXT,
   p_link TEXT DEFAULT NULL,
   p_rex_id UUID DEFAULT NULL
 ) RETURNS UUID AS $$
 DECLARE
   v_notification_id UUID;
 BEGIN
-  INSERT INTO notifications (user_id, type, title, message, link, rex_id)
-  VALUES (p_user_id, p_type, p_title, p_message, p_link, p_rex_id)
+  INSERT INTO notifications (user_id, type, title, content, link, rex_id)
+  VALUES (p_user_id, p_type, p_title, p_content, p_link, p_rex_id)
   RETURNING id INTO v_notification_id;
-  
+
   RETURN v_notification_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -138,16 +142,21 @@ CREATE TRIGGER trigger_notify_on_validation
 -- If it doesn't exist, create it first
 DO $$
 BEGIN
-  -- Check if publication exists
+  -- Create publication if it doesn't exist
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
   ) THEN
     CREATE PUBLICATION supabase_realtime;
   END IF;
-END $$;
 
--- Add notifications table to the realtime publication
-ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+  -- Add notifications table only if not already a member
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'notifications'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+  END IF;
+END $$;
 
 -- Grant necessary permissions for realtime
 GRANT SELECT ON notifications TO authenticated;

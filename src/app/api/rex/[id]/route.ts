@@ -157,6 +157,17 @@ export async function DELETE(
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
     }
 
+    // Clean up attachment files from storage before deleting the REX
+    const { data: attachments } = await supabase
+      .from('rex_attachments')
+      .select('storage_path')
+      .eq('rex_id', id);
+
+    if (attachments && attachments.length > 0) {
+      const paths = attachments.map((a) => a.storage_path);
+      await supabase.storage.from('rex-attachments').remove(paths);
+    }
+
     const { error } = await supabase
       .from('rex')
       .delete()

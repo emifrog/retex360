@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { validateRexByType } from '@/lib/validators/rex';
 
 // POST - Create new REX
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
@@ -24,6 +25,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Validate input with Zod
+    const isDraft = body.status === 'draft';
+    const validation = validateRexByType(body, isDraft);
+    if (!validation.success) {
+      return NextResponse.json(
+        { message: 'Données invalides', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
     
     const { data: rex, error } = await supabase
       .from('rex')

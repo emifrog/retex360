@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   FileText,
@@ -33,7 +33,7 @@ const navigation = [
   { name: 'Liste REX', href: '/rex', icon: FileText },
   { name: 'Nouveau REX', href: '/rex/new', icon: PlusCircle },
   { name: 'Favoris', href: '/favorites', icon: Star },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Statistiques', href: '/dashboard', icon: BarChart3 },
 ];
 
 const adminNavigation = [
@@ -53,7 +53,16 @@ interface SidebarProps {
 
 export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', String(collapsed));
+  }, [collapsed]);
 
   return (
     <aside className={cn(

@@ -70,7 +70,7 @@ export const THEMES_FOCUS = [
 export type ThemeFocus = (typeof THEMES_FOCUS)[number];
 
 // Configuration des types de production
-export const PRODUCTION_TYPE_CONFIG = {
+export const PRODUCTION_TYPE_RULES = {
   signalement: {
     label: 'Fiche de signalement',
     shortLabel: 'Signalement',

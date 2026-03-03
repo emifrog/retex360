@@ -86,20 +86,22 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
   // Delete notification
   const deleteNotification = useCallback(async (notificationId: string) => {
     const supabase = createClient();
-    const notification = notifications.find((n) => n.id === notificationId);
-    
+
     const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('id', notificationId);
 
     if (!error) {
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-      if (notification && !notification.is_read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
+      setNotifications((prev) => {
+        const deleted = prev.find((n) => n.id === notificationId);
+        if (deleted && !deleted.is_read) {
+          setUnreadCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((n) => n.id !== notificationId);
+      });
     }
-  }, [notifications]);
+  }, []);
 
   // Fetch on mount
   useEffect(() => {

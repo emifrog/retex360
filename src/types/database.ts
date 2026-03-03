@@ -87,6 +87,7 @@ export type Database = {
           embedding: number[] | null;
           validated_by: string | null;
           validated_at: string | null;
+          rejection_reason: string | null;
           created_at: string;
           updated_at: string;
           // DGSCGC fields
@@ -123,6 +124,7 @@ export type Database = {
           embedding?: number[] | null;
           validated_by?: string | null;
           validated_at?: string | null;
+          rejection_reason?: string | null;
           created_at?: string;
           updated_at?: string;
           // DGSCGC fields
@@ -159,6 +161,7 @@ export type Database = {
           embedding?: number[] | null;
           validated_by?: string | null;
           validated_at?: string | null;
+          rejection_reason?: string | null;
           created_at?: string;
           updated_at?: string;
           // DGSCGC fields

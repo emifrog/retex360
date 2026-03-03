@@ -2,7 +2,7 @@
 
 import { Zap, FileText, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PRODUCTION_TYPE_CONFIG, type ProductionType } from '@/types';
+import { PRODUCTION_TYPE_RULES, type ProductionType } from '@/types';
 
 interface ProductionTypePickerProps {
   value: ProductionType;
@@ -27,7 +27,7 @@ export function ProductionTypePicker({
         Type de production
       </label>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {(Object.entries(PRODUCTION_TYPE_CONFIG) as [ProductionType, typeof PRODUCTION_TYPE_CONFIG[ProductionType]][]).map(
+        {(Object.entries(PRODUCTION_TYPE_RULES) as [ProductionType, typeof PRODUCTION_TYPE_RULES[ProductionType]][]).map(
           ([type, config]) => {
             const Icon = ICONS[config.icon as keyof typeof ICONS];
             const isSelected = value === type;

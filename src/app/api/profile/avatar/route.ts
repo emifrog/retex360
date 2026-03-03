@@ -38,6 +38,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'L\'image ne doit pas dépasser 2 Mo' }, { status: 400 });
     }
 
+    // Delete old avatar if exists
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (currentProfile?.avatar_url) {
+      // Extract storage path from the public URL
+      const oldPath = currentProfile.avatar_url.split('/avatars/').pop();
+      if (oldPath) {
+        await supabase.storage.from('avatars').remove([`avatars/${oldPath}`]);
+      }
+    }
+
     // Generate unique filename
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;

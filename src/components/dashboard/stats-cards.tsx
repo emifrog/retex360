@@ -1,59 +1,67 @@
-import { FileText, Building2, Clock, Sparkles } from 'lucide-react';
+'use client';
 
-interface StatsCardsProps {
+import { useEffect, useState } from 'react';
+import { FileText, Building2, Clock, Sparkles, Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+interface Stats {
   totalRex: number;
   sdisCount: number;
   pendingValidation: number;
-  aiPatterns: number;
+  validatedThisMonth: number;
 }
 
-const stats = [
+const statsConfig = [
   {
-    key: 'totalRex',
+    key: 'totalRex' as const,
     label: 'RETEX Total',
     icon: FileText,
     color: '#3b82f6',
-    trend: '+23 ce mois',
   },
   {
-    key: 'sdisCount',
+    key: 'sdisCount' as const,
     label: 'SDIS Participants',
     icon: Building2,
     color: '#22c55e',
-    trend: 'Région PACA',
   },
   {
-    key: 'pendingValidation',
+    key: 'pendingValidation' as const,
     label: 'En attente validation',
     icon: Clock,
     color: '#f97316',
-    trend: '3 urgents',
   },
   {
-    key: 'aiPatterns',
-    label: 'Patterns IA détectés',
+    key: 'validatedThisMonth' as const,
+    label: 'Validés ce mois',
     icon: Sparkles,
     color: '#a855f7',
-    trend: '+5 cette semaine',
   },
-] as const;
+];
 
-export function StatsCards({
-  totalRex = 1247,
-  sdisCount = 14,
-  pendingValidation = 8,
-  aiPatterns = 47,
-}: Partial<StatsCardsProps>) {
-  const values = {
-    totalRex,
-    sdisCount,
-    pendingValidation,
-    aiPatterns,
-  };
+export function StatsCards() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (error) {
+        logger.error('Error fetching stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
+      {statsConfig.map((stat) => (
         <div
           key={stat.key}
           className="relative bg-card border border-border rounded-xl p-5 overflow-hidden"
@@ -65,17 +73,18 @@ export function StatsCards({
               background: `linear-gradient(90deg, ${stat.color} 0%, transparent 100%)`,
             }}
           />
-          
+
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
                 {stat.label}
               </p>
               <p className="text-3xl font-bold text-foreground">
-                {values[stat.key].toLocaleString('fr-FR')}
-              </p>
-              <p className="text-xs mt-1" style={{ color: stat.color }}>
-                {stat.trend}
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                ) : (
+                  (stats?.[stat.key] ?? 0).toLocaleString('fr-FR')
+                )}
               </p>
             </div>
             <div

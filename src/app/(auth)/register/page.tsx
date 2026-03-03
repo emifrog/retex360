@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useFormStatus } from 'react-dom';
 import { register } from '@/lib/actions/auth';
@@ -18,14 +18,7 @@ import {
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-
-// Liste des SDIS (UUIDs valides RFC 4122 v4)
-const SDIS_LIST = [
-  { id: 'a0000000-0000-4000-a000-000000000001', code: '06', name: 'SDIS des Alpes-Maritimes' },
-  { id: 'a0000000-0000-4000-a000-000000000002', code: '13', name: 'SDIS des Bouches-du-Rhône' },
-  { id: 'a0000000-0000-4000-a000-000000000003', code: '83', name: 'SDIS du Var' },
-  { id: 'a0000000-0000-4000-a000-000000000004', code: '84', name: 'SDIS de Vaucluse' },
-];
+import { createClient } from '@/lib/supabase/client';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -51,6 +44,19 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [sdisId, setSdisId] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [sdisList, setSdisList] = useState<{ id: string; code: string; name: string }[]>([]);
+
+  useEffect(() => {
+    async function fetchSdis() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('sdis')
+        .select('id, code, name')
+        .order('code');
+      if (data) setSdisList(data);
+    }
+    fetchSdis();
+  }, []);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -103,7 +109,7 @@ export default function RegisterPage() {
                 <SelectValue placeholder="Sélectionnez votre SDIS" />
               </SelectTrigger>
               <SelectContent>
-                {SDIS_LIST.map((sdis) => (
+                {sdisList.map((sdis) => (
                   <SelectItem key={sdis.id} value={sdis.id}>
                     {sdis.code} - {sdis.name}
                   </SelectItem>

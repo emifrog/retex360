@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNotifications } from '@/lib/hooks/use-notifications';
+import { useNotifications } from '@/hooks/use-notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export const NotificationBell = memo(function NotificationBell({ userId }: Notif
     isLoading,
     markAsRead,
     markAllAsRead,
-  } = useNotifications(userId);
+  } = useNotifications({ userId: userId || null });
 
   const handleNotificationClick = async (notificationId: string, link?: string | null) => {
     await markAsRead(notificationId);
@@ -129,12 +129,11 @@ function NotificationContent({
     type: string;
     title: string | null;
     content?: string | null;
-    message?: string | null;
     is_read: boolean;
     created_at: string;
   };
 }) {
-  const content = notification.content || notification.message;
+  const content = notification.content;
   const icon = notificationIcons[notification.type as keyof typeof notificationIcons] || '🔔';
 
   return (

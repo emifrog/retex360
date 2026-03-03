@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, X, LayoutGrid, List } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { REX_TYPES, SEVERITIES, STATUSES, PRODUCTION_TYPES, PRODUCTION_TYPE_CONFIG } from '@/types';
+import { REX_TYPES, SEVERITIES, STATUSES, PRODUCTION_TYPES, PRODUCTION_TYPE_RULES } from '@/types';
 
 interface RexFiltersProps {
   onSearch: (query: string) => void;
@@ -38,6 +39,19 @@ export function RexFilters({
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [sdisList, setSdisList] = useState<{ id: string; code: string; name: string }[]>([]);
+
+  useEffect(() => {
+    async function fetchSdis() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('sdis')
+        .select('id, code, name')
+        .order('code');
+      if (data) setSdisList(data);
+    }
+    fetchSdis();
+  }, []);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -133,7 +147,7 @@ export function RexFilters({
                 <SelectItem value="">Tous les types</SelectItem>
                 {PRODUCTION_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {PRODUCTION_TYPE_CONFIG[type].shortLabel}
+                    {PRODUCTION_TYPE_RULES[type].shortLabel}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -205,10 +219,11 @@ export function RexFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tous les SDIS</SelectItem>
-                <SelectItem value="06">SDIS 06</SelectItem>
-                <SelectItem value="13">SDIS 13</SelectItem>
-                <SelectItem value="83">SDIS 83</SelectItem>
-                <SelectItem value="84">SDIS 84</SelectItem>
+                {sdisList.map((sdis) => (
+                  <SelectItem key={sdis.id} value={sdis.code}>
+                    SDIS {sdis.code}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

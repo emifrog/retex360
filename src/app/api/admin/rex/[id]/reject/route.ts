@@ -27,11 +27,12 @@ export async function POST(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // Update REX status back to draft
+    // Update REX status back to draft and store rejection reason
     const { error } = await supabase
       .from('rex')
       .update({
         status: 'draft',
+        rejection_reason: reason || null,
       })
       .eq('id', rexId)
       .eq('status', 'pending');

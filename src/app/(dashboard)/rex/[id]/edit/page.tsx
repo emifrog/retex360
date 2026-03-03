@@ -46,7 +46,7 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
     redirect(`/rex/${id}`);
   }
 
-  // Transform data for form
+  // Transform data for form (include all DGSCGC fields to prevent data loss)
   const initialData = {
     title: rex.title,
     intervention_date: rex.intervention_date,
@@ -59,6 +59,17 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
     difficulties: rex.difficulties || '',
     lessons_learned: rex.lessons_learned || '',
     tags: rex.tags || [],
+    // DGSCGC fields
+    type_production: rex.type_production || 'retex',
+    message_ambiance: rex.message_ambiance || '',
+    sitac: rex.sitac || '',
+    elements_favorables: rex.elements_favorables || '',
+    elements_defavorables: rex.elements_defavorables || '',
+    documentation_operationnelle: rex.documentation_operationnelle || '',
+    focus_thematiques: rex.focus_thematiques || [],
+    key_figures: rex.key_figures || {},
+    chronologie: rex.chronologie || [],
+    prescriptions: rex.prescriptions || [],
   };
 
   return (
