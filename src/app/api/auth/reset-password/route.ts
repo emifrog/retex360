@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Reset password error:', error);
+      logger.error('Reset password error:', error);
       
       if (error.message.includes('same')) {
         return NextResponse.json(
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

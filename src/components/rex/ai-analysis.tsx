@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface AiAnalysisProps {
   rexId: string;
@@ -59,7 +60,7 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
         [type]: { type, content: data.analysis, loading: false },
       }));
     } catch (error) {
-      console.error('Analysis error:', error);
+      logger.error('Analysis error:', error);
       toast.error('Erreur lors de l\'analyse IA');
       setAnalyses(prev => ({
         ...prev,

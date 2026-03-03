@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { loginSchema } from '@/lib/validators/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

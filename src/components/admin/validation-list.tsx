@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { SEVERITY_CONFIG } from '@/lib/constants';
 import type { Rex, Sdis, Profile } from '@/types';
 
 interface ValidationListProps {
@@ -36,29 +37,6 @@ interface ValidationListProps {
   })[];
 }
 
-const severityConfig = {
-  critique: {
-    label: 'Critique',
-    color: 'bg-red-500',
-    textColor: 'text-red-500',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/30',
-  },
-  majeur: {
-    label: 'Majeur',
-    color: 'bg-orange-500',
-    textColor: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/30',
-  },
-  significatif: {
-    label: 'Significatif',
-    color: 'bg-yellow-500',
-    textColor: 'text-yellow-500',
-    bgColor: 'bg-yellow-500/10',
-    borderColor: 'border-yellow-500/30',
-  },
-};
 
 export function ValidationList({ initialRex }: ValidationListProps) {
   const [rexList, setRexList] = useState(initialRex);
@@ -133,7 +111,7 @@ export function ValidationList({ initialRex }: ValidationListProps) {
     <>
       <div className="grid gap-4">
         {rexList.map((rex) => {
-          const severity = severityConfig[rex.severity];
+          const severity = SEVERITY_CONFIG[rex.severity];
 
           return (
             <Card key={rex.id} className="border-border/50 bg-card/80 overflow-hidden">

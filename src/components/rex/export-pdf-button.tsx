@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FileDown, Loader2, ChevronDown, User, UserX } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface ExportPdfButtonProps {
   rexId: string;
@@ -43,7 +44,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
       
       toast.success(anonymize ? 'PDF anonymisé téléchargé' : 'PDF téléchargé');
     } catch (error) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast.error('Erreur lors de la génération du PDF');
     } finally {
       setIsLoading(false);

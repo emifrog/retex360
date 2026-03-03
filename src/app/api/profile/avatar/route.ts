@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      logger.error('Upload error:', uploadError);
       return NextResponse.json({ error: 'Erreur lors de l\'upload' }, { status: 500 });
     }
 
@@ -73,13 +74,13 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Profile update error:', updateError);
+      logger.error('Profile update error:', updateError);
       return NextResponse.json({ error: 'Erreur lors de la mise à jour du profil' }, { status: 500 });
     }
 
     return NextResponse.json({ url: publicUrl });
   } catch (error) {
-    console.error('Avatar upload error:', error);
+    logger.error('Avatar upload error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

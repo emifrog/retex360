@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { generateRexEmbedding } from '@/lib/openai';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // POST - Generate and store embedding for a REX
 export async function POST(
@@ -38,13 +39,13 @@ export async function POST(
       .eq('id', id);
 
     if (updateError) {
-      console.error('Error storing embedding:', updateError);
+      logger.error('Error storing embedding:', updateError);
       return NextResponse.json({ message: 'Erreur lors de la sauvegarde' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Embedding généré' });
   } catch (error) {
-    console.error('Embedding error:', error);
+    logger.error('Embedding error:', error);
     return NextResponse.json({ message: 'Erreur de génération' }, { status: 500 });
   }
 }

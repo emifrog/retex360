@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -39,14 +40,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Forgot password error:', error);
+      logger.error('Forgot password error:', error);
       // Don't reveal if email exists or not for security
       return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

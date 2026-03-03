@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface Notification {
   id: string;
@@ -36,7 +37,7 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
       .limit(50);
 
     if (error) {
-      console.error('Error fetching notifications:', error);
+      logger.error('Error fetching notifications:', error);
       return;
     }
 

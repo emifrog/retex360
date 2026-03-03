@@ -3,7 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Calendar, Building2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
 
 interface SearchResultsProps {
   searchParams: {
@@ -21,18 +23,6 @@ interface SearchResultsProps {
 
 const ITEMS_PER_PAGE = 10;
 
-const severityConfig = {
-  critique: { label: 'Critique', color: 'bg-red-500', textColor: 'text-red-500' },
-  majeur: { label: 'Majeur', color: 'bg-orange-500', textColor: 'text-orange-500' },
-  significatif: { label: 'Significatif', color: 'bg-yellow-500', textColor: 'text-yellow-500' },
-};
-
-const statusConfig = {
-  draft: { label: 'Brouillon', color: 'bg-gray-500' },
-  pending: { label: 'En attente', color: 'bg-orange-500' },
-  validated: { label: 'Validé', color: 'bg-green-500' },
-  archived: { label: 'Archivé', color: 'bg-gray-400' },
-};
 
 export async function SearchResults({ searchParams }: SearchResultsProps) {
   const supabase = await createClient();
@@ -105,7 +95,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
   const { data: results, count, error } = await query;
 
   if (error) {
-    console.error('Search error:', error);
+    logger.error('Search error:', error);
     return (
       <div className="bg-card border border-border rounded-xl p-8 text-center">
         <p className="text-destructive">Erreur lors de la recherche</p>
@@ -156,8 +146,8 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
       {/* Results list */}
       <div className="space-y-3">
         {results.map((rex) => {
-          const severity = severityConfig[rex.severity as keyof typeof severityConfig];
-          const status = statusConfig[rex.status as keyof typeof statusConfig];
+          const severity = SEVERITY_CONFIG[rex.severity as keyof typeof SEVERITY_CONFIG];
+          const status = STATUS_CONFIG[rex.status as keyof typeof STATUS_CONFIG];
           const sdisData = Array.isArray(rex.sdis) ? rex.sdis[0] : rex.sdis;
           const authorData = Array.isArray(rex.author) ? rex.author[0] : rex.author;
 
@@ -174,13 +164,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                     <div
                       className={cn('w-2.5 h-2.5 rounded-full', severity?.color)}
                       style={{
-                        boxShadow: `0 0 8px ${
-                          rex.severity === 'critique'
-                            ? '#ef4444'
-                            : rex.severity === 'majeur'
-                            ? '#f97316'
-                            : '#eab308'
-                        }50`,
+                        boxShadow: `0 0 8px ${severity?.hex || '#eab308'}50`,
                       }}
                     />
                     <span className="text-xs text-muted-foreground uppercase font-medium">

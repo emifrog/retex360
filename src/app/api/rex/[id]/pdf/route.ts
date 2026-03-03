@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { RexPdfTemplate } from '@/lib/pdf/rex-template';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -51,7 +52,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('PDF generation error:', error);
+    logger.error('PDF generation error:', error);
     return NextResponse.json(
       { error: 'Failed to generate PDF' },
       { status: 500 }

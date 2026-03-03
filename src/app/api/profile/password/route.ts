@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { passwordChangeSchema } from '@/lib/validators/api';
+import { logger } from '@/lib/logger';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Password update error:', error);
+      logger.error('Password update error:', error);
       
       if (error.message.includes('same')) {
         return NextResponse.json(
@@ -45,7 +46,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Password update error:', error);
+    logger.error('Password update error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

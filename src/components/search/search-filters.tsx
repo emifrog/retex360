@@ -16,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Search, X, Filter, RotateCcw } from 'lucide-react';
 import { REX_TYPES, SEVERITIES, STATUSES } from '@/types';
 import { cn } from '@/lib/utils';
+import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
 
 interface SearchFiltersProps {
   sdisList: { id: string; code: string; name: string }[];
@@ -32,18 +33,6 @@ interface SearchFiltersProps {
   };
 }
 
-const severityLabels = {
-  critique: 'Critique',
-  majeur: 'Majeur',
-  significatif: 'Significatif',
-};
-
-const statusLabels = {
-  draft: 'Brouillon',
-  pending: 'En attente',
-  validated: 'Validé',
-  archived: 'Archivé',
-};
 
 export function SearchFilters({ sdisList, allTags, currentParams }: SearchFiltersProps) {
   const router = useRouter();
@@ -184,7 +173,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
                 <SelectItem value="all">Toutes les sévérités</SelectItem>
                 {SEVERITIES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {severityLabels[s]}
+                    {SEVERITY_CONFIG[s].label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -204,7 +193,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
                 <SelectItem value="all">Tous les statuts</SelectItem>
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {statusLabels[s]}
+                    {STATUS_CONFIG[s].label}
                   </SelectItem>
                 ))}
               </SelectContent>

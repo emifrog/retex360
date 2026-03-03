@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function DELETE(
   request: NextRequest,
@@ -46,7 +47,7 @@ export async function DELETE(
       .remove([attachment.storage_path]);
 
     if (storageError) {
-      console.error('Storage delete error:', storageError);
+      logger.error('Storage delete error:', storageError);
     }
 
     // Delete from database
@@ -56,13 +57,13 @@ export async function DELETE(
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Database delete error:', deleteError);
+      logger.error('Database delete error:', deleteError);
       return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Attachment delete error:', error);
+    logger.error('Attachment delete error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

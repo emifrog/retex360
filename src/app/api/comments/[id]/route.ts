@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // PUT - Update a comment
 export async function PUT(
@@ -52,13 +53,13 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Comment update error:', error);
+      logger.error('Comment update error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ data: comment });
   } catch (error) {
-    console.error('Comment update error:', error);
+    logger.error('Comment update error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -108,13 +109,13 @@ export async function DELETE(
       .eq('id', commentId);
 
     if (error) {
-      console.error('Comment delete error:', error);
+      logger.error('Comment delete error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Comment delete error:', error);
+    logger.error('Comment delete error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

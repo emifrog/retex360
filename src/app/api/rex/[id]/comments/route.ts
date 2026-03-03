@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // GET - Fetch comments for a REX
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Comments fetch error:', error);
+      logger.error('Comments fetch error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -38,7 +39,7 @@ export async function GET(
 
     return NextResponse.json({ data: threaded });
   } catch (error) {
-    console.error('Comments error:', error);
+    logger.error('Comments error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -81,7 +82,7 @@ export async function POST(
       .single();
 
     if (error) {
-      console.error('Comment create error:', error);
+      logger.error('Comment create error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -132,7 +133,7 @@ export async function POST(
 
     return NextResponse.json({ data: comment }, { status: 201 });
   } catch (error) {
-    console.error('Comment create error:', error);
+    logger.error('Comment create error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

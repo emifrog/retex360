@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { roleUpdateSchema } from '@/lib/validators/api';
+import { logger } from '@/lib/logger';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -69,13 +70,13 @@ export async function PUT(request: NextRequest) {
       .eq('id', userId);
 
     if (error) {
-      console.error('Role update error:', error);
+      logger.error('Role update error:', error);
       return NextResponse.json({ error: 'Erreur lors de la modification' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Role update error:', error);
+    logger.error('Role update error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

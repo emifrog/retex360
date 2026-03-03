@@ -6,6 +6,7 @@ import { RexFilters, type FilterState } from './rex-filters';
 import { FileText, CheckCircle, Clock, FileEdit, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { Rex, Sdis, Profile } from '@/types';
 
 interface RexWithRelations extends Rex {
@@ -73,7 +74,7 @@ export function RexList() {
       setHasMore(pageNum < data.pagination.totalPages);
       setPage(pageNum);
     } catch (error) {
-      console.error('Fetch error:', error);
+      logger.error('Fetch error:', error);
       toast.error('Erreur lors du chargement des REX');
     } finally {
       setIsLoading(false);
@@ -90,7 +91,7 @@ export function RexList() {
         setStats(data);
       }
     } catch (error) {
-      console.error('Stats error:', error);
+      logger.error('Stats error:', error);
     }
   }, []);
 
@@ -103,7 +104,7 @@ export function RexList() {
         setFavorites(new Set(data.favorites || []));
       }
     } catch (error) {
-      console.error('Favorites error:', error);
+      logger.error('Favorites error:', error);
     }
   }, []);
 

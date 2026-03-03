@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Star, Eye, Calendar, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { SEVERITY_CONFIG } from '@/lib/constants';
 
 interface Favorite {
   id: string;
@@ -51,11 +53,6 @@ interface FavoritesListProps {
   favorites: Favorite[];
 }
 
-const severityConfig = {
-  critique: { label: 'Critique', color: 'bg-red-500/20 text-red-500 border-red-500/30' },
-  majeur: { label: 'Majeur', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
-  significatif: { label: 'Significatif', color: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' },
-};
 
 export function FavoritesList({ favorites: initialFavorites }: FavoritesListProps) {
   const [favorites, setFavorites] = useState(initialFavorites);
@@ -106,7 +103,7 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
       <div className="grid gap-4">
         {favorites.map((favorite) => {
           const rex = favorite.rex;
-          const severity = severityConfig[rex.severity as keyof typeof severityConfig];
+          const severity = SEVERITY_CONFIG[rex.severity as keyof typeof SEVERITY_CONFIG];
           const initials = rex.author.full_name
             .split(' ')
             .map((n) => n[0])
@@ -121,7 +118,7 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
                   {/* Main content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className={severity?.color}>
+                      <Badge variant="outline" className={cn(severity?.bgColor, severity?.textColor, severity?.borderColor)}>
                         {severity?.label}
                       </Badge>
                       <Badge variant="outline" className="bg-muted/50">

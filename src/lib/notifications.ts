@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export type NotificationType = 'mention' | 'comment' | 'validation' | 'new_rex' | 'rejection';
 
@@ -31,7 +32,7 @@ export async function createNotification({
   });
 
   if (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification:', error);
     return { success: false, error };
   }
 
@@ -131,7 +132,7 @@ export async function notifyNewRexForValidation(
   const { error } = await supabase.from('notifications').insert(notifications);
 
   if (error) {
-    console.error('Error creating validation notifications:', error);
+    logger.error('Error creating validation notifications:', error);
   }
 }
 
@@ -167,6 +168,6 @@ export async function notifyNewRexPublished(
   const { error } = await supabase.from('notifications').insert(notifications);
 
   if (error) {
-    console.error('Error creating new rex notifications:', error);
+    logger.error('Error creating new rex notifications:', error);
   }
 }

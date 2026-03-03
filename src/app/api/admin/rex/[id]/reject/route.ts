@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -36,7 +37,7 @@ export async function POST(
       .eq('status', 'pending');
 
     if (error) {
-      console.error('Reject error:', error);
+      logger.error('Reject error:', error);
       return NextResponse.json({ error: 'Erreur lors du rejet' }, { status: 500 });
     }
 
@@ -62,7 +63,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Reject error:', error);
+    logger.error('Reject error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

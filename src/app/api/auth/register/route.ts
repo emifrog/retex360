@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { registerSchema } from '@/lib/validators/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       }, { onConflict: 'id' });
 
       if (profileError) {
-        console.error('Profile error:', profileError);
+        logger.error('Profile error:', profileError);
         return NextResponse.json(
           { error: 'Erreur lors de la création du profil' },
           { status: 500 }
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
+    logger.error('Register error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

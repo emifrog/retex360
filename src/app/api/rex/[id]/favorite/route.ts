@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function POST(
       });
 
     if (error) {
-      console.error('Favorite error:', error);
+      logger.error('Favorite error:', error);
       return NextResponse.json(
         { error: 'Erreur lors de l\'ajout aux favoris' },
         { status: 500 }
@@ -51,7 +52,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Favorite error:', error);
+    logger.error('Favorite error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }
@@ -84,7 +85,7 @@ export async function DELETE(
       .eq('rex_id', rexId);
 
     if (error) {
-      console.error('Unfavorite error:', error);
+      logger.error('Unfavorite error:', error);
       return NextResponse.json(
         { error: 'Erreur lors du retrait des favoris' },
         { status: 500 }
@@ -93,7 +94,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Unfavorite error:', error);
+    logger.error('Unfavorite error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

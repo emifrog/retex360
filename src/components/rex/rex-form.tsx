@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SEVERITY_CONFIG, VISIBILITY_LABELS } from '@/lib/constants';
 
 interface RexFormData {
   title: string;
@@ -63,17 +64,6 @@ interface RexFormProps {
   mode?: 'create' | 'edit';
 }
 
-const severityLabels = {
-  critique: { label: 'Critique', color: 'bg-red-500/20 text-red-500 border-red-500/30' },
-  majeur: { label: 'Majeur', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
-  significatif: { label: 'Significatif', color: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' },
-};
-
-const visibilityLabels = {
-  sdis: 'Mon SDIS uniquement',
-  inter_sdis: 'Tous les SDIS',
-  public: 'Public',
-};
 
 export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const router = useRouter();
@@ -298,7 +288,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                             sev === 'significatif' && 'bg-yellow-500'
                           )}
                         />
-                        {severityLabels[sev].label}
+                        {SEVERITY_CONFIG[sev].label}
                       </div>
                     </SelectItem>
                   ))}
@@ -320,7 +310,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               <SelectContent>
                 {VISIBILITIES.map((vis) => (
                   <SelectItem key={vis} value={vis}>
-                    {visibilityLabels[vis]}
+                    {VISIBILITY_LABELS[vis]}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -231,7 +231,7 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSdis())}
                 className="flex-1"
               />
-              <Button type="button" variant="outline" size="icon" onClick={addSdis}>
+              <Button type="button" variant="outline" size="icon" onClick={addSdis} aria-label="Ajouter un SDIS">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

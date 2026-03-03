@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: Request,
@@ -94,7 +95,7 @@ export async function POST(
       .single();
 
     if (updateError) {
-      console.error('Error promoting REX:', updateError);
+      logger.error('Error promoting REX:', updateError);
       return NextResponse.json({ message: updateError.message }, { status: 500 });
     }
 
@@ -103,7 +104,7 @@ export async function POST(
       rex: updatedRex,
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }

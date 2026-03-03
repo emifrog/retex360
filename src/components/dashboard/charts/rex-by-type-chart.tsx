@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -24,7 +25,7 @@ const DEFAULT_DATA: RexByTypeData[] = [
 ];
 
 export function RexByTypeChart({ data = DEFAULT_DATA }: RexByTypeChartProps) {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
   return (
     <Card className="border-border/50 bg-card/80">

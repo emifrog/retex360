@@ -1,9 +1,11 @@
+import { memo } from 'react';
 import Link from 'next/link';
-import { Eye, Star, Calendar, MapPin, Zap, FileText, ClipboardList } from 'lucide-react';
+import { Eye, Star, Calendar, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { Rex, Sdis, Profile, ProductionType } from '@/types';
+import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG, STATUS_CONFIG } from '@/lib/constants';
+import type { Rex, Sdis, Profile } from '@/types';
 
 interface RexCardProps {
   rex: Rex & {
@@ -14,71 +16,10 @@ interface RexCardProps {
   isFavorite?: boolean;
 }
 
-const productionTypeConfig: Record<ProductionType, { label: string; icon: typeof Zap; className: string }> = {
-  signalement: {
-    label: 'Signalement',
-    icon: Zap,
-    className: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30',
-  },
-  pex: {
-    label: 'PEX',
-    icon: FileText,
-    className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
-  },
-  retex: {
-    label: 'RETEX',
-    icon: ClipboardList,
-    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-  },
-};
-
-const severityConfig = {
-  critique: {
-    color: 'bg-red-500',
-    textColor: 'text-red-500',
-    borderColor: 'border-red-500/30',
-    bgColor: 'bg-red-500/10',
-    label: 'Critique',
-  },
-  majeur: {
-    color: 'bg-orange-500',
-    textColor: 'text-orange-500',
-    borderColor: 'border-orange-500/30',
-    bgColor: 'bg-orange-500/10',
-    label: 'Majeur',
-  },
-  significatif: {
-    color: 'bg-yellow-500',
-    textColor: 'text-yellow-500',
-    borderColor: 'border-yellow-500/30',
-    bgColor: 'bg-yellow-500/10',
-    label: 'Significatif',
-  },
-};
-
-const statusConfig = {
-  draft: {
-    label: 'Brouillon',
-    className: 'bg-gray-500/10 text-gray-500 border-gray-500/30',
-  },
-  pending: {
-    label: 'En attente',
-    className: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
-  },
-  validated: {
-    label: '✓ Validé',
-    className: 'bg-green-500/10 text-green-500 border-green-500/30',
-  },
-  archived: {
-    label: 'Archivé',
-    className: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  },
-};
-
-export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
-  const severity = severityConfig[rex.severity];
-  const status = statusConfig[rex.status];
-  const productionType = productionTypeConfig[rex.type_production || 'retex'];
+export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
+  const severity = SEVERITY_CONFIG[rex.severity];
+  const status = STATUS_CONFIG[rex.status];
+  const productionType = PRODUCTION_TYPE_CONFIG[rex.type_production || 'retex'];
   const ProductionIcon = productionType.icon;
 
   return (
@@ -89,13 +30,7 @@ export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
           <div
             className={cn('w-2.5 h-2.5 rounded-full', severity.color)}
             style={{
-              boxShadow: `0 0 10px ${
-                rex.severity === 'critique'
-                  ? '#ef4444'
-                  : rex.severity === 'majeur'
-                  ? '#f97316'
-                  : '#eab308'
-              }40`,
+              boxShadow: `0 0 10px ${severity.hex}40`,
             }}
           />
           <span className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -114,6 +49,7 @@ export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={(e) => {
                 e.preventDefault();
@@ -176,4 +112,4 @@ export function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
       )}
     </div>
   );
-}
+});

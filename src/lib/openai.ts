@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logger } from '@/lib/logger';
 
 // Configuration OpenRouter - compatible avec l'API OpenAI
 const openrouter = new OpenAI({
@@ -51,7 +52,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     const data = await response.json();
     return data.data[0].embedding;
   } catch (error) {
-    console.error('Embedding generation failed:', error);
+    logger.error('Embedding generation failed:', error);
     throw error;
   }
 }

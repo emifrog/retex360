@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { loginSchema, registerSchema } from '@/lib/validators/auth';
+import { logger } from '@/lib/logger';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -38,11 +39,11 @@ export async function register(formData: FormData) {
     grade: formData.get('grade') as string || undefined,
   };
 
-  console.log('Register data:', { ...data, password: '***', confirmPassword: '***' });
+  logger.info('Register data:', { ...data, password: '***', confirmPassword: '***' });
 
   const validated = registerSchema.safeParse(data);
   if (!validated.success) {
-    console.log('Validation errors:', validated.error.issues);
+    logger.info('Validation errors:', validated.error.issues);
     return { error: validated.error.issues[0].message };
   }
 
@@ -67,7 +68,7 @@ export async function register(formData: FormData) {
     }, { onConflict: 'id' });
 
     if (profileError) {
-      console.error('Profile error:', profileError);
+      logger.error('Profile error:', profileError);
       return { error: 'Erreur lors de la création du profil: ' + profileError.message };
     }
   }

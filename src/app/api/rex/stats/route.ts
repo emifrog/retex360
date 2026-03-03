@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -25,7 +26,7 @@ export async function GET() {
       draft: draftResult.count || 0,
     });
   } catch (error) {
-    console.error('Stats error:', error);
+    logger.error('Stats error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }

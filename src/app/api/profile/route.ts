@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { profileUpdateSchema } from '@/lib/validators/api';
+import { logger } from '@/lib/logger';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -33,13 +34,13 @@ export async function PUT(request: NextRequest) {
       .eq('id', user.id);
 
     if (error) {
-      console.error('Profile update error:', error);
+      logger.error('Profile update error:', error);
       return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Profile update error:', error);
+    logger.error('Profile update error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

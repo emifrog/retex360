@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      logger.error('Upload error:', uploadError);
       return NextResponse.json({ error: 'Erreur lors de l\'upload' }, { status: 500 });
     }
 
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (dbError) {
-      console.error('Database error:', dbError);
+      logger.error('Database error:', dbError);
       // Try to delete the uploaded file
       await supabase.storage.from('rex-attachments').remove([storagePath]);
       return NextResponse.json({ error: 'Erreur lors de l\'enregistrement' }, { status: 500 });
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
       url: publicUrl,
     });
   } catch (error) {
-    console.error('Attachment upload error:', error);
+    logger.error('Attachment upload error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

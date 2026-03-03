@@ -3,6 +3,7 @@ import { generateEmbedding } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { searchSchema } from '@/lib/validators/api';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
       // Fallback to text search if vector search fails
       const { data: textResults } = await supabase
         .from('rex')
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       searchType: 'semantic',
     });
   } catch (error) {
-    console.error('Search error:', error);
+    logger.error('Search error:', error);
     return NextResponse.json({ message: 'Erreur de recherche' }, { status: 500 });
   }
 }

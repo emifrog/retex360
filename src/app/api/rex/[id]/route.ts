@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // GET - Get single REX
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
 
     return NextResponse.json(rex);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -106,13 +107,13 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Error updating REX:', error);
+      logger.error('Error updating REX:', error);
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
     return NextResponse.json(rex);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -162,13 +163,13 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting REX:', error);
+      logger.error('Error deleting REX:', error);
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'REX supprimé' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }

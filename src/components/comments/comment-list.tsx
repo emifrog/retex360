@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
 import { MessageSquare, Loader2 } from 'lucide-react';
@@ -32,7 +33,7 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
         setComments(data.data || []);
       }
     } catch (error) {
-      console.error('Fetch comments error:', error);
+      logger.error('Fetch comments error:', error);
     } finally {
       setIsLoading(false);
     }

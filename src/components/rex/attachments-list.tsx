@@ -14,6 +14,7 @@ import {
   Paperclip
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { logger } from '@/lib/logger';
 import { fr } from 'date-fns/locale';
 
 interface Attachment {
@@ -61,7 +62,7 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Download error:', error);
+      logger.error('Download error:', error);
     } finally {
       setDownloading(null);
     }
@@ -114,6 +115,7 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handlePreview(attachment)}
+                      aria-label={`Aperçu de ${attachment.file_name}`}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: Request,
@@ -40,7 +41,7 @@ export async function POST(
         .eq('id', id);
 
       if (error) {
-        console.error('Validation error:', error);
+        logger.error('Validation error:', error);
         return NextResponse.json({ message: error.message }, { status: 500 });
       }
 
@@ -60,7 +61,7 @@ export async function POST(
         .eq('id', id);
 
       if (error) {
-        console.error('Rejection error:', error);
+        logger.error('Rejection error:', error);
         return NextResponse.json({ message: error.message }, { status: 500 });
       }
 
@@ -71,7 +72,7 @@ export async function POST(
 
     return NextResponse.json({ message: 'Action invalide' }, { status: 400 });
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error('Validation error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }

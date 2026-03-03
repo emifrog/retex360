@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDebounce } from './use-debounce';
+import { logger } from '@/lib/logger';
 
 interface SearchResult {
   id: string;
@@ -57,7 +58,7 @@ export function useSearch() {
       setResults(data.results);
       setSearchType(data.searchType);
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
       setResults([]);
     } finally {
       setIsLoading(false);

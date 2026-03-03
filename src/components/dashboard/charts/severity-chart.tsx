@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +22,7 @@ const DEFAULT_DATA: SeverityData[] = [
 ];
 
 export function SeverityChart({ data = DEFAULT_DATA }: SeverityChartProps) {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
   return (
     <Card className="border-border/50 bg-card/80">

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // POST - Create new REX
 export async function POST(request: Request) {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Error creating REX:', error);
+      logger.error('Error creating REX:', error);
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
@@ -70,13 +71,13 @@ export async function POST(request: Request) {
         .eq('uploaded_by', user.id);
 
       if (attachError) {
-        console.error('Error linking attachments:', attachError);
+        logger.error('Error linking attachments:', attachError);
       }
     }
 
     return NextResponse.json(rex, { status: 201 });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -120,7 +121,7 @@ export async function GET(request: Request) {
       .range(from, to);
 
     if (error) {
-      console.error('Error fetching REX:', error);
+      logger.error('Error fetching REX:', error);
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
@@ -134,7 +135,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }

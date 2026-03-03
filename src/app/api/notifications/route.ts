@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // GET - Fetch user notifications
 export async function GET(request: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const { data: notifications, error } = await query;
 
     if (error) {
-      console.error('Notifications fetch error:', error);
+      logger.error('Notifications fetch error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       unreadCount: unreadCount || 0,
     });
   } catch (error) {
-    console.error('Notifications error:', error);
+    logger.error('Notifications error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Mark read error:', error);
+    logger.error('Mark read error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const notificationIcons = {
   system: '🔔',
 };
 
-export function NotificationBell({ userId }: NotificationBellProps) {
+export const NotificationBell = memo(function NotificationBell({ userId }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const {
     notifications,
@@ -47,7 +47,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ''}`}>
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -120,7 +120,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       </PopoverContent>
     </Popover>
   );
-}
+});
 
 function NotificationContent({
   notification,

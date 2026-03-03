@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Users } from 'lucide-react';
 import { UsersTable } from '@/components/admin/users-table';
+import { logger } from '@/lib/logger';
 
 export const metadata = {
   title: 'Gestion des utilisateurs | RETEX360',
@@ -52,7 +53,7 @@ export default async function AdminUsersPage() {
   const { data: usersRaw, error } = await query;
 
   if (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users:', error);
   }
 
   // Transform users to normalize sdis field

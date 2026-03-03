@@ -3,6 +3,7 @@ import { chatCompletion, OPENROUTER_MODELS } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { aiAnalysisSchema } from '@/lib/validators/api';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting (strict for AI - expensive operations)
@@ -132,7 +133,7 @@ ${rexContext}`;
       rexId,
     });
   } catch (error) {
-    console.error('AI analysis error:', error);
+    logger.error('AI analysis error:', error);
     return NextResponse.json(
       { error: 'Erreur lors de l\'analyse IA' },
       { status: 500 }

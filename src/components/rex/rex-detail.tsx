@@ -28,13 +28,12 @@ import {
   CheckCircle,
   Clock,
   Building2,
-  Zap,
-  FileText,
-  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize';
+import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
-import type { Rex, Sdis, Profile, ProductionType } from '@/types';
+import type { Rex, Sdis, Profile } from '@/types';
 
 interface Attachment {
   id: string;
@@ -56,30 +55,6 @@ interface RexDetailProps {
   currentUser: Profile | null;
 }
 
-const severityConfig = {
-  critique: {
-    label: 'Critique',
-    color: 'bg-red-500',
-    textColor: 'text-red-500',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/30',
-  },
-  majeur: {
-    label: 'Majeur',
-    color: 'bg-orange-500',
-    textColor: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/30',
-  },
-  significatif: {
-    label: 'Significatif',
-    color: 'bg-yellow-500',
-    textColor: 'text-yellow-500',
-    bgColor: 'bg-yellow-500/10',
-    borderColor: 'border-yellow-500/30',
-  },
-};
-
 const statusConfig = {
   draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-500' },
   pending: { label: 'En attente de validation', icon: Clock, color: 'text-orange-500' },
@@ -87,33 +62,15 @@ const statusConfig = {
   archived: { label: 'Archivé', icon: Clock, color: 'text-gray-400' },
 };
 
-const productionTypeConfig: Record<ProductionType, { label: string; icon: typeof Zap; className: string }> = {
-  signalement: {
-    label: 'Signalement',
-    icon: Zap,
-    className: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30',
-  },
-  pex: {
-    label: 'PEX',
-    icon: FileText,
-    className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
-  },
-  retex: {
-    label: 'RETEX',
-    icon: ClipboardList,
-    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-  },
-};
-
 export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
   const router = useRouter();
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [favoritesCount, setFavoritesCount] = useState(rex.favorites_count || 0);
 
-  const severity = severityConfig[rex.severity];
+  const severity = SEVERITY_CONFIG[rex.severity];
   const status = statusConfig[rex.status];
   const StatusIcon = status.icon;
-  const productionType = productionTypeConfig[rex.type_production || 'retex'];
+  const productionType = PRODUCTION_TYPE_CONFIG[rex.type_production || 'retex'];
   const ProductionIcon = productionType.icon;
 
   const isAuthor = currentUser?.id === rex.author_id;
@@ -160,7 +117,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back Button */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Retour">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <span className="text-sm text-muted-foreground">Retour à la liste</span>
@@ -172,13 +129,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
         <div
           className={cn('h-1', severity.color)}
           style={{
-            boxShadow: `0 0 20px ${
-              rex.severity === 'critique'
-                ? '#ef4444'
-                : rex.severity === 'majeur'
-                ? '#f97316'
-                : '#eab308'
-            }40`,
+            boxShadow: `0 0 20px ${severity.hex}40`,
           }}
         />
 
@@ -255,6 +206,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
                 variant="outline"
                 size="icon"
                 onClick={handleFavorite}
+                aria-label={isFavorited ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                 className={cn(
                   isFavorited && 'bg-yellow-500/10 border-yellow-500/30'
                 )}
@@ -266,7 +218,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
                   )}
                 />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleShare}>
+              <Button variant="outline" size="icon" onClick={handleShare} aria-label="Partager le lien">
                 <Share2 className="w-4 h-4" />
               </Button>
               <ExportPdfButton rexId={rex.id} rexTitle={rex.title} />
@@ -370,7 +322,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.description) }}
             />
           </CardContent>
         </Card>
@@ -384,7 +336,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.context }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.context) }}
             />
           </CardContent>
         </Card>
@@ -398,7 +350,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.means_deployed }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.means_deployed) }}
             />
           </CardContent>
         </Card>
@@ -420,7 +372,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.difficulties }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.difficulties) }}
             />
           </CardContent>
         </Card>
@@ -434,7 +386,7 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.lessons_learned }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.lessons_learned) }}
             />
           </CardContent>
         </Card>

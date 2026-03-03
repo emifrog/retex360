@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { RexDetail } from '@/components/rex/rex-detail';
+import { logger } from '@/lib/logger';
 
 interface RexPageProps {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ export default async function RexPage({ params }: RexPageProps) {
     .single();
 
   if (error || !rex) {
-    console.error('REX fetch error:', error);
+    logger.error('REX fetch error:', error);
     notFound();
   }
 
