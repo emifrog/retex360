@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { RexForm } from '@/components/rex/rex-form';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface EditRexPageProps {
   params: Promise<{ id: string }>;
@@ -73,7 +74,14 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[
+        { label: 'REX', href: '/rex' },
+        { label: rex.title, href: `/rex/${id}` },
+        { label: 'Modifier' },
+      ]} />
+
       <div>
         <h1 className="text-2xl font-bold">Modifier le REX</h1>
         <p className="text-muted-foreground">

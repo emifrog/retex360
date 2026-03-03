@@ -91,7 +91,7 @@ export default function AuthLayout({
             </div>
             <div>
               <h1 className="text-lg font-bold">RETEX360</h1>
-              <p className="text-[10px] text-white/70">Retours d&apos;Expérience SDIS</p>
+              <p className="text-xs text-white/70">Retours d&apos;Expérience SDIS</p>
             </div>
           </div>
           <ThemeToggle />

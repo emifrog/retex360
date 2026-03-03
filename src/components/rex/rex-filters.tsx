@@ -38,7 +38,12 @@ export function RexFilters({
 }: RexFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768; // Show filters by default on desktop (md breakpoint)
+    }
+    return false;
+  });
   const [sdisList, setSdisList] = useState<{ id: string; code: string; name: string }[]>([]);
 
   useEffect(() => {

@@ -56,7 +56,7 @@ export function ProductionTypePicker({
                 {/* Badge délai */}
                 <span
                   className={cn(
-                    'absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded-full',
+                    'absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full',
                     isSelected
                       ? 'bg-primary/20 text-primary'
                       : 'bg-muted text-muted-foreground'

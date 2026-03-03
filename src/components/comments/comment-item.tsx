@@ -108,12 +108,12 @@ export function CommentItem({
               </span>
             )}
             {comment.author?.role === 'admin' || comment.author?.role === 'super_admin' ? (
-              <Badge variant="outline" className="h-5 text-[10px] bg-primary/10 text-primary border-primary/30">
+              <Badge variant="outline" className="h-5 text-xs bg-primary/10 text-primary border-primary/30">
                 <Shield className="w-3 h-3 mr-1" />
                 Admin
               </Badge>
             ) : comment.author?.role === 'validator' ? (
-              <Badge variant="outline" className="h-5 text-[10px] bg-green-500/10 text-green-500 border-green-500/30">
+              <Badge variant="outline" className="h-5 text-xs bg-green-500/10 text-green-500 border-green-500/30">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Validateur
               </Badge>

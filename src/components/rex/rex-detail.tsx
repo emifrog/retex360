@@ -19,7 +19,6 @@ import { KeyFigures } from './key-figures';
 import { InterventionTimeline } from './intervention-timeline';
 import { PrescriptionsList } from './prescriptions-list';
 import {
-  ArrowLeft,
   Calendar,
   Eye,
   Star,
@@ -29,6 +28,7 @@ import {
   Clock,
   Building2,
 } from 'lucide-react';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
@@ -115,13 +115,11 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back Button */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Retour">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <span className="text-sm text-muted-foreground">Retour à la liste</span>
-      </div>
+      {/* Breadcrumb */}
+      <Breadcrumb items={[
+        { label: 'REX', href: '/rex' },
+        { label: rex.title || 'Détail' },
+      ]} />
 
       {/* Header Card */}
       <Card className="border-border/50 bg-card/80 overflow-hidden">

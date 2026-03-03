@@ -94,7 +94,7 @@ export async function RecentRex() {
               {rex.status === 'validated' && (
                 <Badge
                   variant="outline"
-                  className="bg-green-500/10 text-green-500 border-green-500/30 text-[10px]"
+                  className="bg-green-500/10 text-green-500 border-green-500/30 text-xs"
                 >
                   ✓ Validé
                 </Badge>
@@ -102,7 +102,7 @@ export async function RecentRex() {
               {rex.status === 'pending' && (
                 <Badge
                   variant="outline"
-                  className="bg-orange-500/10 text-orange-500 border-orange-500/30 text-[10px]"
+                  className="bg-orange-500/10 text-orange-500 border-orange-500/30 text-xs"
                 >
                   En attente
                 </Badge>
@@ -125,7 +125,7 @@ export async function RecentRex() {
               {rex.tags.slice(0, 2).map((tag) => (
                 <span
                   key={tag}
-                  className="px-2 py-0.5 bg-muted rounded text-[10px]"
+                  className="px-2 py-0.5 bg-muted rounded text-xs"
                 >
                   {tag}
                 </span>

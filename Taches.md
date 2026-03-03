@@ -33,11 +33,12 @@
 - [x] Optimisation performances (memo, lazy loading)
 - [x] Accessibilité (aria-labels, rôles ARIA)
 
-### Points pré-présentation (P2–P5)
+### Points pré-présentation (P2–P6)
 - [x] P2 : Seed des 97 SDIS → migration 008_all_sdis.sql
 - [x] P3 : Export CSV des statistiques → API /api/dashboard/export + bouton
 - [x] P4 : Suppression ancien endpoint validate → validation-actions redirigé vers /api/admin/rex/
 - [x] P5 : Insight IA sidebar dynamique → composant SidebarAiInsight connecté à /api/dashboard/stats
+- [ ] P6 : Inscription ouverte sans contrôle → restreindre l'inscription (whitelist domaine email, invitation admin, ou validation manuelle)
 
 ---
 

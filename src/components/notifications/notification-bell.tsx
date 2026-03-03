@@ -153,7 +153,7 @@ function NotificationContent({
             {content}
           </p>
         )}
-        <p className="text-[10px] text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {formatDistanceToNow(new Date(notification.created_at), {
             addSuffix: true,
             locale: fr,

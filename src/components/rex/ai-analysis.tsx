@@ -102,7 +102,7 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
         <CardTitle className="text-lg flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
           Analyse IA
-          <Badge variant="outline" className="ml-2 text-[10px] bg-primary/10 text-primary border-primary/30">
+          <Badge variant="outline" className="ml-2 text-xs bg-primary/10 text-primary border-primary/30">
             OpenRouter
           </Badge>
         </CardTitle>

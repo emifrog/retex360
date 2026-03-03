@@ -95,7 +95,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
               <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent tracking-wider">
                 RETEX360
               </h1>
-              <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
+              <p className="text-xs text-muted-foreground tracking-widest uppercase">
                 Plateforme
               </p>
             </div>

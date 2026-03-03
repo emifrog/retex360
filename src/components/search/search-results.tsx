@@ -173,7 +173,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                     <Badge
                       variant="outline"
                       className={cn(
-                        'text-[10px]',
+                        'text-xs',
                         rex.status === 'validated' && 'bg-green-500/10 text-green-500 border-green-500/30',
                         rex.status === 'pending' && 'bg-orange-500/10 text-orange-500 border-orange-500/30'
                       )}
@@ -221,13 +221,13 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                       {rex.tags.slice(0, 4).map((tag: string) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 bg-muted rounded text-[10px]"
+                          className="px-2 py-0.5 bg-muted rounded text-xs"
                         >
                           {tag}
                         </span>
                       ))}
                       {rex.tags.length > 4 && (
-                        <span className="px-2 py-0.5 text-muted-foreground text-[10px]">
+                        <span className="px-2 py-0.5 text-muted-foreground text-xs">
                           +{rex.tags.length - 4}
                         </span>
                       )}

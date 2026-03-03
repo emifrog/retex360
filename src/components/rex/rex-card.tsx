@@ -38,11 +38,11 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className={cn('text-[10px]', productionType.className)}>
+          <Badge variant="outline" className={cn('text-xs', productionType.className)}>
             <ProductionIcon className="w-3 h-3 mr-1" />
             {productionType.label}
           </Badge>
-          <Badge variant="outline" className={cn('text-[10px]', status.className)}>
+          <Badge variant="outline" className={cn('text-xs', status.className)}>
             {status.label}
           </Badge>
           {onFavorite && (
@@ -50,7 +50,10 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
               variant="ghost"
               size="icon"
               aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              className={cn(
+                'h-8 w-8 transition-opacity',
+                isFavorite ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'
+              )}
               onClick={(e) => {
                 e.preventDefault();
                 onFavorite(rex.id);
@@ -98,13 +101,13 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
           {rex.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 bg-muted rounded text-[10px] text-muted-foreground"
+              className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground"
             >
               {tag}
             </span>
           ))}
           {rex.tags.length > 4 && (
-            <span className="px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span className="px-2 py-0.5 text-xs text-muted-foreground">
               +{rex.tags.length - 4}
             </span>
           )}

@@ -70,7 +70,7 @@ export function AiInsights() {
                   style={{ color: config.color }}
                 />
                 <span
-                  className="text-[10px] uppercase font-semibold"
+                  className="text-xs uppercase font-semibold"
                   style={{ color: config.color }}
                 >
                   {config.label}

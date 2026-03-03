@@ -66,7 +66,7 @@ export function SeverityChart({ data = DEFAULT_DATA }: SeverityChartProps) {
               <p className="text-lg font-bold" style={{ color: item.color }}>
                 {item.value}
               </p>
-              <p className="text-[10px] text-muted-foreground">{item.name}</p>
+              <p className="text-xs text-muted-foreground">{item.name}</p>
             </div>
           ))}
         </div>

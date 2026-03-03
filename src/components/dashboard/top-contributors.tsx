@@ -54,7 +54,7 @@ export function TopContributors() {
               <p className="text-sm font-semibold text-primary">
                 {contributor.count}
               </p>
-              <p className="text-[10px] text-muted-foreground">REX</p>
+              <p className="text-xs text-muted-foreground">REX</p>
             </div>
           </div>
         ))}

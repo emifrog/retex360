@@ -102,7 +102,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
               <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent tracking-wider">
                 RETEX360
               </h1>
-              <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
+              <p className="text-xs text-muted-foreground tracking-widest uppercase">
                 Plateforme
               </p>
             </div>
@@ -182,7 +182,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
                       </span>
                     )}
                     {collapsed && item.badge && pendingCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
                         {pendingCount}
                       </span>
                     )}

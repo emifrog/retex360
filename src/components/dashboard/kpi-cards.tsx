@@ -101,7 +101,7 @@ export function KpiCards() {
             <p className="text-xl font-bold">
               {typeof kpi.value === 'number' ? kpi.value.toLocaleString('fr-FR') : kpi.value}
             </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{kpi.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
           </CardContent>
         </Card>
       ))}

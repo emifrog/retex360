@@ -324,7 +324,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               <Input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Ajouter un tag..."
+                placeholder="Ajouter un tag puis Entrée..."
                 className="bg-background/50"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -333,10 +333,13 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   }
                 }}
               />
-              <Button type="button" variant="outline" onClick={addTag}>
+              <Button type="button" variant="outline" onClick={addTag} aria-label="Ajouter le tag">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Appuyez sur Entrée ou cliquez + pour ajouter un tag
+            </p>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (

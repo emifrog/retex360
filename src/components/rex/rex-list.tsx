@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RexCard } from './rex-card';
+import { RexCardSkeleton } from './rex-card-skeleton';
 import { RexFilters, type FilterState } from './rex-filters';
 import { FileText, CheckCircle, Clock, FileEdit, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -229,8 +230,14 @@ export function RexList() {
 
       {/* Initial Loading */}
       {isLoading && rexList.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className={cn(
+          view === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+            : 'space-y-3'
+        )}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <RexCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <>
