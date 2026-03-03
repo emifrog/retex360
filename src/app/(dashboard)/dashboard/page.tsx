@@ -5,8 +5,9 @@ import { TopContributors } from '@/components/dashboard/top-contributors';
 import { KpiCards } from '@/components/dashboard/kpi-cards';
 import { RexByTypeChart, RexTimelineChart, SeverityChart } from '@/components/dashboard/charts';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
+import { ExportStatsButton } from '@/components/dashboard/export-stats-button';
 
 export default function DashboardPage() {
   return (
@@ -67,13 +68,7 @@ export default function DashboardPage() {
                   Créer un RETEX
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                className="w-full bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Exporter statistiques
-              </Button>
+              <ExportStatsButton />
             </div>
           </div>
         </div>

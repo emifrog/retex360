@@ -12,13 +12,13 @@ import {
   BarChart3,
   CheckCircle,
   Settings,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   Search,
   Info,
   Users,
 } from 'lucide-react';
+import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -210,35 +210,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
       </TooltipProvider>
 
       {/* AI Insight Card */}
-      {!collapsed ? (
-        <div className="p-3">
-          <div className="p-4 bg-accent border border-primary/20 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <p className="text-xs text-primary font-semibold">INSIGHT IA</p>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              3 patterns similaires détectés avec votre dernière intervention
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="p-3">
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="p-3 bg-accent border border-primary/20 rounded-lg flex items-center justify-center cursor-pointer">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p className="font-semibold">INSIGHT IA</p>
-                <p className="text-xs text-muted-foreground">3 patterns similaires détectés</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
+      <SidebarAiInsight collapsed={collapsed} />
 
       {/* Bottom Navigation */}
       <div className="border-t border-border p-3">

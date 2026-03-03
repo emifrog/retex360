@@ -12,12 +12,12 @@ import {
   BarChart3,
   CheckCircle,
   Settings,
-  Sparkles,
   Search,
   Info,
   Users,
   Menu,
 } from 'lucide-react';
+import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 
@@ -27,7 +27,7 @@ const navigation = [
   { name: 'Liste REX', href: '/rex', icon: FileText },
   { name: 'Nouveau REX', href: '/rex/new', icon: PlusCircle },
   { name: 'Favoris', href: '/favorites', icon: Star },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Statistiques', href: '/dashboard', icon: BarChart3 },
 ];
 
 const adminNavigation = [
@@ -164,17 +164,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
         </nav>
 
         {/* AI Insight Card */}
-        <div className="p-3">
-          <div className="p-4 bg-accent border border-primary/20 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <p className="text-xs text-primary font-semibold">INSIGHT IA</p>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              3 patterns similaires détectés avec votre dernière intervention
-            </p>
-          </div>
-        </div>
+        <SidebarAiInsight collapsed={false} />
 
         {/* Bottom Navigation */}
         <div className="border-t border-border p-3">

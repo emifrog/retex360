@@ -1,5 +1,46 @@
 # Liste des tâches — Enrichissement RETEX360
 
+## ✅ Corrections effectuées (Phase qualité)
+
+### Bugs critiques (B1–B12)
+- [x] B1 : pendingCount codé en dur → requête Supabase réelle
+- [x] B2 : rejection_reason manquant → migration 007 + types
+- [x] B3 : conflit colonnes notifications (message vs content) → migration 003 corrigée
+- [x] B4 : champs DGSCGC absents du formulaire d'édition → 10 champs ajoutés
+- [x] B5 : pas de validation Zod sur POST /api/rex → validateRexByType()
+- [x] B6 : stale closure dans deleteNotification → callback fonctionnel
+- [x] B7 : StatsCards codées en dur → composant client + API /api/dashboard/stats
+- [x] B8 : KpiCards fake setTimeout → données réelles via API
+- [x] B9 : 4 SDIS codés en dur → chargement dynamique depuis Supabase
+- [x] B10 : rôle validateur refusé → faux positif (code déjà correct)
+- [x] B11 : ancien avatar non supprimé → nettoyage storage avant upload
+- [x] B12 : pièces jointes orphelines → nettoyage storage avant suppression REX
+
+### Défauts de conception (D1–D7)
+- [x] D1 : doublon useNotifications → suppression lib/hooks/use-notifications.ts
+- [x] D2 : doublon PRODUCTION_TYPE_CONFIG → renommé PRODUCTION_TYPE_RULES
+- [x] D3 : boutons OAuth non fonctionnels → supprimés
+- [x] D4 : checkbox "Se souvenir de moi" non connectée → supprimée
+- [x] D5 : lien Analytics vers route inexistante → redirigé vers /dashboard
+- [x] D6 : sidebar collapse non persisté → localStorage
+- [x] D7 : stripHtml() incomplet → 9+ entités HTML supportées
+
+### Améliorations qualité (6 corrections initiales)
+- [x] DOMPurify pour sanitisation HTML
+- [x] Error boundaries React
+- [x] Nettoyage console.log → logger centralisé
+- [x] Constantes centralisées (SEVERITY_CONFIG, STATUS_CONFIG, etc.)
+- [x] Optimisation performances (memo, lazy loading)
+- [x] Accessibilité (aria-labels, rôles ARIA)
+
+### Points pré-présentation (P2–P5)
+- [x] P2 : Seed des 97 SDIS → migration 008_all_sdis.sql
+- [x] P3 : Export CSV des statistiques → API /api/dashboard/export + bouton
+- [x] P4 : Suppression ancien endpoint validate → validation-actions redirigé vers /api/admin/rex/
+- [x] P5 : Insight IA sidebar dynamique → composant SidebarAiInsight connecté à /api/dashboard/stats
+
+---
+
 ## 🔴 Priorité haute
 1. Composant "Chiffres clés de l'intervention"
 

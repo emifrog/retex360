@@ -274,6 +274,8 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 4. supabase/migrations/004_dgscgc_fields.sql
 -- 5. supabase/migrations/005_key_figures.sql
 -- 6. supabase/migrations/006_timeline_prescriptions.sql
+-- 7. supabase/migrations/007_rejection_reason.sql
+-- 8. supabase/migrations/008_all_sdis.sql
 ```
 
 ### 4. Lancer le serveur
@@ -299,7 +301,10 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 | `GET` | `/api/rex/stats` | Statistiques des REX |
 | `POST` | `/api/rex/[id]/favorite` | Ajouter aux favoris |
 | `DELETE` | `/api/rex/[id]/favorite` | Retirer des favoris |
-| `POST` | `/api/rex/[id]/validate` | Valider/Rejeter un REX |
+| `POST` | `/api/admin/rex/[id]/validate` | Valider un REX (admin) |
+| `POST` | `/api/admin/rex/[id]/reject` | Rejeter un REX (admin) |
+| `GET` | `/api/dashboard/stats` | Statistiques dashboard (KPI) |
+| `GET` | `/api/dashboard/export` | Export CSV des statistiques |
 | `GET` | `/api/rex/[id]/comments` | Commentaires d'un REX |
 | `POST` | `/api/rex/[id]/comments` | Ajouter un commentaire |
 | `PUT` | `/api/comments/[id]` | Modifier un commentaire |
@@ -399,7 +404,7 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Export PDF professionnel avec infographies
 - [x] Intelligence Artificielle (analyse de patterns, synthèse, suggestions, tags)
 - [ ] Application mobile (React Native)
-- [ ] Export Excel/CSV
+- [x] Export CSV des statistiques
 - [ ] Intégration cartographique
 - [ ] Statistiques avancées par SDIS
 - [ ] Mode hors-ligne (PWA)

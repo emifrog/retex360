@@ -43,10 +43,8 @@ export function ValidationActions({
   const handleValidate = async () => {
     setIsValidating(true);
     try {
-      const response = await fetch(`/api/rex/${rexId}/validate`, {
+      const response = await fetch(`/api/admin/rex/${rexId}/validate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'validate' }),
       });
 
       if (!response.ok) {
@@ -70,13 +68,10 @@ export function ValidationActions({
 
     setIsRejecting(true);
     try {
-      const response = await fetch(`/api/rex/${rexId}/validate`, {
+      const response = await fetch(`/api/admin/rex/${rexId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'reject',
-          reason: rejectReason 
-        }),
+        body: JSON.stringify({ reason: rejectReason }),
       });
 
       if (!response.ok) {
