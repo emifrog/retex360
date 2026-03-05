@@ -68,8 +68,15 @@ export default function AuthLayout({
         </div>
 
         {/* Footer */}
-        <div className="text-sm text-white/60">
-          © 2025 RETEX360 Platform • Sécurisé et conforme RGPD
+        <div className="text-sm text-white/60 space-y-1">
+          <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
+          <div className="flex gap-2 text-xs text-white/40">
+            <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">Mentions légales</a>
+            <span>·</span>
+            <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">CGU</a>
+            <span>·</span>
+            <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">Confidentialité</a>
+          </div>
         </div>
       </div>
 
@@ -120,7 +127,7 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative">
+      <div id="main-content" className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative">
         {/* Theme Toggle - desktop only */}
         <div className="absolute top-4 right-4 hidden lg:block">
           <ThemeToggle />
@@ -132,8 +139,15 @@ export default function AuthLayout({
       </div>
 
       {/* Mobile Footer */}
-      <div className="lg:hidden p-4 text-center text-xs text-muted-foreground border-t bg-background">
-        © 2025 RETEX360 Platform • Sécurisé et conforme RGPD
+      <div className="lg:hidden p-4 text-center text-xs text-muted-foreground border-t bg-background space-y-1">
+        <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
+        <div className="flex justify-center gap-2 text-[10px] text-muted-foreground/60">
+          <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+          <span>·</span>
+          <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+          <span>·</span>
+          <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+        </div>
       </div>
     </div>
   );

@@ -44,7 +44,7 @@ export function Header({ user, isAdmin = false, pendingCount = 0 }: HeaderProps)
     .slice(0, 2) || 'U';
 
   return (
-    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
+    <header role="banner" aria-label="En-tête du site" className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
       {/* Mobile Menu */}
       <div className="flex items-center gap-3">
         <MobileSidebar isAdmin={isAdmin} pendingCount={pendingCount} />
@@ -65,7 +65,9 @@ export function Header({ user, isAdmin = false, pendingCount = 0 }: HeaderProps)
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            type="text"
+            type="search"
+            role="searchbox"
+            aria-label="Rechercher dans les REX"
             placeholder="Recherche : type d'intervention, contexte..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

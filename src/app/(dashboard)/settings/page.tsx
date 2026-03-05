@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { Settings } from 'lucide-react';
 import { ProfileForm } from '@/components/settings/profile-form';
 import { PasswordForm } from '@/components/settings/password-form';
+import { DeleteAccountForm } from '@/components/settings/delete-account-form';
+import { DataExportButton } from '@/components/settings/data-export-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata = {
@@ -62,10 +64,11 @@ export default async function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="password">Mot de passe</TabsTrigger>
+          <TabsTrigger value="data">Mes données</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileForm 
+          <ProfileForm
             profile={{
               id: profile?.id || user.id,
               email: profile?.email || user.email || '',
@@ -80,6 +83,11 @@ export default async function SettingsPage() {
 
         <TabsContent value="password">
           <PasswordForm />
+        </TabsContent>
+
+        <TabsContent value="data" className="space-y-6">
+          <DataExportButton />
+          <DeleteAccountForm />
         </TabsContent>
       </Tabs>
     </div>

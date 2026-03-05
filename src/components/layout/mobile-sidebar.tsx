@@ -38,6 +38,7 @@ const adminNavigation = [
 
 const bottomNavigation = [
   { name: 'À propos', href: '/about', icon: Info },
+  { name: 'Accessibilité', href: '/accessibilite', icon: Info },
 ];
 
 interface MobileSidebarProps {
@@ -167,7 +168,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
         <SidebarAiInsight collapsed={false} />
 
         {/* Bottom Navigation */}
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-3 space-y-1">
           {bottomNavigation.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -187,6 +188,16 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
               </Link>
             );
           })}
+          {/* Legal links */}
+          <div className="pt-2 px-3 space-y-0.5">
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground/60">
+              <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+              <span>·</span>
+              <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+              <span>·</span>
+              <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

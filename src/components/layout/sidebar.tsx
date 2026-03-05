@@ -44,6 +44,7 @@ const adminNavigation = [
 
 const bottomNavigation = [
   { name: 'À propos', href: '/about', icon: Info },
+  { name: 'Accessibilité', href: '/accessibilite', icon: Info },
 ];
 
 interface SidebarProps {
@@ -65,7 +66,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
   }, [collapsed]);
 
   return (
-    <aside className={cn(
+    <aside aria-label="Navigation principale" className={cn(
       'bg-sidebar border-r border-sidebar-border flex-col transition-all duration-300 relative hidden md:flex',
       collapsed ? 'w-[72px]' : 'w-60'
     )}>
@@ -112,7 +113,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
 
       {/* Navigation */}
       <TooltipProvider delayDuration={0}>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav aria-label="Menu principal" className="flex-1 p-3 space-y-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
@@ -213,7 +214,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
       <SidebarAiInsight collapsed={collapsed} />
 
       {/* Bottom Navigation */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-3 space-y-1">
         <TooltipProvider delayDuration={0}>
           {bottomNavigation.map((item) => {
             const isActive = pathname === item.href;
@@ -250,6 +251,18 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
             return linkContent;
           })}
         </TooltipProvider>
+        {/* Legal links */}
+        {!collapsed && (
+          <div className="pt-2 px-3 space-y-0.5">
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground/60">
+              <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+              <span>·</span>
+              <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+              <span>·</span>
+              <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
