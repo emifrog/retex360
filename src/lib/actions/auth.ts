@@ -24,7 +24,7 @@ export async function login(formData: FormData) {
     return { error: 'Email ou mot de passe incorrect' };
   }
 
-  redirect('/dashboard');
+  redirect('/');
 }
 
 export async function register(formData: FormData) {
@@ -73,7 +73,7 @@ export async function register(formData: FormData) {
     }
   }
 
-  redirect('/dashboard');
+  redirect('/');
 }
 
 export async function logout() {

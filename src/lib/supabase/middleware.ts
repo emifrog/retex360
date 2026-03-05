@@ -59,10 +59,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Rediriger vers /dashboard si connecté et sur une page auth
+  // Rediriger vers / si connecté et sur une page auth
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
