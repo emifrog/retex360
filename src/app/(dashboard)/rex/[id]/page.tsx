@@ -92,13 +92,25 @@ export default async function RexPage({ params }: RexPageProps) {
     currentUserProfile = profile;
   }
 
-  // Transform rex_attachments to attachments for the component
+  // Transform rex_attachments to attachments with public URLs
   const rexWithAttachments = {
     ...rexWithRelations,
-    attachments: rexWithRelations.rex_attachments?.map((att: { id: string; file_name: string; file_type: string; file_size: number; storage_path: string; created_at: string }) => ({
-      ...att,
-      file_url: att.storage_path, // Map storage_path to file_url
-    })) || [],
+    attachments: rexWithRelations.rex_attachments?.map((att: { id: string; file_name: string; file_type: string; file_size: number; storage_path: string; created_at: string }) => {
+      const { data: { publicUrl } } = supabase.storage
+        .from('rex-attachments')
+        .getPublicUrl(att.storage_path);
+      const thumbPath = att.storage_path.replace(/\.[^.]+$/, '_thumb.webp');
+      const { data: { publicUrl: thumbnailUrl } } = supabase.storage
+        .from('rex-attachments')
+        .getPublicUrl(thumbPath);
+      return {
+        ...att,
+        file_url: publicUrl,
+        thumbnail_url: att.file_type?.startsWith('image/') && att.file_type !== 'image/gif'
+          ? thumbnailUrl
+          : null,
+      };
+    }) || [],
   };
 
   return (

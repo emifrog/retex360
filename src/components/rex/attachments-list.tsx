@@ -23,6 +23,7 @@ interface Attachment {
   file_type: string;
   file_size: number;
   file_url: string;
+  thumbnail_url?: string | null;
   created_at: string;
 }
 
@@ -97,9 +98,18 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
                 key={attachment.id}
                 className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileIcon className="w-5 h-5 text-primary" />
-                </div>
+                {isImage && attachment.thumbnail_url ? (
+                  <img
+                    src={attachment.thumbnail_url}
+                    alt={attachment.file_name}
+                    className="w-10 h-10 rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileIcon className="w-5 h-5 text-primary" />
+                  </div>
+                )}
                 
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{attachment.file_name}</p>

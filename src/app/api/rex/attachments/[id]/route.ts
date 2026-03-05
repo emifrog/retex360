@@ -41,10 +41,11 @@ export async function DELETE(
       }
     }
 
-    // Delete from storage
+    // Delete from storage (original + thumbnail)
+    const thumbPath = attachment.storage_path.replace(/\.[^.]+$/, '_thumb.webp');
     const { error: storageError } = await supabase.storage
       .from('rex-attachments')
-      .remove([attachment.storage_path]);
+      .remove([attachment.storage_path, thumbPath]);
 
     if (storageError) {
       logger.error('Storage delete error:', storageError);

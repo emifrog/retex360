@@ -15,6 +15,7 @@ interface UploadedFile {
   file_size: number;
   storage_path: string;
   url: string;
+  thumbnail_url?: string | null;
 }
 
 interface ImageUploadProps {
@@ -38,7 +39,7 @@ export function ImageUpload({
   files,
   onFilesChange,
   maxFiles = 10,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -191,7 +192,7 @@ export function ImageUpload({
               {isImage(file.file_type) ? (
                 <div className="aspect-square relative">
                   <Image
-                    src={file.url}
+                    src={file.thumbnail_url || file.url}
                     alt={file.file_name}
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
