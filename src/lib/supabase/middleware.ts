@@ -34,25 +34,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes
-  const isAuthRoute = request.nextUrl.pathname === '/' ||
-                      request.nextUrl.pathname.startsWith('/login') || 
+  // Auth routes (pages de connexion/inscription)
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
                       request.nextUrl.pathname.startsWith('/register') ||
                       request.nextUrl.pathname.startsWith('/forgot-password') ||
                       request.nextUrl.pathname.startsWith('/reset-password');
-  
-  // Toutes les routes sauf /, /login et /register sont protégées
-  const isProtectedRoute = !isAuthRoute && 
+
+  // Toutes les routes sauf auth, api et _next sont protégées
+  const isProtectedRoute = !isAuthRoute &&
                            !request.nextUrl.pathname.startsWith('/api') &&
                            !request.nextUrl.pathname.startsWith('/_next');
 
-  // Rediriger / vers /login si non connecté
-  if (!user && request.nextUrl.pathname === '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
+  // Rediriger vers /login si non connecté et route protégée
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
