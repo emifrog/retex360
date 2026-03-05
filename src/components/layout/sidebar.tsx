@@ -9,7 +9,6 @@ import {
   FileText,
   PlusCircle,
   Star,
-  BarChart3,
   CheckCircle,
   Settings,
   ChevronLeft,
@@ -33,7 +32,6 @@ const navigation = [
   { name: 'Liste REX', href: '/rex', icon: FileText },
   { name: 'Nouveau REX', href: '/rex/new', icon: PlusCircle },
   { name: 'Favoris', href: '/favorites', icon: Star },
-  { name: 'Statistiques', href: '/dashboard', icon: BarChart3 },
 ];
 
 const adminNavigation = [
