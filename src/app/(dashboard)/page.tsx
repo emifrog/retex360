@@ -1,6 +1,6 @@
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { KpiCards } from '@/components/dashboard/kpi-cards';
-import { RexByTypeChart, RexTimelineChart, SeverityChart } from '@/components/dashboard/charts';
+import { ChartsContainer, RexByTypeChartContainer } from '@/components/dashboard/charts';
 import { RecentRex } from '@/components/dashboard/recent-rex';
 import { AiInsights } from '@/components/dashboard/ai-insights';
 import { TopContributors } from '@/components/dashboard/top-contributors';
@@ -19,14 +19,7 @@ export default function DashboardPage() {
       <KpiCards />
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RexTimelineChart />
-        </div>
-        <div>
-          <SeverityChart />
-        </div>
-      </div>
+      <ChartsContainer />
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -48,7 +41,7 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* REX by Type Chart */}
-          <RexByTypeChart />
+          <RexByTypeChartContainer />
 
           {/* AI Insights */}
           <AiInsights />

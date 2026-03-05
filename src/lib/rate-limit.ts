@@ -50,12 +50,24 @@ function createRateLimiter(requests: number, window: Duration) {
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
 
-    return new Ratelimit({
+    const upstashLimiter = new Ratelimit({
       redis,
       limiter: Ratelimit.slidingWindow(requests, window),
       analytics: true,
       prefix: 'retex360_ratelimit',
     });
+
+    // Wrap with fallback in case Redis is unreachable
+    const fallback = createInMemoryRateLimiter(requests, windowMs);
+    return {
+      async limit(identifier: string): Promise<RateLimitResult> {
+        try {
+          return await upstashLimiter.limit(identifier);
+        } catch {
+          return fallback.limit(identifier);
+        }
+      },
+    };
   }
 
   // Fallback to in-memory for development
