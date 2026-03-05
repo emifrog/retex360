@@ -64,7 +64,7 @@ export function RexFilters({
   };
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    const newFilters = { ...filters, [key]: value === 'all' ? undefined : value };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -149,7 +149,7 @@ export function RexFilters({
                 <SelectValue placeholder="Type de production" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 {PRODUCTION_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {PRODUCTION_TYPE_RULES[type].shortLabel}
@@ -166,7 +166,7 @@ export function RexFilters({
                 <SelectValue placeholder="Type d'intervention" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 {REX_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -183,7 +183,7 @@ export function RexFilters({
                 <SelectValue placeholder="Criticité" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes criticités</SelectItem>
+                <SelectItem value="all">Toutes criticités</SelectItem>
                 {SEVERITIES.map((severity) => (
                   <SelectItem key={severity} value={severity}>
                     {severity.charAt(0).toUpperCase() + severity.slice(1)}
@@ -200,7 +200,7 @@ export function RexFilters({
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous statuts</SelectItem>
+                <SelectItem value="all">Tous statuts</SelectItem>
                 {STATUSES.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status === 'draft'
@@ -223,7 +223,7 @@ export function RexFilters({
                 <SelectValue placeholder="SDIS" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les SDIS</SelectItem>
+                <SelectItem value="all">Tous les SDIS</SelectItem>
                 {sdisList.map((sdis) => (
                   <SelectItem key={sdis.id} value={sdis.code}>
                     SDIS {sdis.code}
