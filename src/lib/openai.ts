@@ -2,14 +2,25 @@ import OpenAI from 'openai';
 import { logger } from '@/lib/logger';
 
 // Configuration OpenRouter - compatible avec l'API OpenAI
-const openrouter = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'X-Title': 'RETEX360',
-  },
-});
+// Lazy init pour éviter le crash au build si la clé n'est pas définie
+let _openrouter: OpenAI | null = null;
+
+function getOpenRouter(): OpenAI {
+  if (!_openrouter) {
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY is not configured');
+    }
+    _openrouter = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'RETEX360',
+      },
+    });
+  }
+  return _openrouter;
+}
 
 // Modèles disponibles sur OpenRouter pour les embeddings
 // Note: OpenRouter ne supporte pas directement les embeddings OpenAI
@@ -78,7 +89,7 @@ export async function generateRexEmbedding(rex: {
 }
 
 // Export du client OpenRouter pour les appels de chat/completion
-export { openrouter };
+export { getOpenRouter };
 
 // Fonction utilitaire pour les appels de chat via OpenRouter
 export async function chatCompletion(
@@ -89,7 +100,7 @@ export async function chatCompletion(
     maxTokens?: number;
   }
 ) {
-  const response = await openrouter.chat.completions.create({
+  const response = await getOpenRouter().chat.completions.create({
     model: options?.model || 'anthropic/claude-3.5-sonnet', // Modèle par défaut
     messages,
     temperature: options?.temperature ?? 0.7,
