@@ -10,9 +10,35 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://retex360.fr';
+
 export const metadata: Metadata = {
-  title: "RETEX360 | Plateforme Collaborative",
-  description: "Plateforme collaborative des Retours d'Expérience (RETEX) pour les SDIS français",
+  title: {
+    default: 'RETEX360 | Plateforme Collaborative RETEX SDIS',
+    template: '%s | RETEX360',
+  },
+  description:
+    'Plateforme collaborative des Retours d\'Expérience (RETEX) pour les SDIS français. Partagez, analysez et capitalisez vos interventions.',
+  metadataBase: new URL(appUrl),
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    siteName: 'RETEX360',
+    title: 'RETEX360 | Plateforme Collaborative RETEX SDIS',
+    description:
+      'Partagez, analysez et capitalisez les retours d\'expérience des interventions des SDIS français.',
+    url: appUrl,
+  },
+  twitter: {
+    card: 'summary',
+    title: 'RETEX360 | Plateforme Collaborative RETEX SDIS',
+    description:
+      'Partagez, analysez et capitalisez les retours d\'expérience des interventions des SDIS français.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

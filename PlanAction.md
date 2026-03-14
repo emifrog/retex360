@@ -11,9 +11,9 @@
 6. ✅ Pipeline CI GitHub Actions (lint + typecheck + tests + build)
 
 ## Phase 3 — Polish (avant commercialisation) :
-7. Prettier pour le formatage du code
-8. Logging structuré avec correlation IDs
-9. Open Graph / meta tags pour le partage social
+7. ✅ Prettier + eslint-config-prettier pour le formatage du code
+8. ✅ Logging structuré avec correlation IDs + intégration Sentry
+9. ✅ Open Graph / Twitter meta tags sur toutes les pages clés
 10. PWA manifest si pertinent
 11. Ajouter robots.txt + sitemap.ts
 
@@ -35,3 +35,6 @@ Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Poli
 Rate limiting	A	Global middleware + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
 Tests	A	62 tests (validators, rate-limit, sanitize, image-optimizer)
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
+Formatage	A	Prettier + eslint-config-prettier
+Logging	A	Structuré, correlation IDs, intégration Sentry prod
+SEO / Social	A	Open Graph + Twitter Cards sur toutes les pages clés

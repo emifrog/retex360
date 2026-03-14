@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { RexDetail } from '@/components/rex/rex-detail';
@@ -5,6 +6,42 @@ import { logger } from '@/lib/logger';
 
 interface RexPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: RexPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: rex } = await supabase
+    .from('rex')
+    .select('title, description, type, intervention_date')
+    .eq('id', id)
+    .single();
+
+  if (!rex) {
+    return { title: 'RETEX non trouvé' };
+  }
+
+  const description = rex.description
+    ? rex.description.replace(/<[^>]*>/g, '').slice(0, 160)
+    : `RETEX ${rex.type} du ${new Date(rex.intervention_date).toLocaleDateString('fr-FR')}`;
+
+  return {
+    title: rex.title,
+    description,
+    openGraph: {
+      title: rex.title,
+      description,
+      type: 'article',
+      locale: 'fr_FR',
+      siteName: 'RETEX360',
+    },
+    twitter: {
+      card: 'summary',
+      title: rex.title,
+      description,
+    },
+  };
 }
 
 export default async function RexPage({ params }: RexPageProps) {

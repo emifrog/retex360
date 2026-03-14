@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { StatsCards } from '@/components/dashboard/stats-cards';
+
+export const metadata: Metadata = {
+  title: 'Tableau de bord',
+  description: 'Vue d\'ensemble des RETEX, statistiques et analyses pour votre SDIS.',
+};
 import { KpiCards } from '@/components/dashboard/kpi-cards';
 import { ChartsContainer, RexByTypeChartContainer } from '@/components/dashboard/charts';
 import { RecentRex } from '@/components/dashboard/recent-rex';

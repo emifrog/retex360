@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { RexForm } from '@/components/rex/rex-form';
+
+export const metadata: Metadata = {
+  title: 'Nouveau RETEX',
+  description: 'Créez un nouveau retour d\'expérience pour partager les enseignements de votre intervention.',
+};
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 export default function NewRexPage() {
