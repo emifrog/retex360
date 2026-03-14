@@ -6,16 +6,16 @@
 3. ✅ Vérification du mot de passe actuel avant changement
 4. ✅ Sentry sampling réduit (traces: 0.2, profiles: 0.1)
 
-## Phase 2 — Qualité (première semaine) :
-4. Mettre en place Jest + React Testing Library + faire les tests critiques
-5. Créer un pipeline CI GitHub Actions (lint + build + tests)
+## Phase 2 — Qualité (première semaine) : ✅ TERMINÉE
+5. ✅ Jest + React Testing Library + 62 tests critiques (validators, rate-limit, sanitize, image-optimizer)
+6. ✅ Pipeline CI GitHub Actions (lint + typecheck + tests + build)
 
 ## Phase 3 — Polish (avant commercialisation) :
-6. Prettier pour le formatage du code
-7. Logging structuré avec correlation IDs
-8. Open Graph / meta tags pour le partage social
-9. PWA manifest si pertinent
-10. Ajouter robots.txt + sitemap.ts
+7. Prettier pour le formatage du code
+8. Logging structuré avec correlation IDs
+9. Open Graph / meta tags pour le partage social
+10. PWA manifest si pertinent
+11. Ajouter robots.txt + sitemap.ts
 
 
 ## CE QUI EST BIEN EN PLACE
@@ -33,3 +33,5 @@ Performance React	A	React Compiler, Suspense, lazy loading, useMemo/useCallback
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy
 Rate limiting	A	Global middleware + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
+Tests	A	62 tests (validators, rate-limit, sanitize, image-optimizer)
+CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
