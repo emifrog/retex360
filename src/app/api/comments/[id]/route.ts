@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 // PUT - Update a comment
@@ -7,6 +8,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const { id: commentId } = await params;
     const supabase = await createClient();

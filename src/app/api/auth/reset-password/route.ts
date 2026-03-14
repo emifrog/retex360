@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 const resetPasswordSchema = z.object({
@@ -8,6 +9,10 @@ const resetPasswordSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.auth.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const body = await request.json();
 

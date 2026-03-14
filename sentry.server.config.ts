@@ -4,7 +4,7 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   
   // Performance Monitoring
-  tracesSampleRate: 1.0, // Capture 100% of transactions (reduce in production)
+  tracesSampleRate: 0.2, // 20% of transactions in production
   
   // Environment
   environment: process.env.NODE_ENV,
@@ -13,5 +13,5 @@ Sentry.init({
   enabled: process.env.NODE_ENV === 'production',
   
   // Set sampling rate for profiling
-  profilesSampleRate: 1.0,
+  profilesSampleRate: 0.1, // 10% of profiled transactions
 });

@@ -1,11 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const { id } = await params;
     const supabase = await createClient();

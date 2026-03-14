@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { RexPdfTemplate } from '@/lib/pdf/rex-template';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);

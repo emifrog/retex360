@@ -1,10 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { validateRexByType } from '@/lib/validators/rex';
 
 // POST - Create new REX
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 

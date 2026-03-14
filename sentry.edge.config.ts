@@ -4,7 +4,7 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   
   // Performance Monitoring
-  tracesSampleRate: 1.0,
+  tracesSampleRate: 0.2, // 20% of transactions in production
   
   // Environment
   environment: process.env.NODE_ENV,
