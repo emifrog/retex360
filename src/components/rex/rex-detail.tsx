@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,7 +63,6 @@ const statusConfig = {
 };
 
 export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
-  const router = useRouter();
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [favoritesCount, setFavoritesCount] = useState(rex.favorites_count || 0);
 

@@ -1,35 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 import { Cookie, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const COOKIE_CONSENT_KEY = 'retex360-cookie-consent';
 
-type ConsentValue = 'accepted' | 'rejected' | null;
+function subscribe(callback: () => void) {
+  window.addEventListener('storage', callback);
+  return () => window.removeEventListener('storage', callback);
+}
+
+function getSnapshot(): string | null {
+  return localStorage.getItem(COOKIE_CONSENT_KEY);
+}
+
+function getServerSnapshot(): string | null {
+  return 'loading'; // Server: don't show banner
+}
 
 export function CookieConsent() {
-  const [consent, setConsent] = useState<ConsentValue>(null);
-  const [mounted, setMounted] = useState(false);
+  const consent = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(COOKIE_CONSENT_KEY) as ConsentValue;
-    setConsent(stored);
+  const handleAccept = useCallback(() => {
+    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+    window.dispatchEvent(new StorageEvent('storage'));
   }, []);
 
-  const handleAccept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
-    setConsent('accepted');
-  };
-
-  const handleReject = () => {
+  const handleReject = useCallback(() => {
     localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
-    setConsent('rejected');
-  };
+    window.dispatchEvent(new StorageEvent('storage'));
+  }, []);
 
-  // Don't render until mounted (avoid hydration mismatch) or if already answered
-  if (!mounted || consent !== null) return null;
+  // Don't render on server ('loading') or if already answered
+  if (consent !== null) return null;
 
   return (
     <div

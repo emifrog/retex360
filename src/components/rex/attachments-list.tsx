@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import NextImage from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  FileText, 
-  Image, 
-  Video, 
-  File, 
-  Download, 
+import {
+  FileText,
+  Image as ImageIcon,
+  Video,
+  File,
+  Download,
   Eye,
   Loader2,
   Paperclip
@@ -32,7 +33,7 @@ interface AttachmentsListProps {
 }
 
 const getFileIcon = (fileType: string) => {
-  if (fileType.startsWith('image/')) return Image;
+  if (fileType.startsWith('image/')) return ImageIcon;
   if (fileType.startsWith('video/')) return Video;
   if (fileType.includes('pdf')) return FileText;
   return File;
@@ -99,9 +100,11 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
                 className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
               >
                 {isImage && attachment.thumbnail_url ? (
-                  <img
+                  <NextImage
                     src={attachment.thumbnail_url}
                     alt={attachment.file_name}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-lg object-cover"
                     loading="lazy"
                   />
