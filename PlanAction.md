@@ -17,6 +17,12 @@
 10. PWA manifest si pertinent
 11. Ajouter robots.txt + sitemap.ts
 
+## Phase 4 — Bugs critiques & UX (avant commercialisation) :
+12. Whitelist de domaines email pour l'inscription (bloquer les inscriptions non-SDIS)
+13. ✅ Rate limiter global middleware → Redis Upstash (persistant entre les invocations serverless)
+14. ✅ Migration SDIS : ON CONFLICT (code) DO NOTHING (préserve les modifications admin)
+15. ✅ Police de lecture Inter pour le texte de corps (JetBrains Mono réservé au code via font-mono)
+
 
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
@@ -32,9 +38,10 @@ Accessibilité	B	ARIA labels, sémantique HTML, page déclaration RGAA
 Performance React	A	React Compiler, Suspense, lazy loading, useMemo/useCallback
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy
-Rate limiting	A	Global middleware + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
+Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
 Tests	A	62 tests (validators, rate-limit, sanitize, image-optimizer)
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod
 SEO / Social	A	Open Graph + Twitter Cards sur toutes les pages clés
+Typographie	A	Inter (texte de corps) + JetBrains Mono (code/données)

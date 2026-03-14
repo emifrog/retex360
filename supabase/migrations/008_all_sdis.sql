@@ -112,6 +112,4 @@ INSERT INTO sdis (id, code, name, region) VALUES
   (gen_random_uuid(), '973', 'SDIS de la Guyane', 'Outre-mer'),
   (gen_random_uuid(), '974', 'SDIS de La Réunion', 'Outre-mer'),
   (gen_random_uuid(), '976', 'SDIS de Mayotte', 'Outre-mer')
-ON CONFLICT (code) DO UPDATE SET
-  name = EXCLUDED.name,
-  region = EXCLUDED.region;
+ON CONFLICT (code) DO NOTHING;

@@ -1,8 +1,28 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 import { updateSession } from '@/lib/supabase/middleware';
 
-// Simple in-memory rate limiter for middleware (global API protection)
-const apiHits = new Map<string, { count: number; resetTime: number }>();
+// Global rate limiter using Upstash Redis (persists across serverless invocations)
+let globalRateLimiter: Ratelimit | null = null;
+
+function getGlobalRateLimiter(): Ratelimit | null {
+  if (globalRateLimiter) return globalRateLimiter;
+
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    globalRateLimiter = new Ratelimit({
+      redis: new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      }),
+      limiter: Ratelimit.slidingWindow(120, '1 m'),
+      analytics: true,
+      prefix: 'retex360_global',
+    });
+  }
+
+  return globalRateLimiter;
+}
 
 function getIp(request: NextRequest): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0].trim()
@@ -10,51 +30,31 @@ function getIp(request: NextRequest): string {
     || 'unknown';
 }
 
-// Global rate limit: 120 requests/min per IP for API routes
-function checkGlobalRateLimit(ip: string): { allowed: boolean; retryAfter: number } {
-  const now = Date.now();
-  const windowMs = 60_000;
-  const maxRequests = 120;
-
-  const record = apiHits.get(ip);
-
-  if (!record || now > record.resetTime) {
-    apiHits.set(ip, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, retryAfter: 0 };
-  }
-
-  if (record.count >= maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((record.resetTime - now) / 1000) };
-  }
-
-  record.count++;
-  return { allowed: true, retryAfter: 0 };
-}
-
-// Cleanup stale entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of apiHits) {
-    if (now > value.resetTime) apiHits.delete(key);
-  }
-}, 300_000);
-
 export async function middleware(request: NextRequest) {
   // Apply global rate limit to API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
-    const ip = getIp(request);
-    const { allowed, retryAfter } = checkGlobalRateLimit(ip);
+    const limiter = getGlobalRateLimiter();
+    if (limiter) {
+      try {
+        const ip = getIp(request);
+        const { success, reset } = await limiter.limit(ip);
 
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Trop de requêtes. Veuillez réessayer plus tard.' },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(retryAfter),
-          },
+        if (!success) {
+          const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+          return NextResponse.json(
+            { error: 'Trop de requêtes. Veuillez réessayer plus tard.' },
+            {
+              status: 429,
+              headers: {
+                'Retry-After': String(retryAfter),
+              },
+            }
+          );
         }
-      );
+      } catch {
+        // If Redis is unreachable, allow the request through
+        // Per-route rate limiters will still catch abuse
+      }
     }
   }
 
