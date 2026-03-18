@@ -5,6 +5,9 @@
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/rex/[id]/pdf/route.ts": {
+      "maxDuration": 60
     }
   }
 }

@@ -51,6 +51,18 @@
 32. ✅ Export CSV streaming avec ReadableStream + pagination par 500
 33. ✅ Index DB : composite status+validated_at, favorites.created_at, comments.created_at, rex_attachments.rex_id
 
+### 5E — Génération PDF (6 corrections critiques) : ✅ TERMINÉE
+33b. ✅ Timeout Vercel PDF : 30s → 60s (route dédiée) + limites de taille (200 chrono, 200 prescriptions, 100k chars/champ, 5MB total)
+33c. ✅ Double buffer mémoire éliminé : Buffer → ArrayBuffer zero-copy au lieu de new Uint8Array(copy)
+33d. ✅ stripHtml artisanal → html-entities decode + regex robuste (gère tous les entities named/numeric/hex)
+33e. ✅ Font JetBrains Mono inutile supprimée (enregistrée mais jamais utilisée, -500ms par PDF)
+33f. ✅ Rate-limit spécifique PDF : 10/min par IP (séparé du rate-limit API global)
+33g. ✅ Monitoring PDF : correlation ID, durée, taille, alerte si > 25s + requête Supabase optimisée (colonnes ciblées)
+33h. ✅ Images/attachments dans le PDF : fetch parallèle, max 10 images, grille 2 colonnes avec légendes
+33i. ✅ Anonymisation complète côté serveur : email non fetché, full_name masqué si anonymize=true
+33j. ✅ Cache PDF : ETag basé sur updated_at + If-None-Match → 304 Not Modified + Cache-Control 5min
+33k. ✅ Monitoring taille : alerte si PDF > 10 Mo
+
 
 ## Phase 6 — Responsive Mobile :
 
@@ -69,6 +81,82 @@
 ### 6C — Bas (améliorations) : ✅ TERMINÉE
 42. ✅ Touch targets toolbar Tiptap : h-8 w-8 → h-9 w-9 (36px, +12.5%)
 43. ✅ Grid form : grid-cols-1 sm:grid-cols-2 md:grid-cols-3 (étape intermédiaire tablette)
+
+
+## Phase 7 — Commercialisation (bloquant avant toute vente) :
+
+### 7A — Whitelist domaines email (PRIORITÉ MAX — bloquant avant toute vente)
+> Dès qu'un SDIS signe, des gens vont parler de la plateforme. Si n'importe qui s'inscrit
+> avec un Gmail, on perd le contrôle de qui accède aux données opérationnelles.
+> Pour un produit institutionnel vendu à des services publics, c'est éliminatoire.
+
+44. Migration SQL : table `allowed_domains` (id, sdis_id FK, domain UNIQUE, created_at)
+45. Validation domaine email dans /api/auth/register (rejet si domaine non whitelisté)
+46. Message d'erreur explicite : "Votre adresse email n'est pas autorisée. Contactez votre administrateur SDIS."
+47. Mode "inscription désactivée" par SDIS (seul l'admin SDIS peut créer des comptes)
+48. Système d'invitation par lien tokenisé pour les exceptions (prestataires, consultants DGSCGC)
+49. Interface super_admin pour gérer les domaines autorisés par SDIS
+50. Interface admin SDIS pour voir/gérer les domaines de son propre SDIS
+
+### 7B — Gestion des abonnements (avant la première facturation réelle)
+> Pas besoin de Stripe maintenant. Dans le marché public, c'est bon de commande + mandat
+> de paiement, pas de paiement en ligne. Ce qui compte : tracer quel SDIS est sur quel plan
+> et jusqu'à quand, pour que ce soit opposable en cas de litige.
+
+51. Migration SQL : table `subscriptions` :
+    - `sdis_id` (FK UNIQUE), `plan` (essentiel/reseau/premium)
+    - `status` (trial/active/suspended/expired), `suspended_reason` (text nullable)
+    - `trial_ends_at`, `current_period_start`, `current_period_end`
+    - `max_users` (null = illimité), `max_rex_per_month` (null = illimité)
+52. Middleware de vérification d'abonnement actif sur toutes les routes protégées
+53. Comportement trial : accès complet + bannière rappelant la fin de la période d'essai
+54. Comportement expiré : lecture seule pendant 30 jours, puis blocage total avec message de contact
+55. Page d'expiration utilisateur ("Votre abonnement a expiré — contactez votre référent SDIS")
+56. Limites par plan enforced côté API (max_users, max_rex_per_month)
+
+### 7C — Panel super_admin d'onboarding (avant le 3e client)
+> Ajouter un SDIS implique aujourd'hui de passer par la console Supabase ou des requêtes
+> SQL manuelles. Acceptable pour 1-2 clients, ingérable à partir de 5.
+
+57. Route /super-admin protégée par rôle super_admin, séparée du dashboard SDIS
+58. Workflow "Ajouter un SDIS client" en multi-étapes :
+    - Infos SDIS (code, nom, département, logo)
+    - Domaines email autorisés
+    - Plan tarifaire + dates début/fin
+    - Création du compte admin initial + envoi email d'invitation sécurisé
+59. Vue liste SDIS : nom, plan, statut, nb users, nb REX, date expiration, actions
+60. Actions : suspendre/réactiver, changer de plan, réinitialiser MDP admin SDIS
+61. Dashboard super_admin : métriques globales (SDIS actifs, REX totaux, users totaux, MRR)
+62. Logs d'audit des actions super_admin (qui a fait quoi, quand)
+
+### 7D — Guide d'onboarding documenté (avant pilote SDIS 06)
+> Le guide n'est pas de la documentation pour faire bonne figure : c'est ce qui évite
+> de passer deux heures au téléphone à chaque nouveau client.
+
+63. Tour guidé interactif in-app (première connexion → tooltips/popovers pas-à-pas)
+64. Guide utilisateur (opérationnels) — PDF 8-10 pages :
+    - Connexion, créer un premier REX
+    - Recherche sémantique, filtres, favoris
+    - Exports PDF
+65. Guide administrateur (référent RETEX du SDIS) — PDF 5-8 pages :
+    - Gestion des utilisateurs et rôles (user/validator/admin)
+    - Configuration du SDIS, export des données
+    - Sert aussi à rassurer les DSI lors de l'évaluation technique
+66. FAQ intégrée dans l'app (/aide) avec les questions les plus fréquentes
+67. Email de bienvenue automatique à l'inscription avec lien vers le guide
+
+## Phase 8 — Scale (optionnel, fort impact commercial) :
+
+### 8A — Sous-domaines par SDIS
+> Ce n'est pas une nécessité technique, c'est un argument de vente.
+> sdis06.retex360.fr communique une chose que retex360.vercel.app ne peut pas :
+> "c'est votre espace, pas un espace partagé."
+
+68. Domaine retex360.fr en production (sortir de .vercel.app)
+69. Middleware multi-tenant Next.js : intercepter le host, identifier le SDIS, passer sdis_id au contexte
+70. Certificats SSL wildcard *.retex360.fr (automatique chez Vercel sur domaine custom)
+71. Branding par SDIS (logo, couleurs) dans le header — argument plan Premium
+72. Redirection retex360.fr → page d'accueil marketing / login générique
 
 
 ## CE QUI EST BIEN EN PLACE

@@ -3,17 +3,12 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer';
+import { decode } from 'html-entities';
 import type { Rex, Sdis, Profile, FocusThematique, ProductionType, KeyFigures, BilanHumain, TimelineEvent, Prescription } from '@/types';
 import { TIMELINE_EVENT_CONFIG, PRESCRIPTION_CATEGORY_CONFIG } from '@/types';
-
-// Register font (optional - uses default if not available)
-Font.register({
-  family: 'JetBrains Mono',
-  src: 'https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2',
-});
 
 const styles = StyleSheet.create({
   page: {
@@ -367,7 +362,33 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#9ca3af',
   },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  imageWrapper: {
+    width: '48%',
+    marginBottom: 10,
+  },
+  imageItem: {
+    width: '100%',
+    maxHeight: 200,
+    objectFit: 'contain' as const,
+    borderRadius: 4,
+  },
+  imageCaption: {
+    fontSize: 7,
+    color: '#9ca3af',
+    marginTop: 3,
+    textAlign: 'center' as const,
+  },
 });
+
+interface PdfImage {
+  name: string;
+  url: string;
+}
 
 interface RexPdfTemplateProps {
   rex: Rex & {
@@ -375,31 +396,29 @@ interface RexPdfTemplateProps {
     sdis?: Sdis;
   };
   anonymize?: boolean;
+  images?: PdfImage[];
 }
 
-// Helper to strip HTML tags
+/**
+ * Strip HTML tags and decode all entities (named + numeric + hex).
+ * Uses html-entities for robust decoding instead of artisanal regex.
+ */
 function stripHtml(html: string | null | undefined): string {
   if (!html) return '';
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&laquo;/g, '«')
-    .replace(/&raquo;/g, '»')
-    .replace(/&ndash;/g, '–')
-    .replace(/&mdash;/g, '—')
-    .replace(/&hellip;/g, '…')
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
-    .replace(/&\w+;/g, '')
+  return decode(
+    html
+      // Replace block-level tags with newlines for readability
+      .replace(/<\/(p|div|li|br|h[1-6])>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      // Strip all remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+  )
+    // Collapse multiple newlines
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
-export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) {
+export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTemplateProps) {
   const severityLabel = {
     critique: 'CRITIQUE',
     majeur: 'MAJEUR',
@@ -768,6 +787,22 @@ export function RexPdfTemplate({ rex, anonymize = false }: RexPdfTemplateProps) 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Documentation opérationnelle</Text>
             <Text style={styles.sectionContent}>{stripHtml(rex.documentation_operationnelle)}</Text>
+          </View>
+        )}
+
+        {/* Pièces jointes images */}
+        {images.length > 0 && (
+          <View style={styles.section} break={images.length > 4}>
+            <Text style={styles.sectionTitle}>Pièces jointes ({images.length} image{images.length > 1 ? 's' : ''})</Text>
+            <View style={styles.imagesGrid}>
+              {images.map((img, index) => (
+                <View key={index} style={styles.imageWrapper}>
+                  {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image has no alt prop */}
+                  <Image src={img.url} style={styles.imageItem} />
+                  <Text style={styles.imageCaption}>{img.name}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
