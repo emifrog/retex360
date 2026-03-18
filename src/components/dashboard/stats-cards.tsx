@@ -1,37 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { FileText, Building2, Clock, Sparkles, Loader2 } from 'lucide-react';
-import { logger } from '@/lib/logger';
-
-interface Stats {
-  totalRex: number;
-  sdisCount: number;
-  pendingValidation: number;
-  validatedThisMonth: number;
-}
+import { useDashboardStats, type DashboardStats } from '@/lib/hooks/use-dashboard-data';
 
 const statsConfig = [
   {
-    key: 'totalRex' as const,
+    key: 'totalRex' as keyof DashboardStats,
     label: 'RETEX Total',
     icon: FileText,
     color: '#3b82f6',
   },
   {
-    key: 'sdisCount' as const,
+    key: 'sdisCount' as keyof DashboardStats,
     label: 'SDIS Participants',
     icon: Building2,
     color: '#22c55e',
   },
   {
-    key: 'pendingValidation' as const,
+    key: 'pendingValidation' as keyof DashboardStats,
     label: 'En attente validation',
     icon: Clock,
     color: '#f97316',
   },
   {
-    key: 'validatedThisMonth' as const,
+    key: 'validatedThisMonth' as keyof DashboardStats,
     label: 'Validés ce mois',
     icon: Sparkles,
     color: '#a855f7',
@@ -39,25 +31,7 @@ const statsConfig = [
 ];
 
 export function StatsCards() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/dashboard/stats');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (error) {
-        logger.error('Error fetching stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchStats();
-  }, []);
+  const { stats, isLoading } = useDashboardStats();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

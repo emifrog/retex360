@@ -23,6 +23,34 @@
 14. ✅ Migration SDIS : ON CONFLICT (code) DO NOTHING (préserve les modifications admin)
 15. ✅ Police de lecture Inter pour le texte de corps (JetBrains Mono réservé au code via font-mono)
 
+## Phase 5 — Performance & Optimisation :
+
+### 5A — Requêtes & API (impact critique) : ✅ TERMINÉE
+16. ✅ Page REX detail : 9 requêtes séquentielles → 2 Promise.all parallèles + fire-and-forget views
+17. ✅ Dashboard : hook useDashboardStats/useDashboardCharts avec cache mémoire + dédup des requêtes in-flight
+18. ✅ Charts API : requêtes ciblées par colonne + filtre date 12 mois au lieu de charger toute la table
+19. ✅ Contributors API : query légère (author_id seul) + profils fetchés uniquement pour le top 5
+
+### 5B — Bundle & code-splitting (impact haut)
+20. Lazy-load @react-pdf/renderer (~600 KB) avec next/dynamic
+21. Lazy-load recharts (~200 KB) avec next/dynamic sur les composants charts
+22. Lazy-load @tiptap (3 packages) avec next/dynamic sur TiptapEditor
+23. Ajouter des Suspense boundaries sur le dashboard (streaming des sections indépendantes)
+24. Configurer webpack-bundle-analyzer pour monitorer la taille du bundle
+
+### 5C — React re-renders (impact moyen)
+25. useMemo sur filteredUsers + stats dans UsersTable (recalculé à chaque render)
+26. Extraire analysisConfig hors du composant AiAnalysis (objet lourd recréé à chaque render)
+27. useMemo sur les 6 valeurs watch de RexForm (tags, focusThematiques, keyFigures, chronologie, prescriptions)
+28. Extraire un hook useRexFilters pour RexList (11 useState au même niveau)
+29. Wrapper RexDetail (446 lignes) avec React.memo
+
+### 5D — Cache & données (impact bas)
+30. Ajouter du cache Next.js sur stats/charts API (revalidate: 300s)
+31. Cacher la liste SDIS + tags sur la page search (données quasi-statiques, revalidate: 3600s)
+32. Streaming pour l'export CSV (actuellement tout en mémoire)
+33. Vérifier/ajouter les index DB sur rex.created_at, rex.status, comments.rex_id
+
 
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
@@ -35,7 +63,7 @@ Optimisation images	A	Sharp + WebP + thumbnails
 Gestion d'erreurs	A	Try/catch, error boundaries, logging centralisé
 TypeScript	A	Mode strict activé
 Accessibilité	B	ARIA labels, sémantique HTML, page déclaration RGAA
-Performance React	A	React Compiler, Suspense, lazy loading, useMemo/useCallback
+React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
@@ -45,3 +73,5 @@ Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod
 SEO / Social	A	Open Graph + Twitter Cards sur toutes les pages clés
 Typographie	A	Inter (texte de corps) + JetBrains Mono (code/données)
+Fonts	A	next/font optimisé (subset latin, CSS variables)
+Images	A	next/image + sharp + lazy loading + sizes responsive

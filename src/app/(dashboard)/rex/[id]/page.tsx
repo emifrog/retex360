@@ -48,7 +48,7 @@ export default async function RexPage({ params }: RexPageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch REX basic data first
+  // 1. Fetch REX (required for everything else)
   const { data: rex, error } = await supabase
     .from('rex')
     .select('*')
@@ -60,79 +60,74 @@ export default async function RexPage({ params }: RexPageProps) {
     notFound();
   }
 
-  // Fetch related data separately
-  const { data: author } = await supabase
-    .from('profiles')
-    .select('id, full_name, grade, email, avatar_url')
-    .eq('id', rex.author_id)
-    .single();
-
-  const { data: sdis } = await supabase
-    .from('sdis')
-    .select('id, code, name, region')
-    .eq('id', rex.sdis_id)
-    .single();
-
-  let validator = null;
-  if (rex.validated_by) {
-    const { data } = await supabase
+  // 2. Parallel fetch: all independent queries at once
+  const [
+    { data: author },
+    { data: sdis },
+    validatorResult,
+    { data: attachments },
+    { data: { user } },
+  ] = await Promise.all([
+    supabase
       .from('profiles')
-      .select('id, full_name, grade')
-      .eq('id', rex.validated_by)
-      .single();
-    validator = data;
-  }
+      .select('id, full_name, grade, email, avatar_url')
+      .eq('id', rex.author_id)
+      .single(),
+    supabase
+      .from('sdis')
+      .select('id, code, name, region')
+      .eq('id', rex.sdis_id)
+      .single(),
+    rex.validated_by
+      ? supabase
+          .from('profiles')
+          .select('id, full_name, grade')
+          .eq('id', rex.validated_by)
+          .single()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('rex_attachments')
+      .select('id, file_name, file_type, file_size, storage_path, created_at')
+      .eq('rex_id', id),
+    supabase.auth.getUser(),
+  ]);
 
-  const { data: attachments } = await supabase
-    .from('rex_attachments')
-    .select('id, file_name, file_type, file_size, storage_path, created_at')
-    .eq('rex_id', id);
+  const validator = validatorResult.data;
 
-  // Combine all data
-  const rexWithRelations = {
+  // 3. Parallel fetch: user-dependent queries + fire-and-forget view count
+  const [favoriteResult, profileResult] = user
+    ? await Promise.all([
+        supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('rex_id', id)
+          .single(),
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single(),
+      ])
+    : [{ data: null }, { data: null }];
+
+  const isFavorited = !!favoriteResult.data;
+  const currentUserProfile = profileResult.data;
+
+  // Fire-and-forget: increment view count (no await needed)
+  supabase
+    .from('rex')
+    .update({ views_count: (rex.views_count || 0) + 1 })
+    .eq('id', id)
+    .then();
+
+  // Transform attachments with public URLs
+  const rexWithAttachments = {
     ...rex,
     author,
     sdis,
     validator,
-    rex_attachments: attachments || [],
-  };
-
-  // Increment view count
-  await supabase
-    .from('rex')
-    .update({ views_count: (rex.views_count || 0) + 1 })
-    .eq('id', id);
-
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  // Check if favorited
-  let isFavorited = false;
-  if (user) {
-    const { data: favorite } = await supabase
-      .from('favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('rex_id', id)
-      .single();
-    isFavorited = !!favorite;
-  }
-
-  // Get current user profile
-  let currentUserProfile = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    currentUserProfile = profile;
-  }
-
-  // Transform rex_attachments to attachments with public URLs
-  const rexWithAttachments = {
-    ...rexWithRelations,
-    attachments: rexWithRelations.rex_attachments?.map((att: { id: string; file_name: string; file_type: string; file_size: number; storage_path: string; created_at: string }) => {
+    attachments: (attachments || []).map((att: { id: string; file_name: string; file_type: string; file_size: number; storage_path: string; created_at: string }) => {
       const { data: { publicUrl } } = supabase.storage
         .from('rex-attachments')
         .getPublicUrl(att.storage_path);
@@ -147,12 +142,12 @@ export default async function RexPage({ params }: RexPageProps) {
           ? thumbnailUrl
           : null,
       };
-    }) || [],
+    }),
   };
 
   return (
-    <RexDetail 
-      rex={rexWithAttachments} 
+    <RexDetail
+      rex={rexWithAttachments}
       isFavorited={isFavorited}
       currentUser={currentUserProfile}
     />

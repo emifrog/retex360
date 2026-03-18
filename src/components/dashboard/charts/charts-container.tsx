@@ -1,18 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { RexTimelineChart } from './rex-timeline-chart';
 import { RexByTypeChart } from './rex-by-type-chart';
 import { SeverityChart } from './severity-chart';
-import { logger } from '@/lib/logger';
-
-interface ChartsData {
-  timeline: { month: string; rex: number; validated: number }[];
-  byType: { name: string; value: number; color: string }[];
-  bySeverity: { name: string; value: number; color: string }[];
-}
+import { useDashboardCharts } from '@/lib/hooks/use-dashboard-data';
 
 function ChartSkeleton() {
   return (
@@ -25,25 +18,7 @@ function ChartSkeleton() {
 }
 
 export function ChartsContainer() {
-  const [data, setData] = useState<ChartsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchCharts() {
-      try {
-        const res = await fetch('/api/dashboard/charts');
-        if (res.ok) {
-          const chartsData = await res.json();
-          setData(chartsData);
-        }
-      } catch (error) {
-        logger.error('Charts fetch error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchCharts();
-  }, []);
+  const { data, isLoading } = useDashboardCharts();
 
   if (isLoading) {
     return (
@@ -71,21 +46,7 @@ export function ChartsContainer() {
 }
 
 export function RexByTypeChartContainer() {
-  const [data, setData] = useState<ChartsData | null>(null);
-
-  useEffect(() => {
-    async function fetchCharts() {
-      try {
-        const res = await fetch('/api/dashboard/charts');
-        if (res.ok) {
-          setData(await res.json());
-        }
-      } catch (error) {
-        logger.error('Chart fetch error:', error);
-      }
-    }
-    fetchCharts();
-  }, []);
+  const { data } = useDashboardCharts();
 
   return <RexByTypeChart data={data?.byType} />;
 }

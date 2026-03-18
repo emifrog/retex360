@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Clock,
@@ -9,67 +8,37 @@ import {
   Star,
   Loader2
 } from 'lucide-react';
-import { logger } from '@/lib/logger';
-
-interface DashboardStats {
-  activeContributors: number;
-  commentsThisWeek: number;
-  favoritesThisWeek: number;
-  pendingValidation: number;
-}
-
-interface KPI {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  color: string;
-}
+import { useDashboardStats } from '@/lib/hooks/use-dashboard-data';
 
 export function KpiCards() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [kpis, setKpis] = useState<KPI[]>([]);
+  const { stats, isLoading } = useDashboardStats();
 
-  useEffect(() => {
-    async function fetchKpis() {
-      try {
-        const res = await fetch('/api/dashboard/stats');
-        if (res.ok) {
-          const data: DashboardStats = await res.json();
-          setKpis([
-            {
-              label: 'En attente',
-              value: data.pendingValidation,
-              icon: Clock,
-              color: '#3b82f6',
-            },
-            {
-              label: 'Contributeurs actifs',
-              value: data.activeContributors,
-              icon: Users,
-              color: '#a855f7',
-            },
-            {
-              label: 'Commentaires (7j)',
-              value: data.commentsThisWeek,
-              icon: MessageSquare,
-              color: '#f97316',
-            },
-            {
-              label: 'Favoris (7j)',
-              value: data.favoritesThisWeek,
-              icon: Star,
-              color: '#eab308',
-            },
-          ]);
-        }
-      } catch (error) {
-        logger.error('Error fetching KPIs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchKpis();
-  }, []);
+  const kpis = [
+    {
+      label: 'En attente',
+      value: stats?.pendingValidation ?? 0,
+      icon: Clock,
+      color: '#3b82f6',
+    },
+    {
+      label: 'Contributeurs actifs',
+      value: stats?.activeContributors ?? 0,
+      icon: Users,
+      color: '#a855f7',
+    },
+    {
+      label: 'Commentaires (7j)',
+      value: stats?.commentsThisWeek ?? 0,
+      icon: MessageSquare,
+      color: '#f97316',
+    },
+    {
+      label: 'Favoris (7j)',
+      value: stats?.favoritesThisWeek ?? 0,
+      icon: Star,
+      color: '#eab308',
+    },
+  ];
 
   if (isLoading) {
     return (
