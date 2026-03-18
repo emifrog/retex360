@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import dynamic from 'next/dynamic';
 import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique, type KeyFigures, type TimelineEvent, type Prescription } from '@/types';
-import { TiptapEditor } from './tiptap-editor';
 import { ImageUpload } from './image-upload';
 import { ProductionTypePicker } from './production-type-picker';
 import { FocusThematiqueEditor } from './focus-thematique-editor';
@@ -33,6 +33,19 @@ import { toast } from 'sonner';
 import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, VISIBILITY_LABELS } from '@/lib/constants';
+
+// Lazy-load TiptapEditor (@tiptap ~150KB)
+const TiptapEditor = dynamic(
+  () => import('./tiptap-editor').then((m) => m.TiptapEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="border border-border rounded-lg bg-background/50 min-h-[150px] flex items-center justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+);
 
 interface RexFormData {
   title: string;

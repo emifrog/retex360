@@ -31,12 +31,12 @@
 18. ✅ Charts API : requêtes ciblées par colonne + filtre date 12 mois au lieu de charger toute la table
 19. ✅ Contributors API : query légère (author_id seul) + profils fetchés uniquement pour le top 5
 
-### 5B — Bundle & code-splitting (impact haut)
-20. Lazy-load @react-pdf/renderer (~600 KB) avec next/dynamic
-21. Lazy-load recharts (~200 KB) avec next/dynamic sur les composants charts
-22. Lazy-load @tiptap (3 packages) avec next/dynamic sur TiptapEditor
-23. Ajouter des Suspense boundaries sur le dashboard (streaming des sections indépendantes)
-24. Configurer webpack-bundle-analyzer pour monitorer la taille du bundle
+### 5B — Bundle & code-splitting (impact haut) : ✅ TERMINÉE
+20. ✅ @react-pdf/renderer : déjà server-only (API route), pas dans le bundle client
+21. ✅ recharts (~200 KB) : lazy-load via next/dynamic + ssr:false + skeleton loading
+22. ✅ @tiptap (~150 KB) : lazy-load via next/dynamic dans rex-form + skeleton loading
+23. ✅ Suspense boundary sur RecentRex (async server component) avec skeleton streaming
+24. ✅ @next/bundle-analyzer configuré (npm run analyze)
 
 ### 5C — React re-renders (impact moyen)
 25. useMemo sur filteredUsers + stats dans UsersTable (recalculé à chaque render)

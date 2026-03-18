@@ -1,10 +1,8 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { RexTimelineChart } from './rex-timeline-chart';
-import { RexByTypeChart } from './rex-by-type-chart';
-import { SeverityChart } from './severity-chart';
 import { useDashboardCharts } from '@/lib/hooks/use-dashboard-data';
 
 function ChartSkeleton() {
@@ -17,31 +15,43 @@ function ChartSkeleton() {
   );
 }
 
+// Lazy-load chart components (recharts ~200KB)
+const RexTimelineChart = dynamic(
+  () => import('./rex-timeline-chart').then((m) => m.RexTimelineChart),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+
+const SeverityChart = dynamic(
+  () => import('./severity-chart').then((m) => m.SeverityChart),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+
+const RexByTypeChart = dynamic(
+  () => import('./rex-by-type-chart').then((m) => m.RexByTypeChart),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+
 export function ChartsContainer() {
   const { data, isLoading } = useDashboardCharts();
 
   if (isLoading) {
     return (
-      <>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><ChartSkeleton /></div>
-          <div><ChartSkeleton /></div>
-        </div>
-      </>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2"><ChartSkeleton /></div>
+        <div><ChartSkeleton /></div>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RexTimelineChart data={data?.timeline} />
-        </div>
-        <div>
-          <SeverityChart data={data?.bySeverity} />
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <RexTimelineChart data={data?.timeline} />
       </div>
-    </>
+      <div>
+        <SeverityChart data={data?.bySeverity} />
+      </div>
+    </div>
   );
 }
 

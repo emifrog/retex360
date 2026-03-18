@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { StatsCards } from '@/components/dashboard/stats-cards';
-
-export const metadata: Metadata = {
-  title: 'Tableau de bord',
-  description: 'Vue d\'ensemble des RETEX, statistiques et analyses pour votre SDIS.',
-};
 import { KpiCards } from '@/components/dashboard/kpi-cards';
 import { ChartsContainer, RexByTypeChartContainer } from '@/components/dashboard/charts';
 import { RecentRex } from '@/components/dashboard/recent-rex';
@@ -14,6 +11,19 @@ import { ExportStatsButton } from '@/components/dashboard/export-stats-button';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Tableau de bord',
+  description: 'Vue d\'ensemble des RETEX, statistiques et analyses pour votre SDIS.',
+};
+
+function SectionSkeleton({ height = 'h-48' }: { height?: string }) {
+  return (
+    <div className={`${height} flex items-center justify-center bg-card/50 border border-border/50 rounded-xl`}>
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   return (
@@ -41,7 +51,9 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-          <RecentRex />
+          <Suspense fallback={<SectionSkeleton height="h-64" />}>
+            <RecentRex />
+          </Suspense>
         </div>
 
         {/* Right Column */}

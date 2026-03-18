@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -26,25 +27,29 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const analyzedConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})(nextConfig);
+
+export default withSentryConfig(analyzedConfig, {
   // Sentry options
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  
+
   // Suppress logs during build
   silent: !process.env.CI,
-  
+
   // Upload source maps for better stack traces
   widenClientFileUpload: true,
-  
+
   // Source maps configuration
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,
   },
-  
+
   // Automatically tree-shake Sentry logger
   disableLogger: true,
-  
+
   // Enable React component annotations
   reactComponentAnnotation: {
     enabled: true,
