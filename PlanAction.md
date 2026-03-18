@@ -45,11 +45,11 @@
 28. ✅ Hook useRexList extrait (11 useState + 3 useCallback + 3 useEffect → hook dédié)
 29. ✅ RexDetail (446 lignes) wrappé avec React.memo
 
-### 5D — Cache & données (impact bas)
-30. Ajouter du cache Next.js sur stats/charts API (revalidate: 300s)
-31. Cacher la liste SDIS + tags sur la page search (données quasi-statiques, revalidate: 3600s)
-32. Streaming pour l'export CSV (actuellement tout en mémoire)
-33. Vérifier/ajouter les index DB sur rex.created_at, rex.status, comments.rex_id
+### 5D — Cache & données (impact bas) : ✅ TERMINÉE
+30. ✅ Cache-Control private max-age=300 + stale-while-revalidate sur stats/charts API
+31. ✅ unstable_cache sur SDIS (1h) + tags (10min) sur la page search
+32. ✅ Export CSV streaming avec ReadableStream + pagination par 500
+33. ✅ Index DB : composite status+validated_at, favorites.created_at, comments.created_at, rex_attachments.rex_id
 
 
 ## CE QUI EST BIEN EN PLACE

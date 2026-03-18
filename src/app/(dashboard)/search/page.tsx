@@ -1,8 +1,39 @@
 import { Suspense } from 'react';
+import { unstable_cache } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { SearchFilters } from '@/components/search/search-filters';
 import { SearchResults } from '@/components/search/search-results';
 import { Search } from 'lucide-react';
+
+// Cache SDIS list for 1 hour (quasi-static data)
+const getCachedSdisList = unstable_cache(
+  async () => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('sdis')
+      .select('id, code, name')
+      .order('code');
+    return data || [];
+  },
+  ['sdis-list'],
+  { revalidate: 3600 }
+);
+
+// Cache unique tags for 10 minutes (changes when REX are created)
+const getCachedTags = unstable_cache(
+  async () => {
+    const supabase = await createClient();
+    const { data: rexWithTags } = await supabase
+      .from('rex')
+      .select('tags')
+      .not('tags', 'is', null);
+    return Array.from(
+      new Set(rexWithTags?.flatMap((r) => r.tags || []) || [])
+    ).sort();
+  },
+  ['rex-tags'],
+  { revalidate: 600 }
+);
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -20,23 +51,11 @@ interface SearchPageProps {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
-  const supabase = await createClient();
-
-  // Fetch SDIS list for filter
-  const { data: sdisList } = await supabase
-    .from('sdis')
-    .select('id, code, name')
-    .order('code');
-
-  // Fetch all unique tags from REX
-  const { data: rexWithTags } = await supabase
-    .from('rex')
-    .select('tags')
-    .not('tags', 'is', null);
-
-  const allTags = Array.from(
-    new Set(rexWithTags?.flatMap((r) => r.tags || []) || [])
-  ).sort();
+  // Use cached data for quasi-static content
+  const [sdisList, allTags] = await Promise.all([
+    getCachedSdisList(),
+    getCachedTags(),
+  ]);
 
   return (
     <div className="space-y-6">

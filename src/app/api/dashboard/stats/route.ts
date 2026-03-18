@@ -53,6 +53,10 @@ export async function GET() {
       activeContributors: uniqueContributors,
       commentsThisWeek: commentsThisWeekResult.count || 0,
       favoritesThisWeek: favoritesThisWeekResult.count || 0,
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
+      },
     });
   } catch (error) {
     logger.error('Dashboard stats error:', error);

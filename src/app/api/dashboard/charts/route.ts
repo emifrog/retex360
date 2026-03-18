@@ -123,6 +123,10 @@ export async function GET() {
       timeline,
       byType,
       bySeverity,
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
+      },
     });
   } catch (error) {
     logger.error('Charts error:', error);
