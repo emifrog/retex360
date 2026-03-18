@@ -67,7 +67,7 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="end">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
         </div>
 
         {/* Notifications list */}
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />

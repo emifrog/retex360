@@ -56,7 +56,7 @@ export const NotificationBell = memo(function NotificationBell({ userId }: Notif
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-0" align="end">
         <div className="flex items-center justify-between p-3 border-b border-border">
           <h3 className="font-semibold text-sm">Notifications</h3>
           {unreadCount > 0 && (
@@ -72,7 +72,7 @@ export const NotificationBell = memo(function NotificationBell({ userId }: Notif
           )}
         </div>
 
-        <ScrollArea className="h-[300px]">
+        <ScrollArea className="max-h-[50vh] sm:max-h-[300px]">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

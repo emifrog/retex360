@@ -46,42 +46,75 @@ export function InterventionTimeline({ events, variant = 'vertical', className }
 
   if (variant === 'horizontal') {
     return (
-      <Card className={cn('p-4 bg-card/80 border-border/50 overflow-x-auto', className)}>
+      <Card className={cn('p-4 bg-card/80 border-border/50', className)}>
         <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary" />
           Chronologie de l&apos;intervention
         </h3>
-        <div className="flex items-start gap-2 min-w-max pb-2">
-          {sortedEvents.map((event, index) => {
-            const config = TIMELINE_EVENT_CONFIG[event.type];
-            const Icon = getIcon(event.type);
-            const isLast = index === sortedEvents.length - 1;
 
-            return (
-              <div key={event.id} className="flex items-start">
-                <div className="flex flex-col items-center min-w-[120px]">
-                  <div className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center',
-                    config.bgColor
-                  )}>
+        {/* Mobile: vertical layout */}
+        <div className="md:hidden relative">
+          <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
+          <div className="space-y-4">
+            {sortedEvents.map((event, index) => {
+              const config = TIMELINE_EVENT_CONFIG[event.type];
+              const Icon = getIcon(event.type);
+              const isLast = index === sortedEvents.length - 1;
+              return (
+                <div key={event.id} className="relative flex items-start gap-4">
+                  <div className={cn('relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0', config.bgColor)}>
                     <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-xs font-semibold text-foreground">{event.heure}</p>
-                    <p className="text-sm font-medium text-foreground mt-1">{event.titre}</p>
+                  <div className={cn('flex-1 pb-4', isLast && 'pb-0')}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">{event.heure}</span>
+                      <span className={cn('text-xs', config.color)}>{config.label}</span>
+                    </div>
+                    <p className="font-medium text-foreground">{event.titre}</p>
                     {event.description && (
-                      <p className="text-xs text-muted-foreground mt-1 max-w-[100px] line-clamp-2">
-                        {event.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
                     )}
                   </div>
                 </div>
-                {!isLast && (
-                  <div className="flex-shrink-0 w-8 h-0.5 bg-border mt-5 mx-1" />
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Desktop: horizontal layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <div className="flex items-start gap-2 min-w-max pb-2">
+            {sortedEvents.map((event, index) => {
+              const config = TIMELINE_EVENT_CONFIG[event.type];
+              const Icon = getIcon(event.type);
+              const isLast = index === sortedEvents.length - 1;
+
+              return (
+                <div key={event.id} className="flex items-start">
+                  <div className="flex flex-col items-center min-w-[120px]">
+                    <div className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      config.bgColor
+                    )}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="mt-2 text-center">
+                      <p className="text-xs font-semibold text-foreground">{event.heure}</p>
+                      <p className="text-sm font-medium text-foreground mt-1">{event.titre}</p>
+                      {event.description && (
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[100px] line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {!isLast && (
+                    <div className="shrink-0 w-8 h-0.5 bg-border mt-5 mx-1" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </Card>
     );

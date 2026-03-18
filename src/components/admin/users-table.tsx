@@ -207,9 +207,9 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-40">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Rôle" />
             </SelectTrigger>
@@ -225,7 +225,7 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
           
           {isSuperAdmin && sdisList.length > 0 && (
             <Select value={sdisFilter} onValueChange={setSdisFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="SDIS" />
               </SelectTrigger>
               <SelectContent>
@@ -242,14 +242,14 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
       </div>
 
       {/* Table */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Utilisateur</TableHead>
-              <TableHead>SDIS</TableHead>
+              <TableHead className="hidden sm:table-cell">SDIS</TableHead>
               <TableHead>Rôle</TableHead>
-              <TableHead>Inscrit</TableHead>
+              <TableHead className="hidden md:table-cell">Inscrit</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -288,7 +288,7 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {user.sdis ? (
                         <span className="text-sm">SDIS {user.sdis.code}</span>
                       ) : (
@@ -301,7 +301,7 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
                         {role.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(user.created_at), {
                         addSuffix: true,
                         locale: fr,
