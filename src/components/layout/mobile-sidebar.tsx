@@ -72,7 +72,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0 bg-sidebar border-sidebar-border">
+      <SheetContent side="left" className="w-[85vw] max-w-72 p-0 bg-sidebar border-sidebar-border">
         <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
         
         {/* Logo */}

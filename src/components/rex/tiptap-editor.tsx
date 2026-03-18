@@ -56,7 +56,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', editor.isActive('bold') && 'bg-muted')}
+          className={cn('h-9 w-9', editor.isActive('bold') && 'bg-muted')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <Bold className="h-4 w-4" />
@@ -65,7 +65,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', editor.isActive('italic') && 'bg-muted')}
+          className={cn('h-9 w-9', editor.isActive('italic') && 'bg-muted')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <Italic className="h-4 w-4" />
@@ -75,7 +75,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', editor.isActive('heading', { level: 2 }) && 'bg-muted')}
+          className={cn('h-9 w-9', editor.isActive('heading', { level: 2 }) && 'bg-muted')}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         >
           <Heading2 className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', editor.isActive('bulletList') && 'bg-muted')}
+          className={cn('h-9 w-9', editor.isActive('bulletList') && 'bg-muted')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           <List className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', editor.isActive('orderedList') && 'bg-muted')}
+          className={cn('h-9 w-9', editor.isActive('orderedList') && 'bg-muted')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrdered className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-9 w-9"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         >
@@ -113,7 +113,7 @@ export function TiptapEditor({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-9 w-9"
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
         >

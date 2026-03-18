@@ -32,7 +32,7 @@ export function SeverityChart({ data = DEFAULT_DATA }: SeverityChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[180px] min-w-0">
+        <div className="h-[150px] sm:h-[180px] min-w-0">
           <ResponsiveContainer width="100%" height="100%" minWidth={1}>
             <BarChart data={data} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
               <XAxis type="number" hide />

@@ -8,7 +8,7 @@ import { useDashboardCharts } from '@/lib/hooks/use-dashboard-data';
 function ChartSkeleton() {
   return (
     <Card className="border-border/50 bg-card/80">
-      <CardContent className="flex items-center justify-center h-[320px]">
+      <CardContent className="flex items-center justify-center h-[200px] sm:h-[280px] lg:h-80">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </CardContent>
     </Card>

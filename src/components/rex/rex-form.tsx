@@ -254,7 +254,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {/* Date */}
             <div className="space-y-2">
               <Label htmlFor="intervention_date">

@@ -59,16 +59,16 @@
 35. ✅ Table admin : overflow-x-auto + colonnes SDIS/Inscrit cachées sur mobile (hidden sm:/md:table-cell)
 36. ✅ Timeline horizontale : layout vertical automatique sur mobile (md:hidden / hidden md:block)
 
-### 6B — Moyens (UX dégradée)
+### 6B — Moyens (UX dégradée) : ✅ TERMINÉE
 37. ✅ Popover notification-bell : w-[calc(100vw-2rem)] sm:w-80 + ScrollArea max-h-[50vh]
 38. ✅ SelectTrigger filtres admin : w-full sm:w-40 / w-full sm:w-44
-39. Sidebar mobile w-72 fixe → w-[85vw] max-w-72 (adaptatif petits écrans)
-40. ScrollArea notifications h-[400px] fixe → max-h-[60vh] (adaptatif hauteur écran)
-41. Charts hauteur fixe 180-320px → hauteurs responsives h-[200px] sm:h-[250px] lg:h-[320px]
+39. ✅ Sidebar mobile : w-[85vw] max-w-72 (adaptatif petits écrans 320px)
+40. ✅ ScrollArea notifications : max-h-[60vh] sm:max-h-[400px] (fait avec 6A.34)
+41. ✅ Charts : hauteurs responsives h-[200px] sm:h-[250px] / h-[150px] sm:h-[180px] + skeleton adaptatif
 
-### 6C — Bas (améliorations)
-42. Touch targets toolbar Tiptap 32px → h-9 w-9 sur mobile (≥36px)
-43. Grid form 1→3 colonnes direct → étape intermédiaire sm:grid-cols-2 md:grid-cols-3
+### 6C — Bas (améliorations) : ✅ TERMINÉE
+42. ✅ Touch targets toolbar Tiptap : h-8 w-8 → h-9 w-9 (36px, +12.5%)
+43. ✅ Grid form : grid-cols-1 sm:grid-cols-2 md:grid-cols-3 (étape intermédiaire tablette)
 
 
 ## CE QUI EST BIEN EN PLACE
@@ -77,7 +77,7 @@ Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
 Validation des entrées	A	Zod sur toutes les API + DOMPurify XSS
 RGPD/GDPR	A	Export données, suppression compte, cookie consent, mentions légales
 Base de données	A+	8 migrations ordonnées, RLS activé, pgvector, indexes
-Responsive mobile	B+	Tailwind breakpoints, mobile-first — overflow popovers/table/timeline à corriger (Phase 6)
+Responsive mobile	A	Tailwind breakpoints, mobile-first, popovers/table/timeline/charts adaptifs (Phase 6)
 Optimisation images	A	Sharp + WebP + thumbnails
 Gestion d'erreurs	A	Try/catch, error boundaries, logging centralisé
 TypeScript	A	Mode strict activé
