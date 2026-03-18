@@ -23,6 +23,33 @@ interface AiAnalysisProps {
 
 type AnalysisType = 'summary' | 'suggestions' | 'patterns' | 'tags';
 
+const analysisConfig = [
+  {
+    type: 'summary' as AnalysisType,
+    label: 'Synthèse',
+    icon: FileText,
+    description: 'Résumé des points clés',
+  },
+  {
+    type: 'suggestions' as AnalysisType,
+    label: 'Suggestions',
+    icon: Lightbulb,
+    description: 'Recommandations d\'amélioration',
+  },
+  {
+    type: 'patterns' as AnalysisType,
+    label: 'Patterns',
+    icon: TrendingUp,
+    description: 'Tendances identifiées',
+  },
+  {
+    type: 'tags' as AnalysisType,
+    label: 'Tags',
+    icon: Tag,
+    description: 'Tags suggérés',
+  },
+] as const;
+
 interface AnalysisResult {
   type: AnalysisType;
   content: string;
@@ -68,33 +95,6 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
       }));
     }
   };
-
-  const analysisConfig = [
-    {
-      type: 'summary' as AnalysisType,
-      label: 'Synthèse',
-      icon: FileText,
-      description: 'Résumé des points clés',
-    },
-    {
-      type: 'suggestions' as AnalysisType,
-      label: 'Suggestions',
-      icon: Lightbulb,
-      description: 'Recommandations d\'amélioration',
-    },
-    {
-      type: 'patterns' as AnalysisType,
-      label: 'Patterns',
-      icon: TrendingUp,
-      description: 'Tendances identifiées',
-    },
-    {
-      type: 'tags' as AnalysisType,
-      label: 'Tags',
-      icon: Tag,
-      description: 'Tags suggérés',
-    },
-  ];
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">

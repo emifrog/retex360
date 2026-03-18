@@ -38,12 +38,12 @@
 23. ✅ Suspense boundary sur RecentRex (async server component) avec skeleton streaming
 24. ✅ @next/bundle-analyzer configuré (npm run analyze)
 
-### 5C — React re-renders (impact moyen)
-25. useMemo sur filteredUsers + stats dans UsersTable (recalculé à chaque render)
-26. Extraire analysisConfig hors du composant AiAnalysis (objet lourd recréé à chaque render)
-27. useMemo sur les 6 valeurs watch de RexForm (tags, focusThematiques, keyFigures, chronologie, prescriptions)
-28. Extraire un hook useRexFilters pour RexList (11 useState au même niveau)
-29. Wrapper RexDetail (446 lignes) avec React.memo
+### 5C — React re-renders (impact moyen) : ✅ TERMINÉE
+25. ✅ useMemo sur filteredUsers + stats dans UsersTable
+26. ✅ analysisConfig extrait hors du composant AiAnalysis (constante module-level)
+27. ✅ Références stables pour les 6 valeurs watch de RexForm (EMPTY_* useMemo)
+28. ✅ Hook useRexList extrait (11 useState + 3 useCallback + 3 useEffect → hook dédié)
+29. ✅ RexDetail (446 lignes) wrappé avec React.memo
 
 ### 5D — Cache & données (impact bas)
 30. Ajouter du cache Next.js sur stats/charts API (revalidate: 300s)

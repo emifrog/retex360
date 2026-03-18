@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -106,26 +106,29 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
   const [newRole, setNewRole] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Filter users
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.grade?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesSdis = sdisFilter === 'all' || user.sdis?.id === sdisFilter;
-    
-    return matchesSearch && matchesRole && matchesSdis;
-  });
+  // Filter users (memoized to avoid recalculating on unrelated state changes)
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return users.filter((user) => {
+      const matchesSearch =
+        user.full_name?.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.grade?.toLowerCase().includes(query);
 
-  // Stats
-  const stats = {
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesSdis = sdisFilter === 'all' || user.sdis?.id === sdisFilter;
+
+      return matchesSearch && matchesRole && matchesSdis;
+    });
+  }, [users, searchQuery, roleFilter, sdisFilter]);
+
+  // Stats (memoized — only recalculates when users array changes)
+  const stats = useMemo(() => ({
     total: users.length,
     users: users.filter(u => u.role === 'user').length,
     validators: users.filter(u => u.role === 'validator').length,
     admins: users.filter(u => u.role === 'admin' || u.role === 'super_admin').length,
-  };
+  }), [users]);
 
   const handleRoleChange = async () => {
     if (!selectedUser || !newRole) return;

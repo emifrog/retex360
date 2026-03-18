@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
@@ -127,11 +127,24 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   });
 
   const typeProduction = watch('type_production');
-  const tags = watch('tags') || [];
-  const focusThematiques = watch('focus_thematiques') || [];
-  const keyFigures = watch('key_figures') || {};
-  const chronologie = watch('chronologie') || [];
-  const prescriptions = watch('prescriptions') || [];
+  const rawTags = watch('tags');
+  const rawFocusThematiques = watch('focus_thematiques');
+  const rawKeyFigures = watch('key_figures');
+  const rawChronologie = watch('chronologie');
+  const rawPrescriptions = watch('prescriptions');
+
+  // Stable references for arrays/objects to avoid child re-renders
+  const EMPTY_TAGS: string[] = useMemo(() => [], []);
+  const EMPTY_FOCUS: FocusThematique[] = useMemo(() => [], []);
+  const EMPTY_FIGURES: KeyFigures = useMemo(() => ({} as KeyFigures), []);
+  const EMPTY_TIMELINE: TimelineEvent[] = useMemo(() => [], []);
+  const EMPTY_PRESCRIPTIONS: Prescription[] = useMemo(() => [], []);
+
+  const tags = rawTags || EMPTY_TAGS;
+  const focusThematiques = rawFocusThematiques || EMPTY_FOCUS;
+  const keyFigures = rawKeyFigures || EMPTY_FIGURES;
+  const chronologie = rawChronologie || EMPTY_TIMELINE;
+  const prescriptions = rawPrescriptions || EMPTY_PRESCRIPTIONS;
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {

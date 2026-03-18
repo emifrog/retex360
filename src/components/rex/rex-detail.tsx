@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ const statusConfig = {
   archived: { label: 'Archivé', icon: Clock, color: 'text-gray-400' },
 };
 
-export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
+export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [favoritesCount, setFavoritesCount] = useState(rex.favorites_count || 0);
 
@@ -443,4 +443,4 @@ export function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: R
       </Card>
     </div>
   );
-}
+});
