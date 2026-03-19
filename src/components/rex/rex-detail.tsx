@@ -17,6 +17,8 @@ import { CompletionIndicator } from './completion-indicator';
 import { KeyFigures } from './key-figures';
 import { InterventionTimeline } from './intervention-timeline';
 import { PrescriptionsList } from './prescriptions-list';
+import { TemoignagesList } from './temoignages-list';
+import { RessourcesList } from './ressources-list';
 import {
   Calendar,
   Eye,
@@ -166,6 +168,13 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
                   {status.label}
                 </Badge>
               </div>
+
+              {/* Numero REX */}
+              {rex.numero_rex && (
+                <Badge variant="outline" className="text-xs font-mono w-fit">
+                  {rex.numero_rex}
+                </Badge>
+              )}
 
               {/* Title */}
               <CardTitle className="text-2xl leading-tight">{rex.title}</CardTitle>
@@ -393,6 +402,37 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       {rex.prescriptions && Array.isArray(rex.prescriptions) && rex.prescriptions.length > 0 && (
         <PrescriptionsList
           prescriptions={(rex.prescriptions as unknown) as import('@/types').Prescription[]}
+        />
+      )}
+
+      {/* Témoignages */}
+      {rex.temoignages && Array.isArray(rex.temoignages) && rex.temoignages.length > 0 && (
+        <TemoignagesList
+          temoignages={(rex.temoignages as unknown) as import('@/types').Temoignage[]}
+        />
+      )}
+
+      {/* Description de l'ouvrage/site */}
+      {rex.description_site && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Description de l&apos;ouvrage / site
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.description_site) }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ressources complémentaires */}
+      {rex.ressources_complementaires && Array.isArray(rex.ressources_complementaires) && rex.ressources_complementaires.length > 0 && (
+        <RessourcesList
+          ressources={(rex.ressources_complementaires as unknown) as import('@/types').RessourceComplementaire[]}
         />
       )}
 

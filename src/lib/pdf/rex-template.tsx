@@ -458,6 +458,8 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
   const keyFigures = (rex.key_figures as unknown as KeyFigures) || {};
   const chronologie = (rex.chronologie as unknown as TimelineEvent[]) || [];
   const prescriptions = (rex.prescriptions as unknown as Prescription[]) || [];
+  const temoignages = (rex.temoignages as unknown as { id: string; auteur_fonction: string; citation: string; contexte?: string }[]) || [];
+  const ressources = (rex.ressources_complementaires as unknown as { id: string; titre: string; type: string; url_ou_reference: string }[]) || [];
 
   const getTimelineColor = (type: string): string => {
     const colors: Record<string, string> = {
@@ -558,6 +560,11 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
         </View>
 
         {/* Title */}
+        {rex.numero_rex && (
+          <Text style={{ fontSize: 9, color: '#6b7280', fontFamily: 'Helvetica', marginBottom: 4 }}>
+            {rex.numero_rex}
+          </Text>
+        )}
         <Text style={styles.title}>{rex.title}</Text>
 
         {/* Meta */}
@@ -712,6 +719,31 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           </View>
         )}
 
+        {/* Témoignages / Verbatims */}
+        {temoignages.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Témoignages</Text>
+            {temoignages.map((t, index) => (
+              <View key={index} style={{ marginBottom: 8, paddingLeft: 10, borderLeft: '3px solid #f59e0b' }}>
+                <Text style={{ fontSize: 10, fontStyle: 'italic', color: '#374151', lineHeight: 1.5 }}>
+                  « {t.citation} »
+                </Text>
+                <Text style={{ fontSize: 8, color: '#6b7280', marginTop: 2 }}>
+                  {t.auteur_fonction}{t.contexte ? ` — ${t.contexte}` : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Description de l'ouvrage / site */}
+        {rex.description_site && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Description de l&apos;ouvrage / site</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.description_site)}</Text>
+          </View>
+        )}
+
         {/* DGSCGC Fields - Message d'ambiance */}
         {rex.message_ambiance && (
           <View style={styles.section}>
@@ -817,6 +849,23 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Ressources complémentaires */}
+        {ressources.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Pour aller plus loin</Text>
+            {ressources.map((r, index) => (
+              <View key={index} style={{ flexDirection: 'row', marginBottom: 4, gap: 6 }}>
+                <Text style={{ fontSize: 8, color: '#6b7280', width: 40, textTransform: 'uppercase' }}>
+                  [{r.type}]
+                </Text>
+                <Text style={{ fontSize: 9, color: '#374151', flex: 1 }}>
+                  {r.titre}{r.url_ou_reference ? ` — ${r.url_ou_reference}` : ''}
+                </Text>
+              </View>
+            ))}
           </View>
         )}
 

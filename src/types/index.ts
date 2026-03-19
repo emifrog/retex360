@@ -203,3 +203,33 @@ export interface Prescription {
   echeance?: string;
   statut?: PrescriptionStatus;
 }
+
+// ===== TEMOIGNAGES / VERBATIMS =====
+
+export interface Temoignage {
+  id: string;
+  auteur_fonction: string;
+  citation: string;
+  contexte?: string;
+}
+
+// ===== RESSOURCES COMPLEMENTAIRES =====
+
+export type RessourceType = 'arvi' | 'gdo' | 'ddr' | 'etare' | 'gto' | 'gnr' | 'autre';
+
+export const RESSOURCE_TYPES: { value: RessourceType; label: string }[] = [
+  { value: 'arvi', label: 'ARVI' },
+  { value: 'gdo', label: 'GDO' },
+  { value: 'ddr', label: 'DDR' },
+  { value: 'etare', label: 'Fiche ETARE' },
+  { value: 'gto', label: 'GTO' },
+  { value: 'gnr', label: 'GNR' },
+  { value: 'autre', label: 'Autre' },
+];
+
+export interface RessourceComplementaire {
+  id: string;
+  titre: string;
+  type: RessourceType;
+  url_ou_reference: string;
+}

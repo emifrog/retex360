@@ -84,25 +84,31 @@
 
 ---
 
-## 🟠 Priorite moyenne : NON FAIT
+## 🟠 Priorite moyenne : ✅ TERMINE (5, 6, 7)
 
-### 5. Temoignages / Verbatims
-- [ ] Ajouter un champ temoignages (JSONB) au modele
-- [ ] Structure : [{auteur_fonction, citation, contexte}]
-- [ ] Composant TemoignagesEditor pour ajouter/modifier des verbatims
-- [ ] Affichage stylise avec guillemets et mise en forme citation
+### 5. Temoignages / Verbatims ✅
+- [x] Migration 010 : champ temoignages (JSONB) + trigger validation + index GIN
+- [x] Type Temoignage : {id, auteur_fonction, citation, contexte}
+- [x] Composant TemoignagesEditor (collapsible, ajout/suppression, champs auteur/citation/contexte)
+- [x] Composant TemoignagesList (blockquote stylise avec guillemets francais)
+- [x] Integre dans rex-form.tsx (visible PEX + RETEX)
+- [x] Integre dans rex-detail.tsx (affichage)
+- [x] Integre dans rex-template.tsx (export PDF avec bordure ambre)
+- [x] API POST/PUT /api/rex mises a jour
 
-### 6. Collaboration inter-SDIS
-- [x] Champ sdis_impliques existe dans key_figures (partiel)
-- [ ] Selecteur multi-SDIS dans le formulaire
-- [ ] Badge "Inter-SDIS" sur les cards REX concernes
-- [ ] Filtre par SDIS collaborateur dans la recherche avancee
-- [ ] Statistiques : "REX impliquant plusieurs SDIS"
+### 6. Collaboration inter-SDIS ✅
+- [x] Champ sdis_impliques dans key_figures (selecteur existant dans KeyFiguresEditor)
+- [x] Badge "Inter-SDIS" sur les cards REX (rex-card.tsx) — detecte automatiquement via key_figures
+- [x] Badge "Inter-SDIS" dans les resultats de recherche (search-results.tsx)
+- [x] Filtre "Inter-SDIS uniquement" dans la recherche avancee (search-filters.tsx) — checkbox + query JSONB
+- [ ] Statistiques : "REX impliquant plusieurs SDIS" (optionnel, dashboard futur)
 
-### 7. Section "Description de l'ouvrage/site"
-- [ ] Ajouter un champ description_site (rich text)
-- [ ] Pour tunnels, batiments ERP, sites industriels, etc.
-- [ ] Informations techniques : dimensions, equipements de securite, plans ETARE
+### 7. Section "Description de l'ouvrage/site" ✅
+- [x] Migration 010 : champ description_site (TEXT)
+- [x] Editeur TiptapEditor integre dans rex-form.tsx (visible PEX + RETEX)
+- [x] Affichage dans rex-detail.tsx avec sanitizeHtml
+- [x] Export PDF (stripHtml)
+- [x] API POST/PUT /api/rex mises a jour
 
 ### 8. Conditions d'intervention
 - [ ] Ajouter des champs structures pour les conditions meteo/environnement
@@ -112,14 +118,22 @@
 
 ---
 
-## 🟡 Priorite basse : NON FAIT
+## 🟡 Priorite basse : ✅ TERMINE
 
-### 9. Section "Pour aller plus loin"
-- [ ] Ajouter un champ ressources_complementaires (JSONB)
-- [ ] Liens vers documents ARVI, GDO, DDR, fiches ETARE
-- [ ] Structure : [{titre, type, url_ou_reference}]
+### 9. Section "Pour aller plus loin" ✅
+- [x] Migration 011 : champ ressources_complementaires (JSONB) + trigger validation + index GIN
+- [x] Type RessourceComplementaire : {id, titre, type, url_ou_reference}
+- [x] Types de documents : ARVI, GDO, DDR, ETARE, GTO, GNR, Autre
+- [x] Composant RessourcesEditor (collapsible, selecteur type, titre, URL avec lien externe)
+- [x] Composant RessourcesList (badges type + liens cliquables)
+- [x] Integre dans rex-form.tsx (visible PEX + RETEX)
+- [x] Integre dans rex-detail.tsx (affichage)
+- [x] Integre dans rex-template.tsx (export PDF avec type en majuscules)
+- [x] API POST/PUT /api/rex mises a jour
 
-### 10. Numerotation automatique des REX
-- [ ] Format : RETEX N° YYYY-XX (annee + numero sequentiel par SDIS)
-- [ ] Genere automatiquement a la validation
-- [ ] Affiche sur le PDF et dans l'interface
+### 10. Numerotation automatique des REX ✅
+- [x] Migration 011 : champ numero_rex (VARCHAR 20) + index unique partiel
+- [x] Trigger SQL generate_numero_rex : format RETEX-{CODE_SDIS}-{ANNEE}-{XXX}
+- [x] Generation automatique a la validation (status → 'validated')
+- [x] Affiche dans rex-detail.tsx (Badge mono dans l'en-tete)
+- [x] Affiche dans rex-template.tsx (PDF, sous le titre)

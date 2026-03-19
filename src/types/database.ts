@@ -101,6 +101,10 @@ export type Database = {
           key_figures: Json | null;
           chronologie: Json | null;
           prescriptions: Json | null;
+          temoignages: Json | null;
+          description_site: string | null;
+          ressources_complementaires: Json | null;
+          numero_rex: string | null;
         };
         Insert: {
           id?: string;
@@ -138,6 +142,10 @@ export type Database = {
           key_figures?: Json | null;
           chronologie?: Json | null;
           prescriptions?: Json | null;
+          temoignages?: Json | null;
+          description_site?: string | null;
+          ressources_complementaires?: Json | null;
+          numero_rex?: string | null;
         };
         Update: {
           id?: string;
@@ -175,6 +183,10 @@ export type Database = {
           key_figures?: Json | null;
           chronologie?: Json | null;
           prescriptions?: Json | null;
+          temoignages?: Json | null;
+          description_site?: string | null;
+          ressources_complementaires?: Json | null;
+          numero_rex?: string | null;
         };
       };
       rex_attachments: {

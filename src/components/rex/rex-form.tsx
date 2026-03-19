@@ -4,13 +4,15 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
-import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique, type KeyFigures, type TimelineEvent, type Prescription } from '@/types';
+import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique, type KeyFigures, type TimelineEvent, type Prescription, type Temoignage, type RessourceComplementaire } from '@/types';
 import { ImageUpload } from './image-upload';
 import { ProductionTypePicker } from './production-type-picker';
 import { FocusThematiqueEditor } from './focus-thematique-editor';
 import { KeyFiguresEditor } from './key-figures-editor';
 import { TimelineEditor } from './timeline-editor';
 import { PrescriptionsEditor } from './prescriptions-editor';
+import { TemoignagesEditor } from './temoignages-editor';
+import { RessourcesEditor } from './ressources-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,6 +70,9 @@ interface RexFormData {
   key_figures: KeyFigures;
   chronologie: TimelineEvent[];
   prescriptions: Prescription[];
+  temoignages: Temoignage[];
+  description_site: string;
+  ressources_complementaires: RessourceComplementaire[];
   tags: string[];
 }
 
@@ -122,6 +127,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       key_figures: initialData?.key_figures || {},
       chronologie: initialData?.chronologie || [],
       prescriptions: initialData?.prescriptions || [],
+      temoignages: initialData?.temoignages || [],
+      description_site: initialData?.description_site || '',
+      ressources_complementaires: initialData?.ressources_complementaires || [],
       tags: initialData?.tags || [],
     },
   });
@@ -132,6 +140,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const rawKeyFigures = watch('key_figures');
   const rawChronologie = watch('chronologie');
   const rawPrescriptions = watch('prescriptions');
+  const rawTemoignages = watch('temoignages');
+  const rawRessources = watch('ressources_complementaires');
 
   // Stable references for arrays/objects to avoid child re-renders
   const EMPTY_TAGS: string[] = useMemo(() => [], []);
@@ -139,12 +149,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const EMPTY_FIGURES: KeyFigures = useMemo(() => ({} as KeyFigures), []);
   const EMPTY_TIMELINE: TimelineEvent[] = useMemo(() => [], []);
   const EMPTY_PRESCRIPTIONS: Prescription[] = useMemo(() => [], []);
+  const EMPTY_TEMOIGNAGES: Temoignage[] = useMemo(() => [], []);
+  const EMPTY_RESSOURCES: RessourceComplementaire[] = useMemo(() => [], []);
 
   const tags = rawTags || EMPTY_TAGS;
   const focusThematiques = rawFocusThematiques || EMPTY_FOCUS;
   const keyFigures = rawKeyFigures || EMPTY_FIGURES;
   const chronologie = rawChronologie || EMPTY_TIMELINE;
   const prescriptions = rawPrescriptions || EMPTY_PRESCRIPTIONS;
+  const temoignages = rawTemoignages || EMPTY_TEMOIGNAGES;
+  const ressources = rawRessources || EMPTY_RESSOURCES;
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -631,6 +645,35 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         </Card>
       )}
 
+      {/* Témoignages / Verbatims - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Card className="border-border/50 bg-card/80 overflow-hidden">
+          <TemoignagesEditor
+            value={temoignages}
+            onChange={(value) => setValue('temoignages', value)}
+          />
+        </Card>
+      )}
+
+      {/* Description de l'ouvrage/site - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-lg">Description de l&apos;ouvrage / site</CardTitle>
+            <CardDescription>
+              Tunnels, bâtiments ERP, sites industriels, ETARE... Dimensions, équipements de sécurité, plans.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TiptapEditor
+              content={watch('description_site') || ''}
+              onChange={(content) => setValue('description_site', content)}
+              placeholder="Décrivez l'ouvrage ou le site concerné par l'intervention..."
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Documentation opérationnelle - Visible pour RETEX */}
       {typeProduction === 'retex' && (
         <Card className="border-border/50 bg-card/80">
@@ -647,6 +690,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               placeholder="Listez les références documentaires utilisées ou à consulter..."
             />
           </CardContent>
+        </Card>
+      )}
+
+      {/* Ressources complémentaires - Visible pour PEX et RETEX */}
+      {(typeProduction === 'pex' || typeProduction === 'retex') && (
+        <Card className="border-border/50 bg-card/80 overflow-hidden">
+          <RessourcesEditor
+            value={ressources}
+            onChange={(value) => setValue('ressources_complementaires', value)}
+          />
         </Card>
       )}
 

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Calendar, Building2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Eye, Calendar, Building2, ChevronLeft, ChevronRight, FileText, Users } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
@@ -14,6 +14,7 @@ interface SearchResultsProps {
     sdis?: string;
     severity?: string;
     status?: string;
+    interSdis?: string;
     dateFrom?: string;
     dateTo?: string;
     tags?: string;
@@ -42,6 +43,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
       status,
       views_count,
       tags,
+      key_figures,
       created_at,
       sdis:sdis_id(id, code, name),
       author:author_id(id, full_name, grade)
@@ -72,6 +74,12 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
   } else {
     // By default, only show validated and pending
     query = query.in('status', ['validated', 'pending']);
+  }
+
+  if (searchParams.interSdis === 'true') {
+    // Filter REX with sdis_impliques in key_figures (JSONB array not empty)
+    query = query.not('key_figures->sdis_impliques', 'is', null)
+      .neq('key_figures->sdis_impliques', '[]');
   }
 
   if (searchParams.dateFrom) {
@@ -150,6 +158,8 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
           const status = STATUS_CONFIG[rex.status as keyof typeof STATUS_CONFIG];
           const sdisData = Array.isArray(rex.sdis) ? rex.sdis[0] : rex.sdis;
           const authorData = Array.isArray(rex.author) ? rex.author[0] : rex.author;
+          const kf = (rex.key_figures as { sdis_impliques?: string[] }) || {};
+          const isInterSdis = (kf.sdis_impliques?.length ?? 0) > 0;
 
           return (
             <Link
@@ -180,6 +190,12 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                     >
                       {status?.label}
                     </Badge>
+                    {isInterSdis && (
+                      <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10">
+                        <Users className="w-3 h-3 mr-1" />
+                        Inter-SDIS
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Title */}

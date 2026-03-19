@@ -1,11 +1,11 @@
 import { memo } from 'react';
 import Link from 'next/link';
-import { Eye, Star, Calendar, MapPin } from 'lucide-react';
+import { Eye, Star, Calendar, MapPin, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG, STATUS_CONFIG } from '@/lib/constants';
-import type { Rex, Sdis, Profile } from '@/types';
+import type { Rex, Sdis, Profile, KeyFigures } from '@/types';
 
 interface RexCardProps {
   rex: Rex & {
@@ -21,6 +21,8 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
   const status = STATUS_CONFIG[rex.status];
   const productionType = PRODUCTION_TYPE_CONFIG[rex.type_production || 'retex'];
   const ProductionIcon = productionType.icon;
+  const keyFigures = (rex.key_figures as unknown as KeyFigures) || {};
+  const isInterSdis = (keyFigures.sdis_impliques?.length ?? 0) > 0;
 
   return (
     <div className="bg-card/80 border border-border hover:border-primary/40 rounded-xl p-5 transition-all group">
@@ -45,6 +47,12 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
           <Badge variant="outline" className={cn('text-xs', status.className)}>
             {status.label}
           </Badge>
+          {isInterSdis && (
+            <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10">
+              <Users className="w-3 h-3 mr-1" />
+              Inter-SDIS
+            </Badge>
+          )}
           {onFavorite && (
             <Button
               variant="ghost"

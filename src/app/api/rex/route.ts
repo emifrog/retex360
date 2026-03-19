@@ -69,6 +69,9 @@ export async function POST(request: Request) {
         key_figures: body.key_figures || {},
         chronologie: body.chronologie || [],
         prescriptions: body.prescriptions || [],
+        temoignages: body.temoignages || [],
+        description_site: body.description_site || null,
+        ressources_complementaires: body.ressources_complementaires || [],
       })
       .select()
       .single();

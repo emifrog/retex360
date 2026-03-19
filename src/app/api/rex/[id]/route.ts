@@ -106,6 +106,9 @@ export async function PUT(
         key_figures: body.key_figures || {},
         chronologie: body.chronologie || [],
         prescriptions: body.prescriptions || [],
+        temoignages: body.temoignages || [],
+        description_site: body.description_site || null,
+        ressources_complementaires: body.ressources_complementaires || [],
       })
       .eq('id', id)
       .select()

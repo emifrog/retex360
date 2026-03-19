@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, X, Filter, RotateCcw } from 'lucide-react';
+import { Search, X, Filter, RotateCcw, Users } from 'lucide-react';
 import { REX_TYPES, SEVERITIES, STATUSES } from '@/types';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
@@ -27,6 +27,7 @@ interface SearchFiltersProps {
     sdis?: string;
     severity?: string;
     status?: string;
+    interSdis?: string;
     dateFrom?: string;
     dateTo?: string;
     tags?: string;
@@ -43,6 +44,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
   const [sdis, setSdis] = useState(currentParams.sdis || '');
   const [severity, setSeverity] = useState(currentParams.severity || '');
   const [status, setStatus] = useState(currentParams.status || '');
+  const [interSdis, setInterSdis] = useState(currentParams.interSdis === 'true');
   const [dateFrom, setDateFrom] = useState(currentParams.dateFrom || '');
   const [dateTo, setDateTo] = useState(currentParams.dateTo || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(
@@ -50,7 +52,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
   );
   const [showAllTags, setShowAllTags] = useState(false);
 
-  const hasActiveFilters = query || type || sdis || severity || status || dateFrom || dateTo || selectedTags.length > 0;
+  const hasActiveFilters = query || type || sdis || severity || status || interSdis || dateFrom || dateTo || selectedTags.length > 0;
 
   const buildSearchUrl = () => {
     const params = new URLSearchParams();
@@ -59,6 +61,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
     if (sdis) params.set('sdis', sdis);
     if (severity) params.set('severity', severity);
     if (status) params.set('status', status);
+    if (interSdis) params.set('interSdis', 'true');
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
     if (selectedTags.length > 0) params.set('tags', selectedTags.join(','));
@@ -77,6 +80,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
     setSdis('');
     setSeverity('');
     setStatus('');
+    setInterSdis(false);
     setDateFrom('');
     setDateTo('');
     setSelectedTags([]);
@@ -200,6 +204,19 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             </Select>
           </div>
         </div>
+
+        {/* Inter-SDIS toggle */}
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={interSdis}
+            onChange={(e) => setInterSdis(e.target.checked)}
+            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+          />
+          <Users className="w-4 h-4 text-blue-500" />
+          <span className="text-sm font-medium">Inter-SDIS uniquement</span>
+          <span className="text-xs text-muted-foreground">(REX impliquant plusieurs SDIS)</span>
+        </label>
 
         {/* Date range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
