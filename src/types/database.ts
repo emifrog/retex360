@@ -284,6 +284,7 @@ export type Database = {
           title: string | null;
           content: string | null;
           link: string | null;
+          rex_id: string | null;
           is_read: boolean;
           created_at: string;
         };
@@ -294,6 +295,7 @@ export type Database = {
           title?: string | null;
           content?: string | null;
           link?: string | null;
+          rex_id?: string | null;
           is_read?: boolean;
           created_at?: string;
         };
@@ -304,6 +306,7 @@ export type Database = {
           title?: string | null;
           content?: string | null;
           link?: string | null;
+          rex_id?: string | null;
           is_read?: boolean;
           created_at?: string;
         };

@@ -1,46 +1,75 @@
--- Notifications table
--- NOTE: Uses 'content' column to match 001_initial_schema.sql and app code
-CREATE TABLE IF NOT EXISTS notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('mention', 'comment', 'validation', 'rejection', 'favorite', 'new_rex', 'system')),
-  title TEXT,
-  content TEXT,
-  link TEXT,
-  rex_id UUID REFERENCES rex(id) ON DELETE CASCADE,
-  is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ============================================
+-- 003: Enhance notifications (fix schema from 001)
+-- ============================================
+-- Migration 001 created the notifications table WITHOUT rex_id and with VARCHAR(50) type.
+-- This migration safely adds the missing column and updates constraints.
 
--- Index for faster queries
+-- Add rex_id column if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'rex_id'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN rex_id UUID REFERENCES rex(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Add NOT NULL constraint on user_id if missing
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'user_id' AND is_nullable = 'YES'
+  ) THEN
+    ALTER TABLE notifications ALTER COLUMN user_id SET NOT NULL;
+  END IF;
+END $$;
+
+-- Widen type column from VARCHAR(50) to TEXT and add CHECK constraint
+-- (safe: TEXT is compatible with VARCHAR, existing data is preserved)
+ALTER TABLE notifications ALTER COLUMN type TYPE TEXT;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.check_constraints
+    WHERE constraint_name = 'notifications_type_check'
+  ) THEN
+    ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+      CHECK (type IN ('mention', 'comment', 'validation', 'rejection', 'favorite', 'new_rex', 'system'));
+  END IF;
+END $$;
+
+-- Drop duplicate indexes from migration 001 (replaced by more specific ones below)
+DROP INDEX IF EXISTS idx_notifications_user;
+DROP INDEX IF EXISTS idx_notifications_unread;
+
+-- Create improved indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_rex_id ON notifications(rex_id);
 
--- RLS policies
+-- RLS policies (drop and recreate to ensure correct definitions)
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
 DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
 DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 
--- Users can only see their own notifications
 CREATE POLICY "Users can view own notifications"
   ON notifications FOR SELECT
   USING (auth.uid() = user_id);
 
--- Users can update their own notifications (mark as read)
 CREATE POLICY "Users can update own notifications"
   ON notifications FOR UPDATE
   USING (auth.uid() = user_id);
 
--- System can insert notifications for any user
 CREATE POLICY "System can insert notifications"
   ON notifications FOR INSERT
   WITH CHECK (true);
 
--- Drop old function signature before recreating with renamed parameter
+-- Drop old function signature before recreating
 DROP FUNCTION IF EXISTS create_notification(UUID, TEXT, TEXT, TEXT, TEXT, UUID);
 
 -- Function to create a notification
@@ -70,13 +99,9 @@ DECLARE
   v_author_name TEXT;
   v_rex_title TEXT;
 BEGIN
-  -- Get author name
   SELECT full_name INTO v_author_name FROM profiles WHERE id = NEW.author_id;
-  
-  -- Get REX title
   SELECT title INTO v_rex_title FROM rex WHERE id = NEW.rex_id;
-  
-  -- Create notification for each mentioned user
+
   FOREACH v_mentioned_user_id IN ARRAY NEW.mentions
   LOOP
     IF v_mentioned_user_id != NEW.author_id THEN
@@ -90,12 +115,11 @@ BEGIN
       );
     END IF;
   END LOOP;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for mentions
 DROP TRIGGER IF EXISTS trigger_notify_on_mention ON comments;
 CREATE TRIGGER trigger_notify_on_mention
   AFTER INSERT ON comments
@@ -110,7 +134,7 @@ DECLARE
 BEGIN
   IF NEW.status = 'validated' AND OLD.status != 'validated' THEN
     SELECT full_name INTO v_validator_name FROM profiles WHERE id = NEW.validated_by;
-    
+
     PERFORM create_notification(
       NEW.author_id,
       'validation',
@@ -120,7 +144,7 @@ BEGIN
       NEW.id
     );
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -134,22 +158,14 @@ CREATE TRIGGER trigger_notify_on_validation
 -- ============================================================================
 -- REALTIME CONFIGURATION
 -- ============================================================================
--- Enable realtime for notifications table
--- This allows the frontend to subscribe to INSERT/UPDATE/DELETE events
-
--- Add table to realtime publication
--- Note: This requires the supabase_realtime publication to exist
--- If it doesn't exist, create it first
 DO $$
 BEGIN
-  -- Create publication if it doesn't exist
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
   ) THEN
     CREATE PUBLICATION supabase_realtime;
   END IF;
 
-  -- Add notifications table only if not already a member
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
     WHERE pubname = 'supabase_realtime' AND tablename = 'notifications'
@@ -158,6 +174,5 @@ BEGIN
   END IF;
 END $$;
 
--- Grant necessary permissions for realtime
 GRANT SELECT ON notifications TO authenticated;
 GRANT UPDATE ON notifications TO authenticated;
