@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { commentSchema } from '@/lib/validators/api';
+import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // GET - Fetch comments for a REX
 export async function GET(
@@ -24,7 +26,7 @@ export async function GET(
 
     if (error) {
       logger.error('Comments fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erreur lors du chargement des commentaires' }, { status: 500 });
     }
 
     // Organize comments into threads (parent comments with replies)
@@ -64,11 +66,23 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content, parent_id, mentions } = body;
 
-    if (!content?.trim()) {
+    // Validate input (content length, parent_id/mentions as UUIDs, mentions cap)
+    const validated = commentSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    // Strip any HTML (comments are plain text) and dedupe mentions, excluding self.
+    const content = sanitizePlainText(validated.data.content).trim();
+    if (!content) {
       return NextResponse.json({ error: 'Contenu requis' }, { status: 400 });
     }
+    const parent_id = validated.data.parent_id ?? null;
+    const mentions = [...new Set(validated.data.mentions)].filter((mid) => mid !== user.id);
 
     // Create comment
     const { data: comment, error } = await supabase
@@ -76,9 +90,9 @@ export async function POST(
       .insert({
         rex_id: rexId,
         author_id: user.id,
-        parent_id: parent_id || null,
-        content: content.trim(),
-        mentions: mentions || [],
+        parent_id,
+        content,
+        mentions,
       })
       .select(`
         *,
@@ -88,7 +102,7 @@ export async function POST(
 
     if (error) {
       logger.error('Comment create error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erreur lors de la création du commentaire' }, { status: 500 });
     }
 
     // Get REX info and commenter info for notifications
@@ -119,17 +133,22 @@ export async function POST(
       });
     }
 
-    // Notify mentioned users
-    if (mentions && mentions.length > 0) {
-      const mentionNotifications = mentions
-        .filter((mentionedId: string) => mentionedId !== user.id) // Don't notify self
-        .map((mentionedId: string) => ({
-          user_id: mentionedId,
-          type: 'mention',
-          title: `${commenterName} vous a mentionné`,
-          content: content.trim().slice(0, 100) + (content.length > 100 ? '...' : ''),
-          link: `/rex/${rexId}#comments`,
-        }));
+    // Notify mentioned users — only those that actually exist, to avoid spamming
+    // notifications via forged user ids (and to keep the batch insert valid).
+    if (mentions.length > 0) {
+      const { data: realProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('id', mentions);
+
+      const preview = content.slice(0, 100) + (content.length > 100 ? '...' : '');
+      const mentionNotifications = (realProfiles || []).map(({ id: mentionedId }) => ({
+        user_id: mentionedId,
+        type: 'mention',
+        title: `${commenterName} vous a mentionné`,
+        content: preview,
+        link: `/rex/${rexId}#comments`,
+      }));
 
       if (mentionNotifications.length > 0) {
         await supabase.from('notifications').insert(mentionNotifications);

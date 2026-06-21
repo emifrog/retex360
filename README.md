@@ -187,7 +187,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 62 tests (validators, rate-limit, sanitize, image-optimizer)
+- **Jest** + 70 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
 - **GitHub Actions** (lint + typecheck + tests + build)
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
@@ -196,26 +196,31 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **PostgreSQL** avec extensions :
   - `pgvector` pour recherche sémantique
   - `pg_trgm` pour recherche textuelle
-- **Row Level Security (RLS)**
-- **Triggers** automatiques
-- **8 migrations** ordonnées (idempotentes avec ON CONFLICT)
+- **Row Level Security (RLS)** cloisonnée par SDIS (validateurs/admins limités à leur SDIS, super_admin transverse)
+- **Triggers** automatiques (fonctions `SECURITY DEFINER` avec `search_path` fixé)
+- **13 migrations** ordonnées (idempotentes)
 - **Index composites** optimisés (status+validated_at, favorites, comments, attachments)
+- **Storage privé** : bucket `rex-attachments` non public + RLS storage (accès via URLs signées)
 
 ---
 
 ## 🔒 Sécurité
 
 - **Authentification** Supabase Auth (JWT)
-- **Row Level Security** sur toutes les tables
-- **Validation Zod** sur toutes les API + **DOMPurify** (XSS)
+- **Row Level Security** sur toutes les tables, **cloisonnée par SDIS**
+- **Validation Zod** sur toutes les API (REX, commentaires, mentions plafonnées)
+- **Sanitization XSS double couche** : DOMPurify côté serveur **au stockage** (`sanitize-server.ts` + jsdom) ET côté client au rendu, config partagée (sans `style`, `rel=noopener` forcé)
 - **Headers de sécurité** : CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - **Rate limiting** :
   - Global : 120 req/min par IP (Redis Upstash, persistant entre invocations serverless)
   - Auth : 5/min, Upload : 10/min, API : 60/min, AI : 10/min, PDF : 10/min
-- **Permissions** vérifiées côté serveur
+  - **Fail-closed** sur auth & IA si Redis est injoignable ; **Upstash obligatoire en production** (échec au boot sinon)
+- **Permissions** vérifiées côté serveur (helper réutilisable `requireUser`/`requireRole`)
+- **Pièces jointes privées** : bucket non public, servies par **URLs signées** courtes (accès lié à la visibilité du REX)
+- **Pas de fuite d'erreurs internes** : messages génériques au client, détails loggués en interne
 - **Anonymisation PDF** côté serveur (email non fetché, full_name masqué)
 - **Variables d'environnement** pour les secrets
-- **Sentry** sampling réduit en production (traces: 0.2, profiles: 0.1)
+- **Sentry** initialisé via `instrumentation.ts` / `instrumentation-client.ts`, sampling réduit en production (traces: 0.2, profiles: 0.1)
 
 ---
 
@@ -275,19 +280,24 @@ src/
 │   ├── admin/            # Gestion utilisateurs
 │   └── search/           # Recherche avancée
 ├── lib/
-│   ├── supabase/         # Clients Supabase + middleware sécurité
+│   ├── supabase/         # Clients Supabase (user + admin) + middleware sécurité
 │   ├── actions/          # Server Actions
 │   ├── validators/       # Schémas Zod
 │   ├── hooks/            # Hooks React (useUser, useRexList, useDashboard...)
 │   ├── pdf/              # Template PDF @react-pdf/renderer
+│   ├── api-auth.ts       # Gardes d'autorisation réutilisables (requireUser/requireRole)
+│   ├── sanitize.ts       # Sanitization HTML côté client (rendu)
+│   ├── sanitize-server.ts # Sanitization HTML côté serveur (stockage, jsdom)
+│   ├── sanitize-config.ts # Allowlist DOMPurify partagée client/serveur
+│   ├── storage.ts        # URLs signées + suppression pièces jointes (bucket privé)
 │   ├── image-optimizer.ts # Sharp compression + thumbnails
 │   ├── logger.ts         # Logging structuré + correlation IDs
-│   ├── rate-limit.ts     # Rate limiters Upstash Redis
+│   ├── rate-limit.ts     # Rate limiters Upstash Redis (fail-closed auth/IA)
 │   ├── notifications.ts  # Service notifications
 │   └── openai.ts         # Client OpenRouter/OpenAI (lazy init)
 ├── types/                # Types TypeScript
 └── supabase/
-    └── migrations/       # 8 scripts SQL (idempotents)
+    └── migrations/       # 13 scripts SQL (idempotents)
 ```
 
 ---
@@ -299,7 +309,7 @@ src/
 - Compte Supabase
 - Clé API OpenRouter (optionnel)
 - Clé API OpenAI (optionnel, pour embeddings)
-- Compte Upstash Redis (optionnel, pour rate limiting production)
+- Compte Upstash Redis (**obligatoire en production** pour le rate limiting ; optionnel en dev — fallback mémoire)
 
 ### 1. Cloner le projet
 ```bash
@@ -340,15 +350,25 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 Exécuter les migrations dans Supabase SQL Editor :
 ```sql
 -- Dans l'ordre :
--- 1. supabase/migrations/001_initial_schema.sql
--- 2. supabase/migrations/002_semantic_search.sql
--- 3. supabase/migrations/003_notifications.sql
--- 4. supabase/migrations/004_dgscgc_fields.sql
--- 5. supabase/migrations/005_key_figures.sql
--- 6. supabase/migrations/006_timeline_prescriptions.sql
--- 7. supabase/migrations/007_rejection_reason.sql
--- 8. supabase/migrations/008_all_sdis.sql
+-- 1.  supabase/migrations/001_initial_schema.sql
+-- 2.  supabase/migrations/002_semantic_search.sql
+-- 3.  supabase/migrations/003_notifications.sql
+-- 4.  supabase/migrations/004_dgscgc_fields.sql
+-- 5.  supabase/migrations/005_key_figures.sql
+-- 6.  supabase/migrations/006_timeline_prescriptions.sql
+-- 7.  supabase/migrations/007_rejection_reason.sql
+-- 8.  supabase/migrations/008_all_sdis.sql
+-- 9.  supabase/migrations/009_performance_indexes.sql
+-- 10. supabase/migrations/010_temoignages_site.sql
+-- 11. supabase/migrations/011_ressources_numerotation.sql
+-- 12. supabase/migrations/012_private_attachments_bucket.sql   -- rend le bucket privé + RLS storage
+-- 13. supabase/migrations/013_rls_sdis_partitioning.sql        -- cloisonnement RLS par SDIS + search_path
 ```
+
+> ⚠️ Les migrations 012 et 013 sont des durcissements de sécurité : exécutez-les
+> sur les déploiements existants. La 012 bascule le bucket `rex-attachments` en
+> privé — vérifiez ensuite que l'affichage des pièces jointes et l'export PDF
+> fonctionnent (URLs signées).
 
 ### 4. Lancer le serveur
 ```bash
@@ -362,7 +382,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest (62 tests)
+npm test             # Jest (70 tests)
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests avec couverture
 npm run format       # Prettier (formatage)
@@ -475,7 +495,7 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (62 tests) + CI GitHub Actions
+- [x] Tests Jest (70 tests) + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur
@@ -488,6 +508,14 @@ Un compte démo est disponible pour tester l'application en lecture seule :
 - [x] Prettier + formatage automatique
 - [x] Typographie Inter + JetBrains Mono
 - [x] RGPD (export données, suppression compte, cookie consent)
+- [x] **Audit de sécurité + durcissement** (juin 2026) :
+  - [x] Sanitization HTML serveur au stockage (REX + commentaires)
+  - [x] RLS cloisonnée par SDIS + `search_path` sur fonctions `SECURITY DEFINER`
+  - [x] Bucket pièces jointes privé + URLs signées
+  - [x] Rate limiting fail-closed (auth/IA) + Upstash obligatoire en prod
+  - [x] Sentry réellement initialisé (instrumentation Next 16)
+  - [x] Correction du changement de rôle admin (bypass RLS via service role)
+  - [x] Helper d'autorisation `requireRole` + fin des fuites d'erreurs internes
 
 ### Prochaines étapes
 - [ ] Whitelist domaines email (inscription contrôlée par SDIS)

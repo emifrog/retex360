@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { roleUpdateSchema } from '@/lib/validators/api';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { requireRole } from '@/lib/api-auth';
 
 export async function PUT(request: NextRequest) {
   const ip = getClientIp(request);
@@ -25,20 +26,9 @@ export async function PUT(request: NextRequest) {
     const { userId, role } = validated.data;
 
     // Check auth and admin role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const { data: currentProfile } = await supabase
-      .from('profiles')
-      .select('role, sdis_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!currentProfile || !['admin', 'super_admin'].includes(currentProfile.role)) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
-    }
+    const auth = await requireRole(supabase, ['admin', 'super_admin']);
+    if ('response' in auth) return auth.response;
+    const { user, profile: currentProfile } = auth;
 
     const isSuperAdmin = currentProfile.role === 'super_admin';
 

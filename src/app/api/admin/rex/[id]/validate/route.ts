@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { requireRole } from '@/lib/api-auth';
 
 export async function POST(
   request: NextRequest,
@@ -16,20 +17,9 @@ export async function POST(
     const supabase = await createClient();
 
     // Check auth and role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || !['validator', 'admin', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
-    }
+    const auth = await requireRole(supabase, ['validator', 'admin', 'super_admin']);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     // Update REX status
     const { error } = await supabase

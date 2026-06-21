@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       logger.error('Notifications fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erreur lors du chargement des notifications' }, { status: 500 });
     }
 
     // Get unread count
@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
         .eq('is_read', false);
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logger.error('Mark all read error:', error);
+        return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
       }
     } else if (notificationIds && notificationIds.length > 0) {
       const { error } = await supabase
@@ -82,7 +83,8 @@ export async function POST(request: NextRequest) {
         .in('id', notificationIds);
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logger.error('Mark read error:', error);
+        return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
       }
     }
 

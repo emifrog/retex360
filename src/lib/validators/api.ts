@@ -17,6 +17,8 @@ export const passwordChangeSchema = z.object({
 export const commentSchema = z.object({
   content: z.string().min(1, 'Le commentaire ne peut pas être vide').max(5000),
   parent_id: z.string().uuid().nullable().optional(),
+  // Mentioned user ids — validated as UUIDs and capped to bound notification fan-out.
+  mentions: z.array(z.string().uuid()).max(20).optional().default([]),
 });
 
 // Role update schema

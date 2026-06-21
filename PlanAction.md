@@ -7,7 +7,7 @@
 4. ✅ Sentry sampling réduit (traces: 0.2, profiles: 0.1)
 
 ## Phase 2 — Qualité (première semaine) : ✅ TERMINÉE
-5. ✅ Jest + React Testing Library + 62 tests critiques (validators, rate-limit, sanitize, image-optimizer)
+5. ✅ Jest + React Testing Library + 70 tests critiques (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
 6. ✅ Pipeline CI GitHub Actions (lint + typecheck + tests + build)
 
 ## Phase 3 — Polish (avant commercialisation) :
@@ -159,12 +159,49 @@
 72. Redirection retex360.fr → page d'accueil marketing / login générique
 
 
+## Phase 9 — Audit de sécurité & corrections (juin 2026) : ✅ EN GRANDE PARTIE TERMINÉE
+
+### 9A — Bloquants (corrigés) : ✅ TERMINÉE
+73. ✅ Changement de rôle admin cassé par la RLS (`profiles UPDATE USING auth.uid()=id` → 0 ligne en silence) : update via service role (`createAdminClient`) + détection 0 ligne
+74. ✅ Sentry jamais initialisé (aucune instrumentation) : `instrumentation.ts` (register server/edge + `onRequestError`) + `instrumentation-client.ts`
+75. ✅ Rate-limiting fail-open en serverless : Upstash **obligatoire en prod** (échec au boot), **fail-closed** sur auth & IA
+76. ✅ Bucket `rex-attachments` public (IDOR storage) : bucket privé (migration 012) + **URLs signées** server-side (`lib/storage.ts`)
+
+### 9B — Court terme (corrigés) : ✅ TERMINÉE
+77. ✅ HTML Tiptap non assaini au stockage : `sanitize-server.ts` (DOMPurify + jsdom) sur POST/PUT REX ; config partagée durcie (sans `style`, `rel=noopener` forcé)
+78. ✅ Commentaires sans validation : Zod + strip HTML + mentions plafonnées/dédupliquées/vérifiées (anti-spam notifications)
+79. ✅ Fuites RLS inter-SDIS : migration 013 (validateurs/admins cloisonnés par SDIS, commentaire seulement sur REX visible, auteur peut supprimer son REX, `profiles INSERT` restreint)
+80. ✅ Fonctions `SECURITY DEFINER` sans `search_path` : `ALTER FUNCTION ... SET search_path` (migration 013)
+81. ✅ Duplication auth/rôle dans les routes : helper `requireUser`/`requireRole` (`lib/api-auth.ts`, appliqué aux routes admin)
+82. ✅ Fuite de `error.message` au client (10 occurrences) : messages génériques + log interne
+83. ✅ `npm audit fix` (non-breaking) : 43 → 20 vulnérabilités
+84. ✅ README + PlanAction mis à jour
+
+### 9C — Actions manuelles requises (sur les environnements) :
+- ⚠️ Exécuter les migrations **012** puis **013** dans Supabase (prod + staging)
+- ⚠️ Vérifier l'affichage des pièces jointes + export PDF après passage du bucket en privé (URLs signées)
+- ⚠️ Confirmer que `UPSTASH_REDIS_REST_URL` / `_TOKEN` sont définis en production (sinon l'app refuse de démarrer — voulu)
+- ⚠️ Tester un cycle complet création/édition/commentaire/validation **inter-SDIS** (cloisonnement RLS)
+
+### 9D — Suivi sécurité (recommandé, non bloquant) :
+85. [ ] Bump `next@16.2.9` (corrige la seule vuln npm restante de sévérité haute, dans le framework)
+86. [ ] Étendre `requireRole` aux ~25 routes restantes
+87. [ ] CSP à nonce (retirer `unsafe-inline` / `unsafe-eval`)
+88. [ ] Validation des magic bytes des uploads (pas seulement le Content-Type déclaré ; PDF inspecté)
+89. [ ] Validation Zod du PUT `/api/rex/[id]` (actuellement non validé)
+90. [ ] Tests serveur d'autorisation (RBAC) + isolation multi-SDIS + seuil de couverture en CI
+91. [ ] Durcir la CI : `npm audit`, `format:check`
+92. [ ] Supprimer la route de debug `/api/sentry-test`
+93. [ ] Quotas IA par utilisateur (coût borné) + délimitation anti prompt-injection
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
-Validation des entrées	A	Zod sur toutes les API + DOMPurify XSS
+Validation des entrées	A	Zod sur les API (REX, commentaires, mentions) + sanitization XSS serveur (stockage) ET client (rendu)
 RGPD/GDPR	A	Export données, suppression compte, cookie consent, mentions légales
-Base de données	A+	8 migrations ordonnées, RLS activé, pgvector, indexes
+Base de données	A	13 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
+Stockage fichiers	A	Bucket rex-attachments privé + URLs signées (accès lié à la visibilité du REX)
 Responsive mobile	A	Tailwind breakpoints, mobile-first, popovers/table/timeline/charts adaptifs (Phase 6)
 Optimisation images	A	Sharp + WebP + thumbnails
 Gestion d'erreurs	A	Try/catch, error boundaries, logging centralisé
@@ -172,9 +209,9 @@ TypeScript	A	Mode strict activé
 Accessibilité	B	ARIA labels, sémantique HTML, page déclaration RGAA
 React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
-Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy
-Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min)
-Tests	A	62 tests (validators, rate-limit, sanitize, image-optimizer)
+Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
+Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
+Tests	B	70 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer) ; routes API / RBAC / RLS encore non couvertes
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod

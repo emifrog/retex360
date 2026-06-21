@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { commentSchema } from '@/lib/validators/api';
+import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // PUT - Update a comment
 export async function PUT(
@@ -37,16 +39,24 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { content } = body;
 
-    if (!content?.trim()) {
+    const validated = commentSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const content = sanitizePlainText(validated.data.content).trim();
+    if (!content) {
       return NextResponse.json({ error: 'Contenu requis' }, { status: 400 });
     }
 
     const { data: comment, error } = await supabase
       .from('comments')
       .update({
-        content: content.trim(),
+        content,
         is_edited: true,
         updated_at: new Date().toISOString(),
       })
@@ -59,7 +69,7 @@ export async function PUT(
 
     if (error) {
       logger.error('Comment update error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erreur lors de la modification du commentaire' }, { status: 500 });
     }
 
     return NextResponse.json({ data: comment });
@@ -115,7 +125,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Comment delete error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erreur lors de la suppression du commentaire' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

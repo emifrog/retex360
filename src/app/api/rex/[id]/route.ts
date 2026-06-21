@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
+import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 
 // GET - Get single REX
 export async function GET(
@@ -80,36 +81,39 @@ export async function PUT(
 
     const body = await request.json();
 
+    // Sanitize HTML rich-text fields server-side before storage.
+    const clean = sanitizeRexHtmlFields(body);
+
     const { data: rex, error } = await supabase
       .from('rex')
       .update({
-        title: body.title,
-        intervention_date: body.intervention_date,
-        type: body.type,
-        severity: body.severity,
-        visibility: body.visibility,
-        description: body.description,
-        context: body.context,
-        means_deployed: body.means_deployed,
-        difficulties: body.difficulties,
-        lessons_learned: body.lessons_learned,
-        tags: body.tags || [],
-        status: body.status,
+        title: clean.title,
+        intervention_date: clean.intervention_date,
+        type: clean.type,
+        severity: clean.severity,
+        visibility: clean.visibility,
+        description: clean.description,
+        context: clean.context,
+        means_deployed: clean.means_deployed,
+        difficulties: clean.difficulties,
+        lessons_learned: clean.lessons_learned,
+        tags: clean.tags || [],
+        status: clean.status,
         updated_at: new Date().toISOString(),
         // DGSCGC fields
-        type_production: body.type_production,
-        message_ambiance: body.message_ambiance || null,
-        sitac: body.sitac || null,
-        elements_favorables: body.elements_favorables || null,
-        elements_defavorables: body.elements_defavorables || null,
-        documentation_operationnelle: body.documentation_operationnelle || null,
-        focus_thematiques: body.focus_thematiques || [],
-        key_figures: body.key_figures || {},
-        chronologie: body.chronologie || [],
-        prescriptions: body.prescriptions || [],
-        temoignages: body.temoignages || [],
-        description_site: body.description_site || null,
-        ressources_complementaires: body.ressources_complementaires || [],
+        type_production: clean.type_production,
+        message_ambiance: clean.message_ambiance || null,
+        sitac: clean.sitac || null,
+        elements_favorables: clean.elements_favorables || null,
+        elements_defavorables: clean.elements_defavorables || null,
+        documentation_operationnelle: clean.documentation_operationnelle || null,
+        focus_thematiques: clean.focus_thematiques || [],
+        key_figures: clean.key_figures || {},
+        chronologie: clean.chronologie || [],
+        prescriptions: clean.prescriptions || [],
+        temoignages: clean.temoignages || [],
+        description_site: clean.description_site || null,
+        ressources_complementaires: clean.ressources_complementaires || [],
       })
       .eq('id', id)
       .select()
@@ -117,7 +121,7 @@ export async function PUT(
 
     if (error) {
       logger.error('Error updating REX:', error);
-      return NextResponse.json({ message: error.message }, { status: 500 });
+      return NextResponse.json({ message: 'Erreur lors de la mise à jour du REX' }, { status: 500 });
     }
 
     return NextResponse.json(rex);
@@ -189,7 +193,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Error deleting REX:', error);
-      return NextResponse.json({ message: error.message }, { status: 500 });
+      return NextResponse.json({ message: 'Erreur lors de la suppression du REX' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'REX supprimé' });

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { validateRexByType } from '@/lib/validators/rex';
+import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 
 // POST - Create new REX
 export async function POST(request: Request) {
@@ -41,44 +42,48 @@ export async function POST(request: Request) {
       );
     }
     
+    // Sanitize HTML rich-text fields server-side before storage (defense in
+    // depth: the Tiptap HTML is client-controlled and could be posted directly).
+    const clean = sanitizeRexHtmlFields(body);
+
     const { data: rex, error } = await supabase
       .from('rex')
       .insert({
-        title: body.title,
-        intervention_date: body.intervention_date,
-        type: body.type,
-        severity: body.severity,
-        visibility: body.visibility || 'sdis',
-        description: body.description,
-        context: body.context,
-        means_deployed: body.means_deployed,
-        difficulties: body.difficulties,
-        lessons_learned: body.lessons_learned,
-        tags: body.tags || [],
-        status: body.status || 'draft',
+        title: clean.title,
+        intervention_date: clean.intervention_date,
+        type: clean.type,
+        severity: clean.severity,
+        visibility: clean.visibility || 'sdis',
+        description: clean.description,
+        context: clean.context,
+        means_deployed: clean.means_deployed,
+        difficulties: clean.difficulties,
+        lessons_learned: clean.lessons_learned,
+        tags: clean.tags || [],
+        status: clean.status || 'draft',
         author_id: user.id,
         sdis_id: profile.sdis_id,
         // DGSCGC fields
-        type_production: body.type_production || 'retex',
-        message_ambiance: body.message_ambiance || null,
-        sitac: body.sitac || null,
-        elements_favorables: body.elements_favorables || null,
-        elements_defavorables: body.elements_defavorables || null,
-        documentation_operationnelle: body.documentation_operationnelle || null,
-        focus_thematiques: body.focus_thematiques || [],
-        key_figures: body.key_figures || {},
-        chronologie: body.chronologie || [],
-        prescriptions: body.prescriptions || [],
-        temoignages: body.temoignages || [],
-        description_site: body.description_site || null,
-        ressources_complementaires: body.ressources_complementaires || [],
+        type_production: clean.type_production || 'retex',
+        message_ambiance: clean.message_ambiance || null,
+        sitac: clean.sitac || null,
+        elements_favorables: clean.elements_favorables || null,
+        elements_defavorables: clean.elements_defavorables || null,
+        documentation_operationnelle: clean.documentation_operationnelle || null,
+        focus_thematiques: clean.focus_thematiques || [],
+        key_figures: clean.key_figures || {},
+        chronologie: clean.chronologie || [],
+        prescriptions: clean.prescriptions || [],
+        temoignages: clean.temoignages || [],
+        description_site: clean.description_site || null,
+        ressources_complementaires: clean.ressources_complementaires || [],
       })
       .select()
       .single();
 
     if (error) {
       logger.error('Error creating REX:', error);
-      return NextResponse.json({ message: error.message }, { status: 500 });
+      return NextResponse.json({ message: 'Erreur lors de la création du REX' }, { status: 500 });
     }
 
     // Link attachments to the new REX
@@ -141,7 +146,7 @@ export async function GET(request: Request) {
 
     if (error) {
       logger.error('Error fetching REX:', error);
-      return NextResponse.json({ message: error.message }, { status: 500 });
+      return NextResponse.json({ message: 'Erreur lors du chargement des REX' }, { status: 500 });
     }
 
     return NextResponse.json({
