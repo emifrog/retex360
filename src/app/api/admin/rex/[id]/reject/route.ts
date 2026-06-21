@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
@@ -44,8 +44,9 @@ export async function POST(
       .single();
 
     if (rex) {
-      // Create notification for author
-      await supabase.from('notifications').insert({
+      // Notification destinée à l'auteur : via le client admin (la RLS interdit
+      // au client utilisateur d'écrire une notification pour autrui).
+      await createAdminClient().from('notifications').insert({
         user_id: rex.author_id,
         type: 'rejection',
         title: 'RETEX rejeté',

@@ -135,8 +135,12 @@ export default function RegisterPage() {
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               required
+              minLength={12}
               className="bg-background/50"
             />
+            <p className="text-xs text-muted-foreground">
+              12 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>

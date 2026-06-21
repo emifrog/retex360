@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { strongPasswordSchema } from './auth';
 
 // Profile update schema
 export const profileUpdateSchema = z.object({
@@ -7,10 +8,10 @@ export const profileUpdateSchema = z.object({
   sdis_id: z.string().uuid('SDIS invalide').nullable().optional(),
 });
 
-// Password change schema
+// Password change schema — applique la même politique forte que l'inscription.
 export const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
-  newPassword: z.string().min(8, 'Le nouveau mot de passe doit contenir au moins 8 caractères'),
+  newPassword: strongPasswordSchema,
 });
 
 // Comment schema

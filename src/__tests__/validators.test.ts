@@ -43,8 +43,8 @@ describe('Auth validators', () => {
   describe('registerSchema', () => {
     const validData = {
       email: 'user@example.com',
-      password: 'password123',
-      confirmPassword: 'password123',
+      password: 'Password1234',
+      confirmPassword: 'Password1234',
       fullName: 'John Doe',
       sdisId: '550e8400-e29b-41d4-a716-446655440000',
     };
@@ -57,7 +57,34 @@ describe('Auth validators', () => {
     it('rejects mismatched passwords', () => {
       const result = registerSchema.safeParse({
         ...validData,
-        confirmPassword: 'different',
+        confirmPassword: 'DifferentPass1',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects password under 12 characters', () => {
+      const result = registerSchema.safeParse({
+        ...validData,
+        password: 'Short1',
+        confirmPassword: 'Short1',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects password without uppercase', () => {
+      const result = registerSchema.safeParse({
+        ...validData,
+        password: 'password1234',
+        confirmPassword: 'password1234',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects password without a digit', () => {
+      const result = registerSchema.safeParse({
+        ...validData,
+        password: 'PasswordNoDigit',
+        confirmPassword: 'PasswordNoDigit',
       });
       expect(result.success).toBe(false);
     });
@@ -85,7 +112,7 @@ describe('API validators', () => {
     it('accepts valid password change', () => {
       const result = passwordChangeSchema.safeParse({
         currentPassword: 'oldpass',
-        newPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
       });
       expect(result.success).toBe(true);
     });
@@ -93,17 +120,18 @@ describe('API validators', () => {
     it('rejects empty current password', () => {
       const result = passwordChangeSchema.safeParse({
         currentPassword: '',
-        newPassword: 'newpassword123',
+        newPassword: 'NewPassword123',
       });
       expect(result.success).toBe(false);
     });
 
-    it('rejects short new password (< 8 chars)', () => {
-      const result = passwordChangeSchema.safeParse({
-        currentPassword: 'oldpass',
-        newPassword: 'short',
-      });
-      expect(result.success).toBe(false);
+    it('rejects weak new password (< 12 chars or missing class)', () => {
+      expect(passwordChangeSchema.safeParse({
+        currentPassword: 'oldpass', newPassword: 'short',
+      }).success).toBe(false);
+      expect(passwordChangeSchema.safeParse({
+        currentPassword: 'oldpass', newPassword: 'newpassword123', // pas de majuscule
+      }).success).toBe(false);
     });
   });
 

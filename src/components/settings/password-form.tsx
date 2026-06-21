@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { strongPasswordSchema } from '@/lib/validators/auth';
 
 export function PasswordForm() {
   const [isPending, startTransition] = useTransition();
@@ -27,8 +28,9 @@ export function PasswordForm() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error('Le nouveau mot de passe doit contenir au moins 8 caractères');
+    const pw = strongPasswordSchema.safeParse(newPassword);
+    if (!pw.success) {
+      toast.error(pw.error.issues[0].message);
       return;
     }
 

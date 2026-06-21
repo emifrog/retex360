@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { registerSchema } from '@/lib/validators/auth';
+import { isPasswordCompromised } from '@/lib/password-breach';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,14 @@ export async function POST(request: NextRequest) {
     if (!validated.success) {
       return NextResponse.json(
         { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
+    if (await isPasswordCompromised(validated.data.password)) {
+      return NextResponse.json(
+        { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' },
         { status: 400 }
       );
     }

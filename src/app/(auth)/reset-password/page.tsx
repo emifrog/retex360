@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, CheckCircle, KeyRound } from 'lucide-react';
+import { strongPasswordSchema } from '@/lib/validators/auth';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -57,9 +58,10 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères');
-      toast.error('Le mot de passe doit contenir au moins 8 caractères');
+    const pw = strongPasswordSchema.safeParse(password);
+    if (!pw.success) {
+      setError(pw.error.issues[0].message);
+      toast.error(pw.error.issues[0].message);
       return;
     }
 

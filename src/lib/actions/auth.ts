@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { loginSchema, registerSchema } from '@/lib/validators/auth';
+import { isPasswordCompromised } from '@/lib/password-breach';
 import { logger } from '@/lib/logger';
 
 export async function login(formData: FormData) {
@@ -45,6 +46,11 @@ export async function register(formData: FormData) {
   if (!validated.success) {
     logger.info('Validation errors:', validated.error.issues);
     return { error: validated.error.issues[0].message };
+  }
+
+  // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
+  if (await isPasswordCompromised(validated.data.password)) {
+    return { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' };
   }
 
   const { data: authData, error: authError } = await supabase.auth.signUp({

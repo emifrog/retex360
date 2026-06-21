@@ -3,9 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { strongPasswordSchema } from '@/lib/validators/auth';
+import { isPasswordCompromised } from '@/lib/password-breach';
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+  password: strongPasswordSchema,
 });
 
 export async function POST(request: NextRequest) {
@@ -26,6 +28,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { password } = validated.data;
+
+    // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
+    if (await isPasswordCompromised(password)) {
+      return NextResponse.json(
+        { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     // Check if user is authenticated (via recovery link)

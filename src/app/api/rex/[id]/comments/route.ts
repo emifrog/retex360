@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -118,13 +118,19 @@ export async function POST(
       .eq('id', user.id)
       .single();
 
-    const commenterName = commenter?.grade 
+    const commenterName = commenter?.grade
       ? `${commenter.grade} ${commenter.full_name}`
       : commenter?.full_name || 'Un utilisateur';
 
+    // Notifications destinées à d'autres utilisateurs : insérées via le client
+    // admin (service role). La RLS interdit désormais à un client utilisateur de
+    // créer des notifications pour autrui ; l'autorisation est garantie ici (le
+    // commentaire vient d'être créé par cet utilisateur).
+    const notifClient = createAdminClient();
+
     // Notify REX author if someone else comments
     if (rex && rex.author_id !== user.id) {
-      await supabase.from('notifications').insert({
+      await notifClient.from('notifications').insert({
         user_id: rex.author_id,
         type: 'comment',
         title: `${commenterName} a commenté votre RETEX`,
@@ -151,7 +157,7 @@ export async function POST(
       }));
 
       if (mentionNotifications.length > 0) {
-        await supabase.from('notifications').insert(mentionNotifications);
+        await notifClient.from('notifications').insert(mentionNotifications);
       }
     }
 

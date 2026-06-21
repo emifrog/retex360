@@ -195,6 +195,18 @@
 93. [ ] Quotas IA par utilisateur (coût borné) + délimitation anti prompt-injection
 
 
+### 9E — Durcissements complémentaires (juin 2026) : ✅ TERMINÉE
+94. ✅ Politique de mot de passe forte : `strongPasswordSchema` (12 car. min + majuscule/minuscule/chiffre), appliquée à l'inscription, au changement et à la réinitialisation (login laissé permissif). Tests mis à jour.
+95. ✅ Vérification anti-compromission HaveIBeenPwned (k-anonymity, côté serveur, fail-open) sur les 4 points de définition de mot de passe (`lib/password-breach.ts`).
+96. ✅ Verrouillage `notifications INSERT` (lève la note de la migration 013) : policy restreinte à `auth.uid() = user_id` (migration 015), notifications cross-user routées via le client admin après autorisation, `EXECUTE` révoqué sur `create_notification`.
+    ⚠️ Déploiement : code AVANT migration 015 (sinon coupure temporaire des notifications).
+
+### 9D bis — Reste à traiter (recommandé) :
+- [ ] Évolution mot de passe : refuser aussi la réutilisation de l'ancien (déjà géré par Supabase « same password »).
+- [ ] Bump `next@16.2.9` (seule vuln npm haute restante).
+- [ ] Étendre `requireRole` aux routes restantes ; CSP à nonce ; magic bytes uploads ; tests RBAC ; CI (`npm audit`, `format:check`) ; suppression `/api/sentry-test`.
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
