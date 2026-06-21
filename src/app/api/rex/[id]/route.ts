@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
 
 // GET - Get single REX
 export async function GET(
@@ -172,8 +173,13 @@ export async function DELETE(
       .eq('rex_id', id);
 
     if (attachments && attachments.length > 0) {
-      const paths = attachments.map((a) => a.storage_path);
-      await supabase.storage.from('rex-attachments').remove(paths);
+      // Service-role removal (uploaders may differ from the deleter) + clean up
+      // thumbnails. Authorization (author or admin) is enforced above.
+      const paths = attachments.flatMap((a) => [
+        a.storage_path,
+        thumbnailPathFor(a.storage_path),
+      ]);
+      await removeAttachmentObjects(paths);
     }
 
     const { error } = await supabase

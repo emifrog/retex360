@@ -34,20 +34,46 @@ function createInMemoryRateLimiter(requests: number, windowMs: number) {
   };
 }
 
-// Create rate limiters based on environment
-function createRateLimiter(requests: number, window: Duration) {
+const isProduction = process.env.NODE_ENV === 'production';
+// `next build` runs with NODE_ENV=production but without runtime secrets — don't
+// fail the build, only fail fast on a real production server.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const hasUpstash = Boolean(
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+);
+
+// Fail fast in a running production server if no distributed store is
+// configured. The in-memory fallback is per-instance and therefore useless in
+// serverless (Vercel) — relying on it is a silent fail-open of every limiter.
+if (isProduction && !isBuildPhase && !hasUpstash) {
+  throw new Error(
+    'Rate limiting misconfigured: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN ' +
+      'are required in production. The in-memory fallback is per-instance and does not ' +
+      'protect serverless deployments.'
+  );
+}
+
+// Create rate limiters based on environment.
+// `failClosed`: when Redis is unreachable at request time, deny the request
+// instead of degrading to the (serverless-ineffective) in-memory store. Use for
+// sensitive limiters such as auth brute-force and costly AI calls.
+function createRateLimiter(
+  requests: number,
+  window: Duration,
+  { failClosed = false }: { failClosed?: boolean } = {}
+) {
   // Parse window string for in-memory fallback (e.g., "1 m", "10 s", "1 h")
   const windowStr = String(window);
   const match = windowStr.match(/^(\d+)\s*(s|m|h|d)$/);
-  const windowMs = match 
+  const windowMs = match
     ? parseInt(match[1]) * { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2] as 's'|'m'|'h'|'d']!
     : 60000; // Default 1 minute
 
-  // Use Upstash Redis in production if configured
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  // Use Upstash Redis when configured (required in production, see boot guard).
+  if (hasUpstash) {
     const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     });
 
     const upstashLimiter = new Ratelimit({
@@ -64,32 +90,38 @@ function createRateLimiter(requests: number, window: Duration) {
         try {
           return await upstashLimiter.limit(identifier);
         } catch {
+          if (failClosed) {
+            // Deny rather than degrade to an ineffective per-instance store.
+            return { success: false, limit: requests, remaining: 0, reset: Date.now() + windowMs };
+          }
           return fallback.limit(identifier);
         }
       },
     };
   }
 
-  // Fallback to in-memory for development
+  // Development only: in-memory fallback (production is guarded above).
   return createInMemoryRateLimiter(requests, windowMs);
 }
 
 // Pre-configured rate limiters for different use cases
 export const rateLimiters = {
-  // Auth: 5 attempts per minute (strict for login/register)
-  auth: createRateLimiter(5, '1 m'),
-  
+  // Auth: 5 attempts per minute (strict for login/register) — fail-closed to
+  // keep brute-force protection effective even during a Redis outage.
+  auth: createRateLimiter(5, '1 m', { failClosed: true }),
+
   // Upload: 10 uploads per minute
   upload: createRateLimiter(10, '1 m'),
-  
+
   // API: 60 requests per minute (general API calls)
   api: createRateLimiter(60, '1 m'),
-  
+
   // Search: 30 searches per minute
   search: createRateLimiter(30, '1 m'),
-  
-  // AI: 10 requests per minute (expensive operations)
-  ai: createRateLimiter(10, '1 m'),
+
+  // AI: 10 requests per minute (expensive operations) — fail-closed to bound
+  // cost even during a Redis outage.
+  ai: createRateLimiter(10, '1 m', { failClosed: true }),
 };
 
 // Helper to get client IP from request

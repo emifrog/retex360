@@ -4,6 +4,7 @@ import { RexPdfTemplate } from '@/lib/pdf/rex-template';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { signAttachmentUrls } from '@/lib/storage';
 
 // PDF-specific rate limiter: 5 PDFs per hour per IP (expensive operation)
 const pdfRateLimiter = rateLimiters.ai; // Reuses AI limiter: 10/min — heavy ops
@@ -71,16 +72,20 @@ export async function GET(
       return NextResponse.json({ error: 'REX non trouvé' }, { status: 404 });
     }
 
-    // Build public URLs for image attachments (max 10 images in PDF)
-    const imageAttachments = (attachmentsResult.data || [])
+    // Build signed URLs for image attachments (max 10 images in PDF). The
+    // bucket is private; URLs are short-lived since @react-pdf fetches them
+    // server-side immediately during rendering. Access is already gated by the
+    // REX fetch above (RLS-bound client).
+    const imageAtts = (attachmentsResult.data || [])
       .filter((att) => att.file_type?.startsWith('image/'))
-      .slice(0, 10)
-      .map((att) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('rex-attachments')
-          .getPublicUrl(att.storage_path);
-        return { name: att.file_name, url: publicUrl };
-      });
+      .slice(0, 10);
+    const signedImageUrls = await signAttachmentUrls(
+      imageAtts.map((att) => att.storage_path),
+      600
+    );
+    const imageAttachments = imageAtts
+      .map((att) => ({ name: att.file_name, url: signedImageUrls.get(att.storage_path) }))
+      .filter((att): att is { name: string; url: string } => Boolean(att.url));
 
     // ETag based on REX updated_at — avoid regenerating identical PDFs
     const etag = `"pdf-${id}-${rex.updated_at || ''}-${anonymize}"`;

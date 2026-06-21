@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { roleUpdateSchema } from '@/lib/validators/api';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -68,13 +68,18 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Vous ne pouvez pas modifier votre propre rôle' }, { status: 400 });
     }
 
-    // Update role
-    const { error } = await supabase
+    // Update role via admin client: the RLS policy on `profiles` only allows
+    // `auth.uid() = id`, so a user-context update of another user's row matches
+    // 0 rows and fails silently. Authorization is already enforced above.
+    const admin = createAdminClient();
+    const { data: updated, error } = await admin
       .from('profiles')
       .update({ role })
-      .eq('id', userId);
+      .eq('id', userId)
+      .select('id')
+      .single();
 
-    if (error) {
+    if (error || !updated) {
       logger.error('Role update error:', error);
       return NextResponse.json({ error: 'Erreur lors de la modification' }, { status: 500 });
     }

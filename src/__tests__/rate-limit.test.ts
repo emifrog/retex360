@@ -13,7 +13,13 @@ jest.mock('@upstash/redis', () => ({
   Redis: jest.fn(),
 }));
 
-import { rateLimiters, getClientIp } from '@/lib/rate-limit';
+// These tests exercise the in-memory limiter, so force that path regardless of
+// any local .env Upstash credentials loaded by next/jest. `require` (not
+// `import`) runs after these deletes, before the module reads the env.
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { rateLimiters, getClientIp } = require('@/lib/rate-limit') as typeof import('@/lib/rate-limit');
 
 describe('Rate limiting', () => {
   describe('getClientIp', () => {
@@ -94,6 +100,32 @@ describe('Rate limiting', () => {
       }
       const result = await rateLimiters.upload.limit(uniqueIp);
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('fail-closed behavior on Redis outage', () => {
+    afterEach(() => {
+      delete process.env.UPSTASH_REDIS_REST_URL;
+      delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    });
+
+    it('denies sensitive limiters but degrades general ones when Redis is unreachable', async () => {
+      // Fresh module with Upstash "configured" but unreachable: the mocked
+      // Ratelimit instance has no working .limit(), so every call throws.
+      let rl: typeof rateLimiters | undefined;
+      jest.isolateModules(() => {
+        process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+        process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        rl = (require('@/lib/rate-limit') as typeof import('@/lib/rate-limit')).rateLimiters;
+      });
+
+      // auth + ai are fail-closed: deny on outage to keep protection effective.
+      await expect(rl!.auth.limit('fc-auth')).resolves.toMatchObject({ success: false });
+      await expect(rl!.ai.limit('fc-ai')).resolves.toMatchObject({ success: false });
+
+      // api is not fail-closed: degrade to the in-memory fallback (allow).
+      await expect(rl!.api.limit('fc-api')).resolves.toMatchObject({ success: true });
     });
   });
 });

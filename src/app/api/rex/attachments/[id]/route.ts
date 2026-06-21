@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
 
 export async function DELETE(
   request: NextRequest,
@@ -41,15 +42,13 @@ export async function DELETE(
       }
     }
 
-    // Delete from storage (original + thumbnail)
-    const thumbPath = attachment.storage_path.replace(/\.[^.]+$/, '_thumb.webp');
-    const { error: storageError } = await supabase.storage
-      .from('rex-attachments')
-      .remove([attachment.storage_path, thumbPath]);
-
-    if (storageError) {
-      logger.error('Storage delete error:', storageError);
-    }
+    // Delete from storage (original + thumbnail) with the service role so an
+    // admin can remove files uploaded by another user (own-folder storage
+    // policy would otherwise block it). Authorization is enforced above.
+    await removeAttachmentObjects([
+      attachment.storage_path,
+      thumbnailPathFor(attachment.storage_path),
+    ]);
 
     // Delete from database
     const { error: deleteError } = await supabase

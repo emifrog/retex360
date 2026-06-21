@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { RexDetail } from '@/components/rex/rex-detail';
 import { logger } from '@/lib/logger';
+import { signAttachmentUrls, thumbnailPathFor } from '@/lib/storage';
 
 interface RexPageProps {
   params: Promise<{ id: string }>;
@@ -121,28 +122,39 @@ export default async function RexPage({ params }: RexPageProps) {
     .eq('id', id)
     .then();
 
-  // Transform attachments with public URLs
+  // Transform attachments with short-lived signed URLs (bucket is private).
+  // Access is already gated: `attachments` was fetched via the RLS-bound client,
+  // so it only contains files of a REX this user is allowed to see.
+  const attachmentList = (attachments || []) as Array<{
+    id: string;
+    file_name: string;
+    file_type: string;
+    file_size: number;
+    storage_path: string;
+    created_at: string;
+  }>;
+  const hasThumbnail = (fileType: string) =>
+    fileType?.startsWith('image/') && fileType !== 'image/gif';
+
+  const pathsToSign = attachmentList.flatMap((att) =>
+    hasThumbnail(att.file_type)
+      ? [att.storage_path, thumbnailPathFor(att.storage_path)]
+      : [att.storage_path]
+  );
+  const signedUrls = await signAttachmentUrls(pathsToSign);
+
   const rexWithAttachments = {
     ...rex,
     author,
     sdis,
     validator,
-    attachments: (attachments || []).map((att: { id: string; file_name: string; file_type: string; file_size: number; storage_path: string; created_at: string }) => {
-      const { data: { publicUrl } } = supabase.storage
-        .from('rex-attachments')
-        .getPublicUrl(att.storage_path);
-      const thumbPath = att.storage_path.replace(/\.[^.]+$/, '_thumb.webp');
-      const { data: { publicUrl: thumbnailUrl } } = supabase.storage
-        .from('rex-attachments')
-        .getPublicUrl(thumbPath);
-      return {
-        ...att,
-        file_url: publicUrl,
-        thumbnail_url: att.file_type?.startsWith('image/') && att.file_type !== 'image/gif'
-          ? thumbnailUrl
-          : null,
-      };
-    }),
+    attachments: attachmentList.map((att) => ({
+      ...att,
+      file_url: signedUrls.get(att.storage_path) ?? null,
+      thumbnail_url: hasThumbnail(att.file_type)
+        ? signedUrls.get(thumbnailPathFor(att.storage_path)) ?? null
+        : null,
+    })),
   };
 
   return (

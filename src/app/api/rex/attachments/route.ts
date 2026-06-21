@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { optimizeImage, generateThumbnail } from '@/lib/image-optimizer';
 import { logger } from '@/lib/logger';
+import { signAttachmentUrl } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -86,18 +87,14 @@ export async function POST(request: NextRequest) {
           logger.error('Thumbnail upload error:', thumbError);
           // Non-blocking: continue without thumbnail
         } else {
-          const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
-            .from('rex-attachments')
-            .getPublicUrl(thumbPath);
-          thumbnailUrl = thumbPublicUrl;
+          // Bucket is private — return a short-lived signed URL.
+          thumbnailUrl = await signAttachmentUrl(thumbPath);
         }
       }
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('rex-attachments')
-      .getPublicUrl(storagePath);
+    // Signed URL for the just-uploaded file (bucket is private).
+    const fileUrl = await signAttachmentUrl(storagePath);
 
     // Save to database
     const { data: attachment, error: dbError } = await supabase
@@ -126,7 +123,7 @@ export async function POST(request: NextRequest) {
       file_type: attachment.file_type,
       file_size: attachment.file_size,
       storage_path: attachment.storage_path,
-      url: publicUrl,
+      url: fileUrl,
       thumbnail_url: thumbnailUrl,
     });
   } catch (error) {
