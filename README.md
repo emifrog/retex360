@@ -363,6 +363,7 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 11. supabase/migrations/011_ressources_numerotation.sql
 -- 12. supabase/migrations/012_private_attachments_bucket.sql   -- rend le bucket privé + RLS storage
 -- 13. supabase/migrations/013_rls_sdis_partitioning.sql        -- cloisonnement RLS par SDIS + search_path
+-- 14. supabase/migrations/014_demo_readonly.sql                -- (OPTIONNEL) compte démo en lecture seule
 ```
 
 > ⚠️ Les migrations 012 et 013 sont des durcissements de sécurité : exécutez-les
@@ -470,15 +471,38 @@ Dans Supabase Dashboard > Authentication > URL Configuration :
 
 ## 🔐 Compte Démo
 
-Un compte démo est disponible pour tester l'application en lecture seule :
+Un compte démo **prêt pour la présentation** est disponible : il est pré-rempli
+avec un jeu de données qui couvre toutes les fonctionnalités phares.
 
 | Champ | Valeur |
 |-------|--------|
 | **Email** | `demo@retex360.fr` |
 | **Mot de passe** | `Demo2025!` |
 | **Rôle** | Utilisateur (lecture seule) |
+| **SDIS** | 06 — Alpes-Maritimes |
 
-> Ce compte permet de consulter les RETEX sans pouvoir les modifier ou accéder aux fonctions d'administration.
+### Contenu de démonstration
+Le seed [`supabase/seed_demo_complet.sql`](supabase/seed_demo_complet.sql) crée,
+sous le compte démo :
+- **3 RETEX complets** (incendie industriel, sauvetage-déblaiement, NRBC/TMD) avec
+  chiffres clés, timeline chronologique, prescriptions, focus thématiques,
+  témoignages, ressources et champs DGSCGC — idéal pour démontrer l'export PDF ;
+- **1 PEX** et **1 Signalement** pour illustrer le workflow à 3 niveaux ;
+- **commentaires + mention `@`**, **favoris** et **notifications** non lues.
+
+### Mise en place
+1. **Authentication > Users > Add user** : `demo@retex360.fr` / `Demo2025!` (Auto Confirm ✓).
+2. Exécuter les migrations `001` → `013` (voir section Installation).
+3. Exécuter [`supabase/seed_demo_complet.sql`](supabase/seed_demo_complet.sql).
+4. *(Recommandé si les identifiants sont publics)* Exécuter la migration
+   [`014_demo_readonly.sql`](supabase/migrations/014_demo_readonly.sql) pour rendre
+   le compte **réellement en lecture seule** (impossible de créer/modifier des
+   REX, commentaires ou pièces jointes — la consultation reste totale).
+
+> ⚠️ **Sans la migration 014**, un compte `user` peut techniquement créer des
+> brouillons et commenter ; il n'a en revanche jamais accès aux fonctions
+> d'administration ni de validation. Appliquez la 014 pour un compte démo public
+> infalsifiable.
 
 ---
 
