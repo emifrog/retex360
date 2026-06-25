@@ -22,6 +22,29 @@ export const commentSchema = z.object({
   mentions: z.array(z.string().uuid()).max(20).optional().default([]),
 });
 
+// Inscription sur invitation : le SDIS et le rôle viennent de l'invitation,
+// l'utilisateur ne fournit que le token + son nom/grade + son mot de passe.
+export const invitationRegisterSchema = z
+  .object({
+    token: z.string().min(20, 'Lien d\'invitation invalide'),
+    fullName: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(255),
+    grade: z.string().max(100).optional(),
+    password: strongPasswordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
+
+// Création d'une invitation (admin SDIS / super_admin).
+export const invitationCreateSchema = z.object({
+  email: z.string().email('Email invalide'),
+  role: z.enum(['user', 'validator', 'admin', 'super_admin']).default('user'),
+  // super_admin peut cibler un SDIS ; pour un admin, on force son propre SDIS.
+  sdisId: z.string().uuid('SDIS invalide').optional(),
+});
+
 // Role update schema
 export const roleUpdateSchema = z.object({
   userId: z.string().uuid('ID utilisateur invalide'),

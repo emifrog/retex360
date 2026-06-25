@@ -9,7 +9,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 ## 🎯 Fonctionnalités
 
 ### 🔐 Authentification & Profils
-- **Inscription/Connexion** avec Supabase Auth
+- **Connexion** Supabase Auth ; **inscription sur invitation uniquement** (lien tokenisé émis par un admin SDIS / super_admin, SDIS + rôle pré-assignés, usage unique, expiration 7 j)
 - **Profils utilisateurs** avec grade, SDIS d'appartenance, avatar
 - **Rôles** : Utilisateur, Validateur, Admin, Super Admin
 - **Thème clair/sombre** avec persistance
@@ -211,6 +211,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Validation Zod** sur toutes les API (REX, commentaires, mentions plafonnées)
 - **Politique de mot de passe forte** (12 caractères min + majuscule/minuscule/chiffre) à la création, au changement et à la réinitialisation (le login reste permissif pour ne pas verrouiller les comptes existants)
 - **Vérification anti-compromission** des mots de passe (HaveIBeenPwned en k-anonymity, côté serveur, fail-open) à la création/au changement/à la réinitialisation
+- **Inscription sur invitation uniquement** : pas d'auto-inscription. Token aléatoire (32 octets) dont seul le **hash SHA-256** est stocké, usage unique, expiration ; SDIS + rôle pré-assignés par l'invitation ; restriction secondaire par domaine email (`allowed_domains`). Tables gérées exclusivement via le rôle service (RLS verrouillée)
 - **Notifications** : insertion restreinte par RLS à son propre `user_id` ; les notifications cross-user (commentaire, mention, validation, rejet) passent par le client admin après contrôle d'autorisation
 - **Sanitization XSS double couche** : DOMPurify côté serveur **au stockage** (`sanitize-server.ts` + jsdom) ET côté client au rendu, config partagée (sans `style`, `rel=noopener` forcé)
 - **Headers de sécurité** : CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
@@ -368,6 +369,7 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 13. supabase/migrations/013_rls_sdis_partitioning.sql        -- cloisonnement RLS par SDIS + search_path
 -- 14. supabase/migrations/014_demo_readonly.sql                -- (OPTIONNEL) compte démo en lecture seule
 -- 15. supabase/migrations/015_notifications_insert_lockdown.sql -- INSERT notifications restreint (déployer le code AVANT)
+-- 16. supabase/migrations/016_invitations.sql                   -- inscription sur invitation + domaines autorisés
 ```
 
 > ⚠️ **Migration 015 — ordre de déploiement** : déployez d'abord le code (les
@@ -475,6 +477,41 @@ Vercel déploiera automatiquement à chaque push sur `main`.
 Dans Supabase Dashboard > Authentication > URL Configuration :
 - **Site URL** : `https://votre-app.vercel.app`
 - **Redirect URLs** : `https://votre-app.vercel.app/**`
+
+---
+
+## 🇪🇺 Souveraineté / hébergement UE
+
+Base de données Supabase en **région UE (Irlande)**. Deux briques périphériques
+peuvent être basculées vers des services souverains :
+
+### Monitoring : Sentry → GlitchTip (API-compatible)
+Aucun changement de code. Pointez le DSN sur votre instance GlitchTip :
+```env
+NEXT_PUBLIC_SENTRY_DSN=https://<clé>@glitchtip.votre-domaine.fr/<projet>
+SENTRY_URL=https://glitchtip.votre-domaine.fr   # pour l'upload des source maps au build
+```
+GlitchTip ne gère ni session replay ni profiling (non utilisés ici).
+
+### Pièces jointes : Supabase Storage → Scaleway Object Storage
+Le stockage bascule automatiquement sur Scaleway dès que les 5 variables
+`SCALEWAY_S3_*` sont définies (sinon il reste sur Supabase). Le modèle de sécurité
+est inchangé : bucket **privé** + **URLs signées** générées côté serveur.
+
+1. Créer un bucket **privé** sur Scaleway (ex. `retex360-attachments`, région `fr-par`).
+2. Définir les variables (voir `.env.example`) :
+   `SCALEWAY_S3_ENDPOINT`, `SCALEWAY_S3_REGION`, `SCALEWAY_S3_BUCKET`,
+   `SCALEWAY_S3_ACCESS_KEY`, `SCALEWAY_S3_SECRET_KEY`.
+3. **Migrer les objets existants** depuis Supabase Storage (clés conservées à
+   l'identique) :
+   ```bash
+   rclone copy supabase:rex-attachments scaleway:retex360-attachments/rex-attachments
+   ```
+4. Déployer. Les nouvelles URLs sont signées sur Scaleway ; `next.config.ts`
+   autorise automatiquement l'hôte Scaleway pour `next/image`.
+
+> Le bucket **avatars** reste sur Supabase (donnée peu sensible) — bascule possible
+> ultérieurement sur le même modèle.
 
 ---
 

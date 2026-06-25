@@ -85,18 +85,18 @@
 
 ## Phase 7 — Commercialisation (bloquant avant toute vente) :
 
-### 7A — Whitelist domaines email (PRIORITÉ MAX — bloquant avant toute vente)
-> Dès qu'un SDIS signe, des gens vont parler de la plateforme. Si n'importe qui s'inscrit
-> avec un Gmail, on perd le contrôle de qui accède aux données opérationnelles.
-> Pour un produit institutionnel vendu à des services publics, c'est éliminatoire.
+### 7A — Inscription sur invitation (PRIORITÉ MAX) — MODÈLE ✅ (UI restante)
+> Modèle retenu : **invitation uniquement** (pas d'auto-inscription). Le contrôle
+> primaire est le lien tokenisé ; `allowed_domains` est une restriction secondaire.
 
-44. Migration SQL : table `allowed_domains` (id, sdis_id FK, domain UNIQUE, created_at)
-45. Validation domaine email dans /api/auth/register (rejet si domaine non whitelisté)
-46. Message d'erreur explicite : "Votre adresse email n'est pas autorisée. Contactez votre administrateur SDIS."
-47. Mode "inscription désactivée" par SDIS (seul l'admin SDIS peut créer des comptes)
-48. Système d'invitation par lien tokenisé pour les exceptions (prestataires, consultants DGSCGC)
-49. Interface super_admin pour gérer les domaines autorisés par SDIS
-50. Interface admin SDIS pour voir/gérer les domaines de son propre SDIS
+44. ✅ Migration SQL : tables `allowed_domains` + `invitations` (migration 016, RLS verrouillée, service-role only)
+45. ✅ Inscription invitation-only : `lib/invitations.ts` (token 32o, hash SHA-256, usage unique, expiration 7 j) — server action + `/api/auth/register` reworkés
+46. ✅ Messages explicites (lien invalide/expiré, domaine non autorisé)
+47. ✅ Auto-inscription désactivée par défaut (page register pilotée par token)
+48. ✅ Invitation par lien tokenisé : `POST /api/admin/invitations` (admin SDIS → user/validator de son SDIS ; super_admin → tout) + `GET /api/auth/invitation` (infos pour la page)
+49. ✅ UI d'invitations `/admin/invitations` : créer (avec lien copiable usage unique), lister (statut en attente/accepté/expiré) et révoquer — scopée au SDIS (super_admin transverse) + lien de nav (sidebar/mobile). `DELETE /api/admin/invitations/[id]`.
+50. [ ] UI de gestion des `allowed_domains` (ajout/suppression de domaines autorisés par SDIS) — reste à faire.
+    ⚠️ Déploiement : appliquer la migration 016 avec le déploiement du code.
 
 ### 7B — Gestion des abonnements (avant la première facturation réelle)
 > Pas besoin de Stripe maintenant. Dans le marché public, c'est bon de commande + mandat

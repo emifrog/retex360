@@ -1,84 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-import { registerSchema } from '@/lib/validators/auth';
-import { isPasswordCompromised } from '@/lib/password-breach';
+import { invitationRegisterSchema } from '@/lib/validators/api';
+import { acceptInvitationAndRegister } from '@/lib/invitations';
 import { logger } from '@/lib/logger';
 
+// Inscription sur invitation uniquement (cf. lib/invitations + server action register).
 export async function POST(request: NextRequest) {
-  // Rate limiting
   const ip = getClientIp(request);
   const rateLimitResult = await rateLimiters.auth.limit(ip);
-  
   if (!rateLimitResult.success) {
     return rateLimitResponse(rateLimitResult.reset);
   }
 
   try {
     const body = await request.json();
-    
-    // Validation Zod
-    const validated = registerSchema.safeParse(body);
+
+    const validated = invitationRegisterSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
-    // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
-    if (await isPasswordCompromised(validated.data.password)) {
-      return NextResponse.json(
-        { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: validated.data.email,
+    const result = await acceptInvitationAndRegister({
+      token: validated.data.token,
       password: validated.data.password,
+      fullName: validated.data.fullName,
+      grade: validated.data.grade ?? null,
     });
-
-    if (authError) {
-      return NextResponse.json(
-        { error: authError.message },
-        { status: 400 }
-      );
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    if (authData.user) {
-      // Use admin client to bypass RLS for profile creation
-      const adminClient = createAdminClient();
-      const { error: profileError } = await adminClient.from('profiles').upsert({
-        id: authData.user.id,
-        email: validated.data.email,
-        full_name: validated.data.fullName,
-        sdis_id: validated.data.sdisId,
-        grade: validated.data.grade,
-      }, { onConflict: 'id' });
-
-      if (profileError) {
-        logger.error('Profile error:', profileError);
-        return NextResponse.json(
-          { error: 'Erreur lors de la création du profil' },
-          { status: 500 }
-        );
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: authData.user?.id,
-        email: authData.user?.email,
-      },
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Register error:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

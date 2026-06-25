@@ -2,6 +2,19 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 
+// Autorise l'hôte Scaleway Object Storage pour next/image lorsqu'il est configuré
+// (les pièces jointes y sont servies via URLs signées). Sans config Scaleway,
+// rien n'est ajouté et le stockage reste sur Supabase.
+const scalewayHost = process.env.SCALEWAY_S3_ENDPOINT
+  ? (() => {
+      try {
+        return new URL(process.env.SCALEWAY_S3_ENDPOINT as string).hostname;
+      } catch {
+        return null;
+      }
+    })()
+  : null;
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   async redirects() {
@@ -23,6 +36,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.supabase.in',
       },
+      ...(scalewayHost ? [{ protocol: 'https' as const, hostname: scalewayHost }] : []),
     ],
   },
 };

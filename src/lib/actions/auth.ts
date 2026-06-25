@@ -1,10 +1,10 @@
 'use server';
 
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { loginSchema, registerSchema } from '@/lib/validators/auth';
-import { isPasswordCompromised } from '@/lib/password-breach';
-import { logger } from '@/lib/logger';
+import { loginSchema } from '@/lib/validators/auth';
+import { invitationRegisterSchema } from '@/lib/validators/api';
+import { acceptInvitationAndRegister } from '@/lib/invitations';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -28,55 +28,41 @@ export async function login(formData: FormData) {
   redirect('/');
 }
 
+// Inscription sur invitation uniquement : le SDIS et le rôle viennent de
+// l'invitation, l'utilisateur ne choisit ni l'un ni l'autre.
 export async function register(formData: FormData) {
   const supabase = await createClient();
 
   const data = {
-    email: formData.get('email') as string,
+    token: formData.get('token') as string,
+    fullName: formData.get('fullName') as string,
+    grade: (formData.get('grade') as string) || undefined,
     password: formData.get('password') as string,
     confirmPassword: formData.get('confirmPassword') as string,
-    fullName: formData.get('fullName') as string,
-    sdisId: formData.get('sdisId') as string,
-    grade: formData.get('grade') as string || undefined,
   };
 
-  logger.info('Register data:', { ...data, password: '***', confirmPassword: '***' });
-
-  const validated = registerSchema.safeParse(data);
+  const validated = invitationRegisterSchema.safeParse(data);
   if (!validated.success) {
-    logger.info('Validation errors:', validated.error.issues);
     return { error: validated.error.issues[0].message };
   }
 
-  // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
-  if (await isPasswordCompromised(validated.data.password)) {
-    return { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' };
+  const result = await acceptInvitationAndRegister({
+    token: validated.data.token,
+    password: validated.data.password,
+    fullName: validated.data.fullName,
+    grade: validated.data.grade ?? null,
+  });
+  if ('error' in result) {
+    return { error: result.error };
   }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: validated.data.email,
+  // Établir la session puis rediriger.
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: result.email,
     password: validated.data.password,
   });
-
-  if (authError) {
-    return { error: authError.message };
-  }
-
-  if (authData.user) {
-    // Utiliser le client admin pour bypasser RLS lors de la création du profil
-    const adminClient = createAdminClient();
-    const { error: profileError } = await adminClient.from('profiles').upsert({
-      id: authData.user.id,
-      email: validated.data.email,
-      full_name: validated.data.fullName,
-      sdis_id: validated.data.sdisId,
-      grade: validated.data.grade,
-    }, { onConflict: 'id' });
-
-    if (profileError) {
-      logger.error('Profile error:', profileError);
-      return { error: 'Erreur lors de la création du profil: ' + profileError.message };
-    }
+  if (signInError) {
+    redirect('/login?registered=1');
   }
 
   redirect('/');

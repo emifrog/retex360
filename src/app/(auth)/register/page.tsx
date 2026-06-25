@@ -1,24 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { register } from '@/lib/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { createClient } from '@/lib/supabase/client';
+
+const CARD_CLASS = 'border-border/50 bg-card/80 backdrop-blur';
+
+const ROLE_LABELS: Record<string, string> = {
+  user: 'Utilisateur',
+  validator: 'Validateur',
+  admin: 'Administrateur',
+  super_admin: 'Super administrateur',
+};
+
+type Invitation =
+  | { valid: true; email: string; role: string; sdis: { code: string; name: string } | null }
+  | { valid: false };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -40,35 +46,64 @@ function SubmitButton() {
   );
 }
 
-export default function RegisterPage() {
+function LoadingCard() {
+  return (
+    <Card className={CARD_CLASS}>
+      <CardContent className="py-12 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvitationUnavailable({ expired }: { expired: boolean }) {
+  return (
+    <Card className={CARD_CLASS}>
+      <CardContent className="pt-6 space-y-3 text-center">
+        <p className="text-sm text-muted-foreground">
+          L&apos;inscription se fait uniquement sur invitation. Demandez un lien à
+          l&apos;administrateur de votre SDIS.
+        </p>
+        {expired && (
+          <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">
+            Ce lien d&apos;invitation est invalide, déjà utilisé ou expiré.
+          </p>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-center">
+        <Link href="/login" className="text-sm text-primary hover:underline">
+          Se connecter
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
   const [error, setError] = useState<string | null>(null);
-  const [sdisId, setSdisId] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [sdisList, setSdisList] = useState<{ id: string; code: string; name: string }[]>([]);
+  const [invitation, setInvitation] = useState<Invitation | null>(null); // null = chargement
 
   useEffect(() => {
-    async function fetchSdis() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('sdis')
-        .select('id, code, name')
-        .order('code');
-      if (data) setSdisList(data);
-    }
-    fetchSdis();
-  }, []);
+    if (!token) return;
+    let cancelled = false;
+    fetch(`/api/auth/invitation?token=${encodeURIComponent(token)}`)
+      .then((r) => r.json())
+      .then((d: Invitation) => {
+        if (!cancelled) setInvitation(d);
+      })
+      .catch(() => {
+        if (!cancelled) setInvitation({ valid: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
-    
-    // Vérifier que le SDIS est sélectionné
-    if (!sdisId) {
-      setError('Veuillez sélectionner un SDIS');
-      toast.error('Veuillez sélectionner un SDIS');
-      return;
-    }
-    
-    formData.set('sdisId', sdisId);
     const result = await register(formData);
     if (result?.error) {
       setError(result.error);
@@ -76,10 +111,32 @@ export default function RegisterPage() {
     }
   }
 
+  if (!token) return <InvitationUnavailable expired={false} />;
+  if (invitation === null) return <LoadingCard />;
+  if (!invitation.valid) return <InvitationUnavailable expired />;
+
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur">
+    <Card className={CARD_CLASS}>
       <form action={handleSubmit}>
+        <input type="hidden" name="token" value={token} />
         <CardContent className="pt-6 space-y-4">
+          <div className="rounded-md border border-border/50 bg-muted/30 p-3 text-sm space-y-1">
+            <div>
+              <span className="text-muted-foreground">Email : </span>
+              {invitation.email}
+            </div>
+            {invitation.sdis && (
+              <div>
+                <span className="text-muted-foreground">SDIS : </span>
+                {invitation.sdis.code} - {invitation.sdis.name}
+              </div>
+            )}
+            <div>
+              <span className="text-muted-foreground">Rôle : </span>
+              {ROLE_LABELS[invitation.role] ?? invitation.role}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="fullName">Nom complet</Label>
             <Input
@@ -90,32 +147,6 @@ export default function RegisterPage() {
               required
               className="bg-background/50"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="votre.email@sdis.fr"
-              required
-              className="bg-background/50"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sdisId">SDIS</Label>
-            <Select value={sdisId} onValueChange={setSdisId} required>
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Sélectionnez votre SDIS" />
-              </SelectTrigger>
-              <SelectContent>
-                {sdisList.map((sdis) => (
-                  <SelectItem key={sdis.id} value={sdis.id}>
-                    {sdis.code} - {sdis.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="grade">Grade (optionnel)</Label>
@@ -180,5 +211,13 @@ export default function RegisterPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<LoadingCard />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

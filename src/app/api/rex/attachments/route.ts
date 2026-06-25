@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { optimizeImage, generateThumbnail } from '@/lib/image-optimizer';
 import { logger } from '@/lib/logger';
-import { signAttachmentUrl } from '@/lib/storage';
+import { signAttachmentUrl, putAttachmentObject, removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -57,16 +57,10 @@ export async function POST(request: NextRequest) {
     const baseName = `${user.id}/${timestamp}-${randomSuffix}`;
     const storagePath = `rex-attachments/${baseName}.${ext}`;
 
-    // Upload optimized image to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('rex-attachments')
-      .upload(storagePath, optimized.buffer, {
-        contentType: optimized.contentType,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      logger.error('Upload error:', uploadError);
+    // Upload optimized image to object storage (Scaleway S3 or Supabase)
+    const uploaded = await putAttachmentObject(storagePath, optimized.buffer, optimized.contentType);
+    if (!uploaded) {
+      logger.error('Upload error', { storagePath });
       return NextResponse.json({ error: "Erreur lors de l'upload" }, { status: 500 });
     }
 
@@ -76,15 +70,9 @@ export async function POST(request: NextRequest) {
       const thumbnail = await generateThumbnail(originalBuffer, file.type);
       if (thumbnail) {
         const thumbPath = `rex-attachments/${baseName}_thumb.webp`;
-        const { error: thumbError } = await supabase.storage
-          .from('rex-attachments')
-          .upload(thumbPath, thumbnail.buffer, {
-            contentType: 'image/webp',
-            upsert: false,
-          });
-
-        if (thumbError) {
-          logger.error('Thumbnail upload error:', thumbError);
+        const thumbOk = await putAttachmentObject(thumbPath, thumbnail.buffer, 'image/webp');
+        if (!thumbOk) {
+          logger.error('Thumbnail upload error', { thumbPath });
           // Non-blocking: continue without thumbnail
         } else {
           // Bucket is private — return a short-lived signed URL.
@@ -113,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       logger.error('Database error:', dbError);
       // Clean up uploaded files
-      await supabase.storage.from('rex-attachments').remove([storagePath]);
+      await removeAttachmentObjects([storagePath, thumbnailPathFor(storagePath)]);
       return NextResponse.json({ error: "Erreur lors de l'enregistrement" }, { status: 500 });
     }
 

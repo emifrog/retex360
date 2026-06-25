@@ -16,6 +16,7 @@ import {
   Search,
   Info,
   Users,
+  Mail,
 } from 'lucide-react';
 import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const navigation = [
 const adminNavigation = [
   { name: 'Validation', href: '/admin/validation', icon: CheckCircle, badge: true },
   { name: 'Utilisateurs', href: '/admin/users', icon: Users },
+  { name: 'Invitations', href: '/admin/invitations', icon: Mail },
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
