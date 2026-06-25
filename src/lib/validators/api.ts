@@ -37,6 +37,18 @@ export const invitationRegisterSchema = z
     path: ['confirmPassword'],
   });
 
+// Ajout d'un domaine email autorisé (restriction secondaire des invitations).
+export const domainCreateSchema = z.object({
+  domain: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, 'Domaine invalide')
+    .max(255)
+    .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, 'Domaine invalide (ex. sdis06.fr)'),
+  sdisId: z.string().uuid('SDIS invalide').optional(),
+});
+
 // Création d'une invitation (admin SDIS / super_admin).
 export const invitationCreateSchema = z.object({
   email: z.string().email('Email invalide'),

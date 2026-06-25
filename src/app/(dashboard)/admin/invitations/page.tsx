@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Mail } from 'lucide-react';
 import { InvitationsManager } from '@/components/admin/invitations-manager';
+import { DomainsManager } from '@/components/admin/domains-manager';
 
 export const metadata = {
   title: 'Invitations | RETEX360',
@@ -48,6 +49,22 @@ export default async function AdminInvitationsPage() {
     sdis: (Array.isArray(i.sdis) ? i.sdis[0] : i.sdis) as { code: string; name: string } | null,
   }));
 
+  // Domaines email autorisés (restriction secondaire des invitations).
+  let domQuery = admin
+    .from('allowed_domains')
+    .select('id, domain, sdis_id, created_at, sdis:sdis_id(code, name)')
+    .order('domain');
+  if (!isSuperAdmin) {
+    domQuery = domQuery.eq('sdis_id', currentProfile.sdis_id);
+  }
+  const { data: domRaw } = await domQuery;
+  const domains = (domRaw || []).map((d) => ({
+    id: d.id as string,
+    domain: d.domain as string,
+    created_at: d.created_at as string,
+    sdis: (Array.isArray(d.sdis) ? d.sdis[0] : d.sdis) as { code: string; name: string } | null,
+  }));
+
   let sdisList: { id: string; code: string; name: string }[] = [];
   if (isSuperAdmin) {
     const { data } = await admin.from('sdis').select('id, code, name').order('code');
@@ -73,6 +90,8 @@ export default async function AdminInvitationsPage() {
         isSuperAdmin={isSuperAdmin}
         sdisList={sdisList}
       />
+
+      <DomainsManager domains={domains} isSuperAdmin={isSuperAdmin} sdisList={sdisList} />
     </div>
   );
 }
