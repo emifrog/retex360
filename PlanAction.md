@@ -255,6 +255,12 @@
 114. ✅ Perf : vue `rex_counts_by_sdis` (fin du N+1 super_admin) + index `rex(author_id)` et `rex(sdis_id, created_at)`.
 115. ✅ SEO/PWA (`robots`/`sitemap`/`manifest`) ; CI durcie ; `error.tsx` via Sentry ; code mort retiré ; doc à jour.
 
+**Contrôles post-audit**
+116. ✅ « disable_signup » vérifié côté GoTrue (`disable_signup: true`) : inscriptions publiques fermées — 7A non contournable depuis la console navigateur.
+117. ✅ Exemption super_admin ajoutée dans `sdis_write_blocked()` (migration 018) : cohérence base ↔ application (le super_admin n'est jamais bloqué en écriture).
+118. ✅ Export COMPLET par SDIS (`/api/admin/sdis/export`) : SDIS + abonnement + domaines + utilisateurs + REX + commentaires + manifest des PJ (admin = son SDIS ; super_admin = tout SDIS), audité. Accès UI : action « Exporter » dans la table super-admin + bouton « Exporter les données du SDIS » sur `/admin/users`.
+119. ✅ Bug export RGPD personnel corrigé (`/api/profile/export` ciblait des colonnes inexistantes `factual_elements`/`production_type` → REX silencieusement omis ; corrigé).
+
 > ⚠️ Déploiement : appliquer les migrations **018** puis **019** avec ce code.
 > ℹ️ Restant (hors lots, recommandé, non bloquant) : suppression admin de commentaires/PJ en no-op
 > silencieux (policy RLS admin), re-auth du changement de mot de passe sur client dédié, scoping SDIS

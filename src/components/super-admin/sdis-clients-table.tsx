@@ -14,6 +14,7 @@ import {
   Copy,
   Check,
   Loader2,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -330,6 +331,14 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
                           >
                             <KeyRound className="w-4 h-4 mr-2" />
                             Réinitialiser MDP admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              window.location.href = `/api/admin/sdis/export?sdisId=${row.sdisId}`;
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Exporter (JSON)
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

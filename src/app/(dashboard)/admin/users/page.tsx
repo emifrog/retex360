@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Users } from 'lucide-react';
+import { Users, Download } from 'lucide-react';
 import { UsersTable } from '@/components/admin/users-table';
+import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 
 export const metadata = {
@@ -88,6 +89,14 @@ export default async function AdminUsersPage() {
               : 'Gérez les utilisateurs de votre SDIS'}
           </p>
         </div>
+        {!isSuperAdmin && (
+          <Button asChild variant="outline">
+            <a href="/api/admin/sdis/export" download>
+              <Download className="w-4 h-4 mr-2" />
+              Exporter les données du SDIS
+            </a>
+          </Button>
+        )}
       </div>
 
       {/* Users Table */}
