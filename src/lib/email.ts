@@ -111,3 +111,37 @@ Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
 
   return sendEmail({ to: params.to, subject, html, text });
 }
+
+/** Envoie un lien de réinitialisation de mot de passe (généré côté serveur). */
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  resetUrl: string;
+}): Promise<boolean> {
+  const subject = 'Réinitialisation de votre mot de passe RETEX360';
+
+  const text = `Bonjour,
+
+Une réinitialisation de votre mot de passe RETEX360 a été demandée par votre administrateur.
+
+Pour définir un nouveau mot de passe, ouvrez ce lien :
+${params.resetUrl}
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+
+— RETEX360`;
+
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2937">
+  <h2 style="color:#b91c1c;margin:0 0 16px">RETEX360 🚒</h2>
+  <p>Bonjour,</p>
+  <p>Une réinitialisation de votre mot de passe <strong>RETEX360</strong> a été demandée par votre administrateur.</p>
+  <p style="margin:24px 0">
+    <a href="${params.resetUrl}" style="background:#b91c1c;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600">Définir un nouveau mot de passe</a>
+  </p>
+  <p style="font-size:13px;color:#6b7280">Si le bouton ne fonctionne pas, copiez l'adresse suivante dans votre navigateur :</p>
+  <p style="font-size:12px;word-break:break-all;color:#6b7280">${params.resetUrl}</p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
+  <p style="font-size:12px;color:#9ca3af">Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.</p>
+</div>`;
+
+  return sendEmail({ to: params.to, subject, html, text });
+}

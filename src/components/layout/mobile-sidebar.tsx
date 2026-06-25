@@ -16,6 +16,8 @@ import {
   Users,
   Mail,
   Menu,
+  Crown,
+  Building2,
 } from 'lucide-react';
 import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,11 @@ const adminNavigation = [
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
+const superAdminNavigation = [
+  { name: "Vue d'ensemble", href: '/super-admin', icon: Crown },
+  { name: 'SDIS clients', href: '/super-admin/sdis', icon: Building2 },
+];
+
 const bottomNavigation = [
   { name: 'À propos', href: '/about', icon: Info },
   { name: 'Accessibilité', href: '/accessibilite', icon: Info },
@@ -44,9 +51,10 @@ const bottomNavigation = [
 interface MobileSidebarProps {
   pendingCount?: number;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }
 
-export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSidebarProps) {
+export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false }: MobileSidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const prevPathnameRef = useRef(pathname);
@@ -157,6 +165,40 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false }: MobileSideb
                         {pendingCount}
                       </span>
                     )}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+
+          {/* Super-admin section */}
+          {isSuperAdmin && (
+            <>
+              <div className="pt-4 pb-2">
+                <p className="px-4 text-xs text-muted-foreground uppercase tracking-wider">
+                  Super-admin
+                </p>
+              </div>
+              {superAdminNavigation.map((item) => {
+                const isActive =
+                  item.href === '/super-admin'
+                    ? pathname === '/super-admin'
+                    : pathname.startsWith(item.href);
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all',
+                      isActive
+                        ? 'bg-sidebar-accent border border-primary/40 text-sidebar-accent-foreground'
+                        : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground border border-transparent'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    {item.name}
                   </Link>
                 );
               })}

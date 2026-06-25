@@ -33,6 +33,40 @@ export const ROLES = ['user', 'validator', 'admin', 'super_admin'] as const;
 export type Role = (typeof ROLES)[number];
 
 // ============================================================================
+// Abonnements (7C / 7B) — un abonnement par SDIS
+// ============================================================================
+
+export const PLANS = ['essentiel', 'reseau', 'premium'] as const;
+export type Plan = (typeof PLANS)[number];
+
+export const SUBSCRIPTION_STATUSES = ['trial', 'active', 'suspended', 'expired'] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/**
+ * Catalogue des plans. `monthlyPrice` (€ HT/mois) sert au calcul du MRR du
+ * dashboard super_admin ; `maxUsers` / `maxRexPerMonth` pré-remplissent le wizard
+ * (null = illimité). Valeurs à ajuster à la grille tarifaire réelle.
+ */
+export const PLAN_CONFIG: Record<
+  Plan,
+  { label: string; monthlyPrice: number; maxUsers: number | null; maxRexPerMonth: number | null }
+> = {
+  essentiel: { label: 'Essentiel', monthlyPrice: 150, maxUsers: 30, maxRexPerMonth: null },
+  reseau: { label: 'Réseau', monthlyPrice: 300, maxUsers: 100, maxRexPerMonth: null },
+  premium: { label: 'Premium', monthlyPrice: 600, maxUsers: null, maxRexPerMonth: null },
+};
+
+export const SUBSCRIPTION_STATUS_CONFIG: Record<
+  SubscriptionStatus,
+  { label: string; color: string }
+> = {
+  trial: { label: 'Essai', color: 'bg-blue-500/10 text-blue-500 border-blue-500/30' },
+  active: { label: 'Actif', color: 'bg-green-500/10 text-green-500 border-green-500/30' },
+  suspended: { label: 'Suspendu', color: 'bg-orange-500/10 text-orange-500 border-orange-500/30' },
+  expired: { label: 'Expiré', color: 'bg-red-500/10 text-red-500 border-red-500/30' },
+};
+
+// ============================================================================
 // DGSCGC - Mémento septembre 2022
 // ============================================================================
 

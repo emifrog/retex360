@@ -17,6 +17,8 @@ import {
   Info,
   Users,
   Mail,
+  Crown,
+  Building2,
 } from 'lucide-react';
 import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
@@ -42,6 +44,11 @@ const adminNavigation = [
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
+const superAdminNavigation = [
+  { name: "Vue d'ensemble", href: '/super-admin', icon: Crown },
+  { name: 'SDIS clients', href: '/super-admin/sdis', icon: Building2 },
+];
+
 const bottomNavigation = [
   { name: 'À propos', href: '/about', icon: Info },
   { name: 'Accessibilité', href: '/accessibilite', icon: Info },
@@ -50,9 +57,10 @@ const bottomNavigation = [
 interface SidebarProps {
   pendingCount?: number;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }
 
-export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
+export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -196,6 +204,56 @@ export function Sidebar({ pendingCount = 0, isAdmin = false }: SidebarProps) {
                       <TooltipTrigger asChild>
                         <div className="relative">{linkContent}</div>
                       </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>{item.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return linkContent;
+              })}
+            </>
+          )}
+
+          {/* Super-admin section */}
+          {isSuperAdmin && (
+            <>
+              {!collapsed && (
+                <div className="pt-4 pb-2">
+                  <p className="px-4 text-xs text-muted-foreground uppercase tracking-wider">
+                    Super-admin
+                  </p>
+                </div>
+              )}
+              {collapsed && <div className="pt-4" />}
+              {superAdminNavigation.map((item) => {
+                const isActive =
+                  item.href === '/super-admin'
+                    ? pathname === '/super-admin'
+                    : pathname.startsWith(item.href);
+
+                const linkContent = (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg text-sm transition-all',
+                      collapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
+                      isActive
+                        ? 'bg-sidebar-accent border border-primary/40 text-sidebar-accent-foreground'
+                        : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground border border-transparent'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && item.name}
+                  </Link>
+                );
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.name}>
+                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                       <TooltipContent side="right">
                         <p>{item.name}</p>
                       </TooltipContent>

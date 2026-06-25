@@ -23,10 +23,11 @@ import type { Profile, Sdis } from '@/types';
 interface HeaderProps {
   user?: (Profile & { sdis: Sdis }) | null;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
   pendingCount?: number;
 }
 
-export function Header({ user, isAdmin = false, pendingCount = 0 }: HeaderProps) {
+export function Header({ user, isAdmin = false, isSuperAdmin = false, pendingCount = 0 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
@@ -47,7 +48,7 @@ export function Header({ user, isAdmin = false, pendingCount = 0 }: HeaderProps)
     <header role="banner" aria-label="En-tête du site" className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
       {/* Mobile Menu */}
       <div className="flex items-center gap-3">
-        <MobileSidebar isAdmin={isAdmin} pendingCount={pendingCount} />
+        <MobileSidebar isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} pendingCount={pendingCount} />
         
         {/* Logo mobile */}
         <div className="md:hidden flex items-center gap-2">

@@ -107,31 +107,35 @@
 > de paiement, pas de paiement en ligne. Ce qui compte : tracer quel SDIS est sur quel plan
 > et jusqu'à quand, pour que ce soit opposable en cas de litige.
 
-51. Migration SQL : table `subscriptions` :
+51. ✅ Migration SQL : table `subscriptions` (créée avec 7C, **migration 017**) :
     - `sdis_id` (FK UNIQUE), `plan` (essentiel/reseau/premium)
     - `status` (trial/active/suspended/expired), `suspended_reason` (text nullable)
     - `trial_ends_at`, `current_period_start`, `current_period_end`
     - `max_users` (null = illimité), `max_rex_per_month` (null = illimité)
+    - RLS verrouillée (service-role only) — 7B ajoutera une policy de lecture « son SDIS »
 52. Middleware de vérification d'abonnement actif sur toutes les routes protégées
 53. Comportement trial : accès complet + bannière rappelant la fin de la période d'essai
 54. Comportement expiré : lecture seule pendant 30 jours, puis blocage total avec message de contact
 55. Page d'expiration utilisateur ("Votre abonnement a expiré — contactez votre référent SDIS")
 56. Limites par plan enforced côté API (max_users, max_rex_per_month)
 
-### 7C — Panel super_admin d'onboarding (avant le 3e client)
-> Ajouter un SDIS implique aujourd'hui de passer par la console Supabase ou des requêtes
+### 7C — Panel super_admin d'onboarding (avant le 3e client) : ✅ TERMINÉE
+> Ajouter un SDIS impliquait jusqu'ici de passer par la console Supabase ou des requêtes
 > SQL manuelles. Acceptable pour 1-2 clients, ingérable à partir de 5.
 
-57. Route /super-admin protégée par rôle super_admin, séparée du dashboard SDIS
-58. Workflow "Ajouter un SDIS client" en multi-étapes :
-    - Infos SDIS (code, nom, département, logo)
-    - Domaines email autorisés
-    - Plan tarifaire + dates début/fin
-    - Création du compte admin initial + envoi email d'invitation sécurisé
-59. Vue liste SDIS : nom, plan, statut, nb users, nb REX, date expiration, actions
-60. Actions : suspendre/réactiver, changer de plan, réinitialiser MDP admin SDIS
-61. Dashboard super_admin : métriques globales (SDIS actifs, REX totaux, users totaux, MRR)
-62. Logs d'audit des actions super_admin (qui a fait quoi, quand)
+57. ✅ Routes `/super-admin` (vue d'ensemble) et `/super-admin/sdis` protégées par rôle super_admin (gating page + nav dédiée sidebar/mobile)
+58. ✅ Wizard "Ajouter un SDIS client" multi-étapes (`add-sdis-wizard.tsx`) : infos SDIS (existant ou nouveau : code/nom/département/région/logo) → domaines email autorisés → plan + statut + dates + limites → compte admin initial (invitation tokenisée 7A + email auto, fail-open lien copiable). `POST /api/super-admin/sdis`.
+59. ✅ Vue liste SDIS clients : nom, plan, statut, nb users (/max), nb REX, date d'expiration, actions (`sdis-clients-table.tsx`)
+60. ✅ Actions : suspendre/réactiver (avec motif), modifier l'abonnement (plan + limites + dates), réinitialiser MDP admin (lien de récupération + email). `PATCH /api/super-admin/sdis/[id]`, `POST .../reset-admin`.
+61. ✅ Dashboard super_admin : métriques globales (SDIS clients/actifs/essai, users totaux, REX totaux, MRR estimé via `PLAN_CONFIG`)
+62. ✅ Logs d'audit (`admin_audit_log`, helper `lib/audit.ts`, fail-open) : qui/quoi/quand, affichés sur la vue d'ensemble
+
+> **7C — état** : migration **017** (`subscriptions` [modèle 7B #51], `admin_audit_log`,
+> colonnes `sdis.departement`/`logo_url`) + routes API + UI (dashboard, liste, wizard,
+> actions) + audit = ✅ TERMINÉ. **Enforcement** des abonnements (middleware, lecture seule,
+> limites par plan) volontairement laissé à **7B**.
+> ⚠️ Déploiement : appliquer la migration **017** avec le déploiement du code.
+> ℹ️ Prix de plan (MRR) à ajuster dans `PLAN_CONFIG` (`src/types/index.ts`).
 
 ### 7D — Guide d'onboarding documenté (avant pilote SDIS 06)
 > Le guide n'est pas de la documentation pour faire bonne figure : c'est ce qui évite

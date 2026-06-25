@@ -10,6 +10,7 @@ export default async function DashboardLayout({
 }) {
   const user = await getUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'validator';
+  const isSuperAdmin = user?.role === 'super_admin';
 
   // Fetch real pending validation count
   let pendingCount = 0;
@@ -24,9 +25,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar isAdmin={isAdmin} pendingCount={pendingCount} />
+      <Sidebar isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} pendingCount={pendingCount} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header user={user} isAdmin={isAdmin} pendingCount={pendingCount} />
+        <Header user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} pendingCount={pendingCount} />
         <main id="main-content" className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
       </div>
     </div>
