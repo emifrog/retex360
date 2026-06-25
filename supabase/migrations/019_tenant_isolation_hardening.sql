@@ -45,7 +45,8 @@ DROP POLICY IF EXISTS "Profiles viewable within SDIS" ON profiles;
 CREATE POLICY "Profiles viewable within SDIS" ON profiles
   FOR SELECT TO authenticated
   USING (
-    sdis_id = current_user_sdis_id()
+    id = auth.uid()                       -- toujours lisible : son propre profil (robuste même si sdis_id NULL)
+    OR sdis_id = current_user_sdis_id()
     OR current_user_is_super_admin()
     OR is_public_rex_author(id)
   );
@@ -124,7 +125,10 @@ CREATE INDEX IF NOT EXISTS idx_rex_author_id ON rex(author_id);
 CREATE INDEX IF NOT EXISTS idx_rex_sdis_created_at ON rex(sdis_id, created_at DESC);
 
 -- Compteur de REX par SDIS en une requête (remplace le N+1 du panel super_admin).
-CREATE OR REPLACE VIEW rex_counts_by_sdis AS
+-- `security_invoker = on` (PG15+) : la vue applique la RLS de l'appelant — pas de
+-- backdoor d'agrégats cross-SDIS si un client admin la requête un jour. Le panel
+-- super_admin l'interroge via le rôle service (qui bypasse la RLS) → résultats complets.
+CREATE OR REPLACE VIEW rex_counts_by_sdis WITH (security_invoker = on) AS
   SELECT sdis_id, count(*)::int AS rex_count
   FROM rex
   GROUP BY sdis_id;

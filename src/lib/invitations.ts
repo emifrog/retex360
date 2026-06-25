@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { isPasswordCompromised } from '@/lib/password-breach';
 import { getSubscriptionState } from '@/lib/subscription';
+import { logger } from '@/lib/logger';
 
 /**
  * Inscription sur invitation (modèle "invitation uniquement").
@@ -112,31 +113,39 @@ export async function acceptInvitationAndRegister(params: {
     };
   }
 
-  // Profil avec SDIS + rôle pré-assignés par l'invitation.
-  const { error: profileError } = await admin.from('profiles').upsert(
-    {
-      id: created.user.id,
-      email: invitation.email,
-      full_name: params.fullName,
-      grade: params.grade || null,
-      sdis_id: invitation.sdis_id,
-      role: invitation.role,
-    },
-    { onConflict: 'id' }
-  );
-  if (profileError) {
-    // Rollback : supprime le compte auth tout juste créé pour que l'invitation
-    // reste réutilisable (sinon le compte est orphelin et l'email « déjà pris »).
-    await admin.auth.admin.deleteUser(created.user.id);
-    return { error: 'Erreur lors de la création du profil.' };
+  // Profil + acceptation : enveloppés dans un try/catch pour garantir le rollback
+  // du compte auth même si une opération JETTE (ex. erreur réseau) au lieu de
+  // renvoyer un { error } — sinon le compte resterait orphelin et l'email « déjà pris ».
+  try {
+    // Profil avec SDIS + rôle pré-assignés par l'invitation.
+    const { error: profileError } = await admin.from('profiles').upsert(
+      {
+        id: created.user.id,
+        email: invitation.email,
+        full_name: params.fullName,
+        grade: params.grade || null,
+        sdis_id: invitation.sdis_id,
+        role: invitation.role,
+      },
+      { onConflict: 'id' }
+    );
+    if (profileError) {
+      await admin.auth.admin.deleteUser(created.user.id);
+      return { error: 'Erreur lors de la création du profil.' };
+    }
+
+    // Usage unique : marquer l'invitation comme acceptée.
+    await admin
+      .from('invitations')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('id', invitation.id)
+      .is('accepted_at', null);
+
+    return { ok: true, email: invitation.email };
+  } catch (error) {
+    // Cas résiduel : rollback best-effort du compte auth tout juste créé.
+    logger.error('Registration post-createUser failure:', error);
+    await admin.auth.admin.deleteUser(created.user.id).catch(() => {});
+    return { error: 'Erreur lors de la création du compte.' };
   }
-
-  // Usage unique : marquer l'invitation comme acceptée.
-  await admin
-    .from('invitations')
-    .update({ accepted_at: new Date().toISOString() })
-    .eq('id', invitation.id)
-    .is('accepted_at', null);
-
-  return { ok: true, email: invitation.email };
 }
