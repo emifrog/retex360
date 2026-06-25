@@ -4,6 +4,7 @@ import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { invitationCreateSchema } from '@/lib/validators/api';
 import { generateInvitationToken, hashToken, invitationExpiry } from '@/lib/invitations';
+import { isEmailConfigured, sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 
 // Crée une invitation (admin SDIS / super_admin) et renvoie le lien à transmettre.
@@ -79,12 +80,23 @@ export async function POST(request: NextRequest) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    return NextResponse.json({
-      success: true,
-      email,
-      inviteUrl: `${appUrl}/register?token=${token}`,
-      expiresInDays: 7,
-    });
+    const inviteUrl = `${appUrl}/register?token=${token}`;
+
+    // Envoi automatique de l'email si SMTP est configuré (sinon le lien est
+    // simplement renvoyé à l'admin pour transmission manuelle).
+    let emailSent = false;
+    if (isEmailConfigured()) {
+      const { data: sdisRow } = await admin.from('sdis').select('name').eq('id', sdisId).single();
+      emailSent = await sendInvitationEmail({
+        to: email,
+        inviteUrl,
+        sdisName: sdisRow?.name ?? null,
+        role,
+        expiresInDays: 7,
+      });
+    }
+
+    return NextResponse.json({ success: true, email, inviteUrl, expiresInDays: 7, emailSent });
   } catch (error) {
     logger.error('Invitation error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

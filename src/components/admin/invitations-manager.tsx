@@ -73,7 +73,7 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('user');
   const [sdisId, setSdisId] = useState('');
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteResult, setInviteResult] = useState<{ url: string; emailSent: boolean; email: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const roleOptions = isSuperAdmin
@@ -91,10 +91,11 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
       return;
     }
 
+    const targetEmail = email.trim();
     const res = await fetch('/api/admin/invitations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), role, ...(isSuperAdmin ? { sdisId } : {}) }),
+      body: JSON.stringify({ email: targetEmail, role, ...(isSuperAdmin ? { sdisId } : {}) }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -102,17 +103,17 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
       return;
     }
 
-    setInviteLink(data.inviteUrl);
+    setInviteResult({ url: data.inviteUrl, emailSent: !!data.emailSent, email: targetEmail });
     setCopied(false);
     setEmail('');
-    toast.success('Invitation créée');
+    toast.success(data.emailSent ? `Invitation envoyée à ${targetEmail}` : 'Invitation créée');
     startTransition(() => router.refresh());
   }
 
   async function copyLink() {
-    if (!inviteLink) return;
+    if (!inviteResult) return;
     try {
-      await navigator.clipboard.writeText(inviteLink);
+      await navigator.clipboard.writeText(inviteResult.url);
       setCopied(true);
       toast.success('Lien copié');
       setTimeout(() => setCopied(false), 2000);
@@ -196,11 +197,15 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
             </Button>
           </form>
 
-          {inviteLink && (
+          {inviteResult && (
             <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
-              <p className="text-sm font-medium">Lien d&apos;invitation à transmettre :</p>
+              <p className="text-sm font-medium">
+                {inviteResult.emailSent
+                  ? `Email envoyé à ${inviteResult.email}. Lien (au cas où) :`
+                  : "Lien d'invitation à transmettre :"}
+              </p>
               <div className="flex gap-2">
-                <Input readOnly value={inviteLink} className="font-mono text-xs" />
+                <Input readOnly value={inviteResult.url} className="font-mono text-xs" />
                 <Button type="button" variant="outline" size="icon" onClick={copyLink}>
                   {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                 </Button>

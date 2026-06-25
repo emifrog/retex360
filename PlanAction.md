@@ -98,10 +98,9 @@
 50. ✅ UI de gestion des `allowed_domains` (ajout/suppression par SDIS) intégrée à `/admin/invitations` + endpoints `POST /api/admin/domains` et `DELETE /api/admin/domains/[id]`.
     ⚠️ Déploiement : appliquer la migration 016 avec le déploiement du code.
 
-> **7A — état** : modèle invitation-only + UI invitations + UI domaines = ✅ TERMINÉ.
-> Reste hors-7A pour rendre le flux 100 % autonome : **envoi automatique de l'email
-> d'invitation** (choix d'un fournisseur souverain — Scaleway TEM / Resend EU / SMTP),
-> aujourd'hui le lien est copié/transmis manuellement par l'admin.
+> **7A — état** : modèle invitation-only + UI invitations + UI domaines +
+> **envoi automatique de l'email d'invitation** (SMTP générique via nodemailer,
+> `lib/email.ts`, fournisseur au choix par env, fail-open vers le lien copiable) = ✅ TERMINÉ.
 
 ### 7B — Gestion des abonnements (avant la première facturation réelle)
 > Pas besoin de Stripe maintenant. Dans le marché public, c'est bon de commande + mandat
