@@ -258,7 +258,7 @@
 **Contrôles post-audit**
 116. ✅ « disable_signup » vérifié côté GoTrue (`disable_signup: true`) : inscriptions publiques fermées — 7A non contournable depuis la console navigateur.
 117. ✅ Exemption super_admin ajoutée dans `sdis_write_blocked()` (migration 018) : cohérence base ↔ application (le super_admin n'est jamais bloqué en écriture).
-118. ✅ Export COMPLET par SDIS (`/api/admin/sdis/export`) : SDIS + abonnement + domaines + utilisateurs + REX + commentaires + manifest des PJ (admin = son SDIS ; super_admin = tout SDIS), audité. Accès UI : action « Exporter » dans la table super-admin + bouton « Exporter les données du SDIS » sur `/admin/users`.
+118. ✅ Export COMPLET par SDIS (`/api/admin/sdis/export`) : SDIS + abonnement + domaines + utilisateurs + REX + commentaires + **favoris** + manifest des PJ (admin = son SDIS ; super_admin = tout SDIS), audité. Accès UI : action « Exporter » dans la table super-admin + bouton « Exporter les données du SDIS » sur `/admin/users`.
 119. ✅ Bug export RGPD personnel corrigé (`/api/profile/export` ciblait des colonnes inexistantes `factual_elements`/`production_type` → REX silencieusement omis ; corrigé).
 120. ✅ Rollback d'inscription enveloppé dans try/catch (couvre le cas réseau qui *jette* au lieu de renvoyer `{ error }` ; suppression best-effort du compte auth).
 121. ✅ Vue `rex_counts_by_sdis` en `security_invoker = on` (PG15+) : plus de fuite d'agrégats cross-SDIS si un client admin la requête (le panel super_admin passe par le rôle service).

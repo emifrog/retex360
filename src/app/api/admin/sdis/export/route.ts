@@ -69,27 +69,44 @@ export async function GET(request: NextRequest) {
     });
     const rexIds = rex.map((r) => r.id as string);
 
-    // Commentaires + manifest des pièces jointes, par lots d'IDs de REX (borne la
-    // taille des filtres `in()` sur de gros SDIS).
-    async function fetchByRexIds<T>(table: string, columns: string): Promise<T[]> {
+    // Récupération par lots d'IDs (borne la taille des filtres `in()` sur de gros SDIS).
+    async function fetchByIds<T>(
+      table: string,
+      columns: string,
+      column: string,
+      ids: string[]
+    ): Promise<T[]> {
       const out: T[] = [];
-      for (let i = 0; i < rexIds.length; i += 200) {
-        const batch = rexIds.slice(i, i + 200);
+      for (let i = 0; i < ids.length; i += 200) {
+        const batch = ids.slice(i, i + 200);
         if (batch.length === 0) break;
-        const { data } = await admin.from(table).select(columns).in('rex_id', batch);
+        const { data } = await admin.from(table).select(columns).in(column, batch);
         if (data) out.push(...(data as T[]));
       }
       return out;
     }
 
+    const userIds = (users || []).map((u) => u.id as string);
+
     const comments = rexIds.length
-      ? await fetchByRexIds('comments', 'id, rex_id, author_id, content, created_at, updated_at')
+      ? await fetchByIds(
+          'comments',
+          'id, rex_id, author_id, content, created_at, updated_at',
+          'rex_id',
+          rexIds
+        )
       : [];
     const attachments = rexIds.length
-      ? await fetchByRexIds(
+      ? await fetchByIds(
           'rex_attachments',
-          'id, rex_id, uploaded_by, file_name, file_type, file_size, storage_path, created_at'
+          'id, rex_id, uploaded_by, file_name, file_type, file_size, storage_path, created_at',
+          'rex_id',
+          rexIds
         )
+      : [];
+    // Favoris des membres du SDIS (signets) — complète la portabilité.
+    const favorites = userIds.length
+      ? await fetchByIds('favorites', 'id, user_id, rex_id, created_at', 'user_id', userIds)
       : [];
 
     const exportData = {
@@ -102,6 +119,7 @@ export async function GET(request: NextRequest) {
       users: users || [],
       rex,
       comments,
+      favorites,
       // Manifest (métadonnées) des pièces jointes — les binaires restent dans le
       // bucket privé (accès via URLs signées).
       attachments_manifest: attachments,
@@ -109,6 +127,7 @@ export async function GET(request: NextRequest) {
         users: (users || []).length,
         rex: rex.length,
         comments: comments.length,
+        favorites: favorites.length,
         attachments: attachments.length,
       },
     };
