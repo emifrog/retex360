@@ -32,10 +32,15 @@ SET search_path = pg_catalog, public
 AS $$
   SELECT COALESCE((
     SELECT
-      s.status = 'suspended'
-      OR s.status = 'expired'
-      OR (s.status = 'trial'  AND s.trial_ends_at      IS NOT NULL AND s.trial_ends_at      < now())
-      OR (s.status = 'active' AND s.current_period_end IS NOT NULL AND s.current_period_end < now())
+      -- Le super_admin n'est jamais bloqué (il pilote l'onboarding) : cohérent
+      -- avec l'exemption côté application (layout / routes).
+      p.role <> 'super_admin'
+      AND (
+        s.status = 'suspended'
+        OR s.status = 'expired'
+        OR (s.status = 'trial'  AND s.trial_ends_at      IS NOT NULL AND s.trial_ends_at      < now())
+        OR (s.status = 'active' AND s.current_period_end IS NOT NULL AND s.current_period_end < now())
+      )
     FROM subscriptions s
     JOIN profiles p ON p.sdis_id = s.sdis_id
     WHERE p.id = auth.uid()

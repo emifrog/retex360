@@ -26,7 +26,7 @@ export async function GET() {
       supabase
         .from('rex')
         .select(
-          'id, title, type, severity, status, description, context, factual_elements, lessons_learned, production_type, intervention_date, visibility, created_at, updated_at'
+          'id, title, type, severity, status, description, context, means_deployed, difficulties, lessons_learned, type_production, intervention_date, visibility, created_at, updated_at'
         )
         .eq('author_id', user.id)
         .order('created_at', { ascending: false }),
