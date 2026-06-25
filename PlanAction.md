@@ -102,7 +102,7 @@
 > **envoi automatique de l'email d'invitation** (SMTP générique via nodemailer,
 > `lib/email.ts`, fournisseur au choix par env, fail-open vers le lien copiable) = ✅ TERMINÉ.
 
-### 7B — Gestion des abonnements (avant la première facturation réelle)
+### 7B — Gestion des abonnements (avant la première facturation réelle) : ✅ TERMINÉE
 > Pas besoin de Stripe maintenant. Dans le marché public, c'est bon de commande + mandat
 > de paiement, pas de paiement en ligne. Ce qui compte : tracer quel SDIS est sur quel plan
 > et jusqu'à quand, pour que ce soit opposable en cas de litige.
@@ -113,11 +113,19 @@
     - `trial_ends_at`, `current_period_start`, `current_period_end`
     - `max_users` (null = illimité), `max_rex_per_month` (null = illimité)
     - RLS verrouillée (service-role only) — 7B ajoutera une policy de lecture « son SDIS »
-52. Middleware de vérification d'abonnement actif sur toutes les routes protégées
-53. Comportement trial : accès complet + bannière rappelant la fin de la période d'essai
-54. Comportement expiré : lecture seule pendant 30 jours, puis blocage total avec message de contact
-55. Page d'expiration utilisateur ("Votre abonnement a expiré — contactez votre référent SDIS")
-56. Limites par plan enforced côté API (max_users, max_rex_per_month)
+52. ✅ Vérification d'abonnement actif au niveau du **layout dashboard** (1 lecture/navigation, plutôt que middleware edge par requête) : `getSubscriptionState` calcule le mode (`active`/`trial`/`readonly`/`blocked`) ; `mode=blocked` → redirection `/abonnement-expire`. Statut **dérivé à la lecture** (`lib/subscription.ts`), sans cron.
+53. ✅ Trial : accès complet + bannière de rappel de fin d'essai (`subscription-banner.tsx`)
+54. ✅ Expiré : lecture seule 30 j (grâce) puis blocage total. Écritures bloquées **au niveau base** par RLS `RESTRICTIVE` (`sdis_write_blocked()`, **migration 018**) sur rex/comments/rex_attachments — incontournable ; côté UI : bannière + masquage « Nouveau REX » + garde de `/rex/new` + erreurs 403 lisibles.
+55. ✅ Page `/abonnement-expire` (« Votre abonnement a expiré — contactez votre référent SDIS », hors layout dashboard pour éviter la boucle de redirection)
+56. ✅ Limites par plan côté API : `max_users` (création d'invitation + **gate final à l'inscription** anti-course) et `max_rex_per_month` (création de REX, compté par mois calendaire). Le super_admin n'est jamais soumis aux limites.
+
+> **7B — état** : migration **018** (policy lecture self-SDIS + RLS RESTRICTIVE
+> écritures) + helper d'état dérivé + bannière + page d'expiration + limites par plan
+> = ✅ TERMINÉ. Pas de paiement en ligne (marché public : bon de commande + mandat).
+> ⚠️ Déploiement : appliquer la migration **018** avec le déploiement du code.
+> ℹ️ L'expiration est dérivée des dates (`trial_ends_at`/`current_period_end`) ; le super_admin
+> peut aussi forcer `status` manuellement depuis le panel 7C. Un SDIS **sans** abonnement
+> (référence non onboardée) n'est jamais bloqué ni limité.
 
 ### 7C — Panel super_admin d'onboarding (avant le 3e client) : ✅ TERMINÉE
 > Ajouter un SDIS impliquait jusqu'ici de passer par la console Supabase ou des requêtes

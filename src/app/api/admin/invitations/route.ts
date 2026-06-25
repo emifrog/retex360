@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/api-auth';
 import { invitationCreateSchema } from '@/lib/validators/api';
 import { generateInvitationToken, hashToken, invitationExpiry } from '@/lib/invitations';
 import { isEmailConfigured, sendInvitationEmail } from '@/lib/email';
+import { getSubscriptionState } from '@/lib/subscription';
 import { logger } from '@/lib/logger';
 
 // Crée une invitation (admin SDIS / super_admin) et renvoie le lien à transmettre.
@@ -62,6 +63,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (existingProfile) {
       return NextResponse.json({ error: 'Un compte existe déjà pour cette adresse.' }, { status: 409 });
+    }
+
+    // Limite d'utilisateurs par plan (7B) : refuser si le SDIS est déjà au plafond.
+    const subState = await getSubscriptionState(sdisId);
+    if (subState.maxUsers !== null) {
+      const { count } = await admin
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('sdis_id', sdisId);
+      if ((count ?? 0) >= subState.maxUsers) {
+        return NextResponse.json(
+          { error: `Limite d'utilisateurs atteinte pour ce SDIS (max ${subState.maxUsers}).` },
+          { status: 403 }
+        );
+      }
     }
 
     const token = generateInvitationToken();

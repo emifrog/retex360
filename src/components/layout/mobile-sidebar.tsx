@@ -52,10 +52,12 @@ interface MobileSidebarProps {
   pendingCount?: number;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  canWrite?: boolean;
 }
 
-export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false }: MobileSidebarProps) {
+export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false, canWrite = true }: MobileSidebarProps) {
   const pathname = usePathname();
+  const visibleNavigation = canWrite ? navigation : navigation.filter((i) => i.href !== '/rex/new');
   const [isOpen, setIsOpen] = useState(false);
   const prevPathnameRef = useRef(pathname);
 
@@ -113,7 +115,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
             

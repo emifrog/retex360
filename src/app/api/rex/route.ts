@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { validateRexByType } from '@/lib/validators/rex';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
+import { getSubscriptionState } from '@/lib/subscription';
 
 // POST - Create new REX
 export async function POST(request: Request) {
@@ -22,12 +23,39 @@ export async function POST(request: Request) {
     // Get user profile for sdis_id
     const { data: profile } = await supabase
       .from('profiles')
-      .select('sdis_id')
+      .select('sdis_id, role')
       .eq('id', user.id)
       .single();
 
     if (!profile) {
       return NextResponse.json({ message: 'Profil non trouvé' }, { status: 404 });
+    }
+
+    // Enforcement abonnement (7B) : lecture seule + quota mensuel de REX par plan.
+    // Le super_admin n'est pas soumis aux limites de SDIS.
+    if (profile.role !== 'super_admin') {
+      const sub = await getSubscriptionState(profile.sdis_id);
+      if (!sub.canWrite) {
+        return NextResponse.json(
+          { message: 'Abonnement inactif — création de REX désactivée (lecture seule).' },
+          { status: 403 }
+        );
+      }
+      if (sub.maxRexPerMonth !== null) {
+        const admin = createAdminClient();
+        const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const { count } = await admin
+          .from('rex')
+          .select('*', { count: 'exact', head: true })
+          .eq('sdis_id', profile.sdis_id)
+          .gte('created_at', monthStart);
+        if ((count ?? 0) >= sub.maxRexPerMonth) {
+          return NextResponse.json(
+            { message: `Limite mensuelle de REX atteinte pour votre abonnement (max ${sub.maxRexPerMonth}/mois).` },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     const body = await request.json();

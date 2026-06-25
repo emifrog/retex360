@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { isPasswordCompromised } from '@/lib/password-breach';
+import { getSubscriptionState } from '@/lib/subscription';
 
 /**
  * Inscription sur invitation (modèle "invitation uniquement").
@@ -77,6 +78,22 @@ export async function acceptInvitationAndRegister(params: {
   }
 
   const admin = createAdminClient();
+
+  // Gate final de la limite d'utilisateurs (7B) : couvre les invitations créées
+  // avant d'atteindre le plafond et les inscriptions concurrentes.
+  const subState = await getSubscriptionState(invitation.sdis_id);
+  if (subState.maxUsers !== null) {
+    const { count } = await admin
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('sdis_id', invitation.sdis_id);
+    if ((count ?? 0) >= subState.maxUsers) {
+      return {
+        error:
+          "La limite d'utilisateurs de votre SDIS est atteinte. Contactez votre administrateur.",
+      };
+    }
+  }
 
   // Email auto-confirmé : recevoir l'invitation prouve la maîtrise de l'adresse.
   const { data: created, error: createError } = await admin.auth.admin.createUser({

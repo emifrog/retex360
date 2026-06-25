@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { RexForm } from '@/components/rex/rex-form';
+import { getUser } from '@/lib/actions/auth';
+import { getSubscriptionState } from '@/lib/subscription';
 
 export const metadata: Metadata = {
   title: 'Nouveau RETEX',
@@ -7,7 +10,15 @@ export const metadata: Metadata = {
 };
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 
-export default function NewRexPage() {
+export default async function NewRexPage() {
+  // Mode lecture seule (abonnement suspendu/expiré) : pas de création de REX.
+  const user = await getUser();
+  if (!user) redirect('/login');
+  if (user.role !== 'super_admin') {
+    const state = await getSubscriptionState(user.sdis_id);
+    if (!state.canWrite) redirect('/rex');
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}

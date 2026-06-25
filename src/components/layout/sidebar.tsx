@@ -58,10 +58,13 @@ interface SidebarProps {
   pendingCount?: number;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  canWrite?: boolean;
 }
 
-export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false }: SidebarProps) {
+export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false, canWrite = true }: SidebarProps) {
   const pathname = usePathname();
+  // Masquer la création de REX en mode lecture seule (abonnement suspendu/expiré).
+  const visibleNavigation = canWrite ? navigation : navigation.filter((i) => i.href !== '/rex/new');
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('sidebar-collapsed') === 'true';
@@ -122,7 +125,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
       {/* Navigation */}
       <TooltipProvider delayDuration={0}>
         <nav aria-label="Menu principal" className="flex-1 p-3 space-y-1">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
             
