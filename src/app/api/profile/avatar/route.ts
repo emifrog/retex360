@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { optimizeImage } from '@/lib/image-optimizer';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
   const ip = getClientIp(request);
   const rateLimitResult = await rateLimiters.upload.limit(ip);
-  
+
   if (!rateLimitResult.success) {
     return rateLimitResponse(rateLimitResult.reset);
   }
@@ -16,7 +17,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -28,14 +32,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Le fichier doit être une image' }, { status: 400 });
+    // Validate file type — pas de SVG (XSS stocké en bucket public) ni GIF.
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Format non autorisé (JPEG, PNG ou WebP)' },
+        { status: 400 }
+      );
     }
 
     // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'L\'image ne doit pas dépasser 2 Mo' }, { status: 400 });
+      return NextResponse.json({ error: "L'image ne doit pas dépasser 2 Mo" }, { status: 400 });
     }
 
     // Delete old avatar if exists
@@ -53,44 +61,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
-
-    // Convert File to ArrayBuffer then to Buffer
+    // Re-encode server-side (neutralise toute charge embarquée) + extension
+    // dérivée du type réel, jamais du nom de fichier client.
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const optimized = await optimizeImage(Buffer.from(arrayBuffer), file.type);
+    const fileName = `${user.id}-${Date.now()}.webp`;
+    const filePath = `avatars/${fileName}`;
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, buffer, {
-        contentType: file.type,
+      .upload(filePath, optimized.buffer, {
+        contentType: optimized.contentType,
         upsert: true,
       });
 
     if (uploadError) {
       logger.error('Upload error:', uploadError);
-      return NextResponse.json({ error: 'Erreur lors de l\'upload' }, { status: 500 });
+      return NextResponse.json({ error: "Erreur lors de l'upload" }, { status: 500 });
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
     // Update profile with new avatar URL
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ 
+      .update({
         avatar_url: publicUrl,
       })
       .eq('id', user.id);
 
     if (updateError) {
       logger.error('Profile update error:', updateError);
-      return NextResponse.json({ error: 'Erreur lors de la mise à jour du profil' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors de la mise à jour du profil' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ url: publicUrl });

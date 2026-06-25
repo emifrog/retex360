@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const isSuperAdmin = profile.role === 'super_admin';
 
     // SDIS cible : super_admin choisit, admin est forcé sur son propre SDIS.
-    const sdisId = isSuperAdmin ? validated.data.sdisId ?? profile.sdis_id : profile.sdis_id;
+    const sdisId = isSuperAdmin ? (validated.data.sdisId ?? profile.sdis_id) : profile.sdis_id;
     if (!sdisId) {
       return NextResponse.json({ error: 'SDIS cible requis' }, { status: 400 });
     }
@@ -62,7 +62,10 @@ export async function POST(request: NextRequest) {
       .eq('email', email)
       .maybeSingle();
     if (existingProfile) {
-      return NextResponse.json({ error: 'Un compte existe déjà pour cette adresse.' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Un compte existe déjà pour cette adresse.' },
+        { status: 409 }
+      );
     }
 
     // Limite d'utilisateurs par plan (7B) : refuser si le SDIS est déjà au plafond.
@@ -92,7 +95,10 @@ export async function POST(request: NextRequest) {
     });
     if (insertError) {
       logger.error('Invitation insert error:', insertError);
-      return NextResponse.json({ error: "Erreur lors de la création de l'invitation" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Erreur lors de la création de l'invitation" },
+        { status: 500 }
+      );
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';

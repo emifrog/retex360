@@ -14,12 +14,14 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Tableau de bord',
-  description: 'Vue d\'ensemble des RETEX, statistiques et analyses pour votre SDIS.',
+  description: "Vue d'ensemble des RETEX, statistiques et analyses pour votre SDIS.",
 };
 
 function SectionSkeleton({ height = 'h-48' }: { height?: string }) {
   return (
-    <div className={`${height} flex items-center justify-center bg-card/50 border border-border/50 rounded-xl`}>
+    <div
+      className={`${height} flex items-center justify-center bg-card/50 border border-border/50 rounded-xl`}
+    >
       <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
     </div>
   );

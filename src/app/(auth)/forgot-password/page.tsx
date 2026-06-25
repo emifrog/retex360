@@ -12,11 +12,7 @@ import { Loader2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button
-      type="submit"
-      className="w-full bg-primary hover:bg-primary/90"
-      disabled={pending}
-    >
+    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={pending}>
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -75,7 +71,8 @@ export default function ForgotPasswordPage() {
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-2">Email envoyé !</h1>
         <p className="text-muted-foreground mb-6">
-          Si un compte existe avec l&apos;adresse <strong>{email}</strong>, vous recevrez un email avec les instructions pour réinitialiser votre mot de passe.
+          Si un compte existe avec l&apos;adresse <strong>{email}</strong>, vous recevrez un email
+          avec les instructions pour réinitialiser votre mot de passe.
         </p>
         <p className="text-sm text-muted-foreground mb-6">
           Vérifiez également votre dossier spam si vous ne voyez pas l&apos;email.

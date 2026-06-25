@@ -53,7 +53,6 @@ interface FavoritesListProps {
   favorites: Favorite[];
 }
 
-
 export function FavoritesList({ favorites: initialFavorites }: FavoritesListProps) {
   const [favorites, setFavorites] = useState(initialFavorites);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -87,8 +86,8 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
           <Star className="w-12 h-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">Aucun favori</h3>
           <p className="text-muted-foreground text-center max-w-md mb-4">
-            Vous n&apos;avez pas encore ajouté de REX à vos favoris. 
-            Explorez les retours d&apos;expérience et cliquez sur l&apos;étoile pour les sauvegarder.
+            Vous n&apos;avez pas encore ajouté de REX à vos favoris. Explorez les retours
+            d&apos;expérience et cliquez sur l&apos;étoile pour les sauvegarder.
           </p>
           <Link href="/rex">
             <Button>Explorer les REX</Button>
@@ -112,21 +111,29 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
             .slice(0, 2);
 
           return (
-            <Card key={favorite.id} className="border-border/50 bg-card/80 hover:bg-card/90 transition-colors">
+            <Card
+              key={favorite.id}
+              className="border-border/50 bg-card/80 hover:bg-card/90 transition-colors"
+            >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   {/* Main content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className={cn(severity?.bgColor, severity?.textColor, severity?.borderColor)}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          severity?.bgColor,
+                          severity?.textColor,
+                          severity?.borderColor
+                        )}
+                      >
                         {severity?.label}
                       </Badge>
                       <Badge variant="outline" className="bg-muted/50">
                         {rex.type}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        SDIS {rex.sdis.code}
-                      </span>
+                      <span className="text-xs text-muted-foreground">SDIS {rex.sdis.code}</span>
                     </div>
 
                     <Link href={`/rex/${rex.id}`} className="group">
@@ -164,7 +171,11 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
                     </div>
 
                     <p className="text-xs text-muted-foreground mt-2">
-                      Ajouté aux favoris {formatDistanceToNow(new Date(favorite.created_at), { addSuffix: true, locale: fr })}
+                      Ajouté aux favoris{' '}
+                      {formatDistanceToNow(new Date(favorite.created_at), {
+                        addSuffix: true,
+                        locale: fr,
+                      })}
                     </p>
                   </div>
 
@@ -206,7 +217,8 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
           <AlertDialogHeader>
             <AlertDialogTitle>Retirer des favoris ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ce REX sera retiré de votre liste de favoris. Vous pourrez toujours le retrouver et l&apos;ajouter à nouveau.
+              Ce REX sera retiré de votre liste de favoris. Vous pourrez toujours le retrouver et
+              l&apos;ajouter à nouveau.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

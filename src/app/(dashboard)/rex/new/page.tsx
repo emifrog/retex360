@@ -6,7 +6,8 @@ import { getSubscriptionState } from '@/lib/subscription';
 
 export const metadata: Metadata = {
   title: 'Nouveau RETEX',
-  description: 'Créez un nouveau retour d\'expérience pour partager les enseignements de votre intervention.',
+  description:
+    "Créez un nouveau retour d'expérience pour partager les enseignements de votre intervention.",
 };
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 
@@ -22,10 +23,7 @@ export default async function NewRexPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
-      <Breadcrumb items={[
-        { label: 'REX', href: '/rex' },
-        { label: 'Nouveau RETEX' },
-      ]} />
+      <Breadcrumb items={[{ label: 'REX', href: '/rex' }, { label: 'Nouveau RETEX' }]} />
 
       {/* Header */}
       <div>

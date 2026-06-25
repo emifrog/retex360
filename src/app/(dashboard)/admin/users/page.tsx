@@ -13,7 +13,9 @@ export default async function AdminUsersPage() {
   const supabase = await createClient();
 
   // Check auth and admin role
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     redirect('/login');
   }
@@ -33,7 +35,8 @@ export default async function AdminUsersPage() {
   // Fetch users based on role
   let query = supabase
     .from('profiles')
-    .select(`
+    .select(
+      `
       id,
       email,
       full_name,
@@ -42,7 +45,8 @@ export default async function AdminUsersPage() {
       avatar_url,
       created_at,
       sdis:sdis_id(id, code, name)
-    `)
+    `
+    )
     .order('created_at', { ascending: false });
 
   // Admin can only see users from their SDIS
@@ -65,10 +69,7 @@ export default async function AdminUsersPage() {
   // Fetch SDIS list for super_admin
   let sdisList: { id: string; code: string; name: string }[] = [];
   if (isSuperAdmin) {
-    const { data } = await supabase
-      .from('sdis')
-      .select('id, code, name')
-      .order('code');
+    const { data } = await supabase.from('sdis').select('id, code, name').order('code');
     sdisList = data || [];
   }
 
@@ -82,17 +83,16 @@ export default async function AdminUsersPage() {
             Gestion des utilisateurs
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isSuperAdmin 
+            {isSuperAdmin
               ? 'Gérez les utilisateurs de tous les SDIS'
-              : 'Gérez les utilisateurs de votre SDIS'
-            }
+              : 'Gérez les utilisateurs de votre SDIS'}
           </p>
         </div>
       </div>
 
       {/* Users Table */}
-      <UsersTable 
-        users={users || []} 
+      <UsersTable
+        users={users || []}
         currentUserId={user.id}
         isSuperAdmin={isSuperAdmin}
         sdisList={sdisList}

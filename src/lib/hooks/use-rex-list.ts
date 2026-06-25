@@ -35,48 +35,51 @@ export function useRexList() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch REX data
-  const fetchRex = useCallback(async (pageNum: number, append: boolean = false) => {
-    if (append) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
-
-    try {
-      const params = new URLSearchParams({
-        page: pageNum.toString(),
-        limit: LIMIT.toString(),
-      });
-
-      if (searchQuery) params.set('search', searchQuery);
-      if (filters.type) params.set('type', filters.type);
-      if (filters.severity) params.set('severity', filters.severity);
-      if (filters.status) params.set('status', filters.status);
-      if (filters.type_production) params.set('type_production', filters.type_production);
-
-      const response = await fetch(`/api/rex?${params}`);
-      if (!response.ok) throw new Error('Erreur de chargement');
-
-      const data = await response.json();
-      const newItems = data.data || [];
-
+  const fetchRex = useCallback(
+    async (pageNum: number, append: boolean = false) => {
       if (append) {
-        setRexList(prev => [...prev, ...newItems]);
+        setIsLoadingMore(true);
       } else {
-        setRexList(newItems);
+        setIsLoading(true);
       }
 
-      setTotal(data.pagination.total);
-      setHasMore(pageNum < data.pagination.totalPages);
-      setPage(pageNum);
-    } catch (error) {
-      logger.error('Fetch error:', error);
-      toast.error('Erreur lors du chargement des REX');
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [searchQuery, filters]);
+      try {
+        const params = new URLSearchParams({
+          page: pageNum.toString(),
+          limit: LIMIT.toString(),
+        });
+
+        if (searchQuery) params.set('search', searchQuery);
+        if (filters.type) params.set('type', filters.type);
+        if (filters.severity) params.set('severity', filters.severity);
+        if (filters.status) params.set('status', filters.status);
+        if (filters.type_production) params.set('type_production', filters.type_production);
+
+        const response = await fetch(`/api/rex?${params}`);
+        if (!response.ok) throw new Error('Erreur de chargement');
+
+        const data = await response.json();
+        const newItems = data.data || [];
+
+        if (append) {
+          setRexList((prev) => [...prev, ...newItems]);
+        } else {
+          setRexList(newItems);
+        }
+
+        setTotal(data.pagination.total);
+        setHasMore(pageNum < data.pagination.totalPages);
+        setPage(pageNum);
+      } catch (error) {
+        logger.error('Fetch error:', error);
+        toast.error('Erreur lors du chargement des REX');
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [searchQuery, filters]
+  );
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -153,30 +156,33 @@ export function useRexList() {
     setHasMore(true);
   }, []);
 
-  const toggleFavorite = useCallback(async (id: string) => {
-    const isFavorited = favorites.has(id);
+  const toggleFavorite = useCallback(
+    async (id: string) => {
+      const isFavorited = favorites.has(id);
 
-    try {
-      const response = await fetch(`/api/rex/${id}/favorite`, {
-        method: isFavorited ? 'DELETE' : 'POST',
-      });
-
-      if (response.ok) {
-        setFavorites(prev => {
-          const next = new Set(prev);
-          if (isFavorited) {
-            next.delete(id);
-          } else {
-            next.add(id);
-          }
-          return next;
+      try {
+        const response = await fetch(`/api/rex/${id}/favorite`, {
+          method: isFavorited ? 'DELETE' : 'POST',
         });
+
+        if (response.ok) {
+          setFavorites((prev) => {
+            const next = new Set(prev);
+            if (isFavorited) {
+              next.delete(id);
+            } else {
+              next.add(id);
+            }
+            return next;
+          });
+        }
+      } catch (error) {
+        logger.error('Favorite toggle error:', error);
+        toast.error('Erreur lors de la modification du favori');
       }
-    } catch (error) {
-      logger.error('Favorite toggle error:', error);
-      toast.error('Erreur lors de la modification du favori');
-    }
-  }, [favorites]);
+    },
+    [favorites]
+  );
 
   return {
     rexList,

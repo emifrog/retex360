@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
     const { domain } = validated.data;
     const isSuperAdmin = profile.role === 'super_admin';
-    const sdisId = isSuperAdmin ? validated.data.sdisId ?? profile.sdis_id : profile.sdis_id;
+    const sdisId = isSuperAdmin ? (validated.data.sdisId ?? profile.sdis_id) : profile.sdis_id;
     if (!sdisId) {
       return NextResponse.json({ error: 'SDIS cible requis' }, { status: 400 });
     }

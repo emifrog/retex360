@@ -9,10 +9,7 @@ import { logger } from '@/lib/logger';
 
 // Génère un lien de réinitialisation de mot de passe pour un membre d'un SDIS
 // client (typiquement son admin). `id` = identifiant du SDIS. Super_admin only.
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);

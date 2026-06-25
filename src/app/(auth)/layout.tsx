@@ -1,11 +1,8 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CheckCircle, Shield, Zap, Users } from 'lucide-react';
+import { LEGAL_LINKS } from '@/lib/legal';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Panel - Branding (hidden on mobile, visible on lg+) */}
@@ -37,7 +34,8 @@ export default function AuthLayout({
               Capitalisez sur l&apos;expérience de tous les SDIS de France
             </h2>
             <p className="mt-4 text-white/80 text-lg">
-              Partagez, apprenez et améliorez vos interventions grâce à une plateforme collaborative intelligente.
+              Partagez, apprenez et améliorez vos interventions grâce à une plateforme collaborative
+              intelligente.
             </p>
           </div>
 
@@ -47,21 +45,27 @@ export default function AuthLayout({
               <CheckCircle className="w-5 h-5 mt-0.5 text-white/90" />
               <div>
                 <h3 className="font-semibold">Recherche intelligente</h3>
-                <p className="text-sm text-white/70">Trouvez instantanément les retex pertinents avec l&apos;IA</p>
+                <p className="text-sm text-white/70">
+                  Trouvez instantanément les retex pertinents avec l&apos;IA
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 mt-0.5 text-white/90" />
               <div>
                 <h3 className="font-semibold">Collaboration inter-SDIS</h3>
-                <p className="text-sm text-white/70">Partagez les bonnes pratiques entre départements</p>
+                <p className="text-sm text-white/70">
+                  Partagez les bonnes pratiques entre départements
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 mt-0.5 text-white/90" />
               <div>
                 <h3 className="font-semibold">Analytics avancés</h3>
-                <p className="text-sm text-white/70">Identifiez les tendances et prévenez les risques</p>
+                <p className="text-sm text-white/70">
+                  Identifiez les tendances et prévenez les risques
+                </p>
               </div>
             </div>
           </div>
@@ -71,11 +75,32 @@ export default function AuthLayout({
         <div className="text-sm text-white/60 space-y-1">
           <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
           <div className="flex gap-2 text-xs text-white/40">
-            <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">Mentions légales</a>
+            <a
+              href={LEGAL_LINKS.mentionsLegales}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white/60 transition-colors"
+            >
+              Mentions légales
+            </a>
             <span>·</span>
-            <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">CGU</a>
+            <a
+              href={LEGAL_LINKS.cgu}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white/60 transition-colors"
+            >
+              CGU
+            </a>
             <span>·</span>
-            <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">Confidentialité</a>
+            <a
+              href={LEGAL_LINKS.confidentialite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white/60 transition-colors"
+            >
+              Confidentialité
+            </a>
           </div>
         </div>
       </div>
@@ -103,7 +128,7 @@ export default function AuthLayout({
           </div>
           <ThemeToggle />
         </div>
-        
+
         {/* Mobile tagline */}
         <p className="mt-4 text-sm text-white/80">
           Plateforme collaborative pour les sapeurs-pompiers
@@ -127,26 +152,48 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel - Form */}
-      <div id="main-content" className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative">
+      <div
+        id="main-content"
+        className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative"
+      >
         {/* Theme Toggle - desktop only */}
         <div className="absolute top-4 right-4 hidden lg:block">
           <ThemeToggle />
         </div>
-        
-        <div className="w-full max-w-md">
-          {children}
-        </div>
+
+        <div className="w-full max-w-md">{children}</div>
       </div>
 
       {/* Mobile Footer */}
       <div className="lg:hidden p-4 text-center text-xs text-muted-foreground border-t bg-background space-y-1">
         <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
         <div className="flex justify-center gap-2 text-[10px] text-muted-foreground/60">
-          <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+          <a
+            href={LEGAL_LINKS.mentionsLegales}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-muted-foreground transition-colors"
+          >
+            Mentions légales
+          </a>
           <span>·</span>
-          <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+          <a
+            href={LEGAL_LINKS.cgu}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-muted-foreground transition-colors"
+          >
+            CGU
+          </a>
           <span>·</span>
-          <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+          <a
+            href={LEGAL_LINKS.confidentialite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-muted-foreground transition-colors"
+          >
+            Confidentialité
+          </a>
         </div>
       </div>
     </div>

@@ -30,12 +30,7 @@ export interface FilterState {
   sdis?: string;
 }
 
-export function RexFilters({
-  onSearch,
-  onFilterChange,
-  onViewChange,
-  view,
-}: RexFiltersProps) {
+export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: RexFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
   const [showFilters, setShowFilters] = useState(() => {
@@ -49,10 +44,7 @@ export function RexFilters({
   useEffect(() => {
     async function fetchSdis() {
       const supabase = createClient();
-      const { data } = await supabase
-        .from('sdis')
-        .select('id, code, name')
-        .order('code');
+      const { data } = await supabase.from('sdis').select('id, code, name').order('code');
       if (data) setSdisList(data);
     }
     fetchSdis();
@@ -98,9 +90,7 @@ export function RexFilters({
           <Filter className="w-4 h-4 mr-2" />
           Filtres
           {activeFiltersCount > 0 && (
-            <Badge className="ml-2 bg-primary text-primary-foreground">
-              {activeFiltersCount}
-            </Badge>
+            <Badge className="ml-2 bg-primary text-primary-foreground">{activeFiltersCount}</Badge>
           )}
         </Button>
         <div className="flex border border-border rounded-lg overflow-hidden">
@@ -206,10 +196,10 @@ export function RexFilters({
                     {status === 'draft'
                       ? 'Brouillon'
                       : status === 'pending'
-                      ? 'En attente'
-                      : status === 'validated'
-                      ? 'Validé'
-                      : 'Archivé'}
+                        ? 'En attente'
+                        : status === 'validated'
+                          ? 'Validé'
+                          : 'Archivé'}
                   </SelectItem>
                 ))}
               </SelectContent>

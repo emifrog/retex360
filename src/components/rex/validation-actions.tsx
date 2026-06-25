@@ -24,13 +24,15 @@ interface ValidationActionsProps {
   currentStatus: string;
   isAdmin: boolean;
   isAuthor: boolean;
+  canWrite?: boolean;
 }
 
-export function ValidationActions({ 
-  rexId, 
-  currentStatus, 
+export function ValidationActions({
+  rexId,
+  currentStatus,
   isAdmin,
-  isAuthor 
+  isAuthor,
+  canWrite = true,
 }: ValidationActionsProps) {
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
@@ -110,9 +112,10 @@ export function ValidationActions({
     }
   };
 
-  // Only show for pending REX to admins, or for authors on their drafts
-  const showValidationActions = isAdmin && currentStatus === 'pending';
-  const showDeleteAction = isAuthor || isAdmin;
+  // Only show for pending REX to admins, or for authors on their drafts.
+  // Masqué en mode lecture seule (abonnement suspendu/expiré).
+  const showValidationActions = canWrite && isAdmin && currentStatus === 'pending';
+  const showDeleteAction = canWrite && (isAuthor || isAdmin);
 
   if (!showValidationActions && !showDeleteAction) {
     return null;
@@ -193,9 +196,7 @@ export function ValidationActions({
               disabled={isRejecting || !rejectReason.trim()}
               className="bg-orange-600 hover:bg-orange-700"
             >
-              {isRejecting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
+              {isRejecting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Rejeter
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -208,7 +209,8 @@ export function ValidationActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce REX ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. Le REX et tous ses commentaires seront définitivement supprimés.
+              Cette action est irréversible. Le REX et tous ses commentaires seront définitivement
+              supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -218,9 +220,7 @@ export function ValidationActions({
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
+              {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

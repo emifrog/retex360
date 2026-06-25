@@ -29,7 +29,8 @@ describe('HTML sanitization', () => {
   });
 
   it('allows tables', () => {
-    const input = '<table><thead><tr><th>Header</th></tr></thead><tbody><tr><td>Cell</td></tr></tbody></table>';
+    const input =
+      '<table><thead><tr><th>Header</th></tr></thead><tbody><tr><td>Cell</td></tr></tbody></table>';
     expect(sanitizeHtml(input)).toBe(input);
   });
 

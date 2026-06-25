@@ -15,7 +15,9 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -43,7 +45,10 @@ export async function POST(request: Request) {
       }
       if (sub.maxRexPerMonth !== null) {
         const admin = createAdminClient();
-        const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const now = new Date();
+        const monthStart = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+        ).toISOString();
         const { count } = await admin
           .from('rex')
           .select('*', { count: 'exact', head: true })
@@ -51,7 +56,9 @@ export async function POST(request: Request) {
           .gte('created_at', monthStart);
         if ((count ?? 0) >= sub.maxRexPerMonth) {
           return NextResponse.json(
-            { message: `Limite mensuelle de REX atteinte pour votre abonnement (max ${sub.maxRexPerMonth}/mois).` },
+            {
+              message: `Limite mensuelle de REX atteinte pour votre abonnement (max ${sub.maxRexPerMonth}/mois).`,
+            },
             { status: 403 }
           );
         }
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     // Sanitize HTML rich-text fields server-side before storage (defense in
     // depth: the Tiptap HTML is client-controlled and could be posted directly).
     const clean = sanitizeRexHtmlFields(body);
@@ -139,8 +146,10 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
-    
-    const { data: { user } } = await supabase.auth.getUser();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -155,7 +164,9 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('rex')
-      .select('*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)', { count: 'exact' });
+      .select('*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)', {
+        count: 'exact',
+      });
 
     // Filters
     if (status) query = query.eq('status', status);
@@ -167,10 +178,12 @@ export async function GET(request: Request) {
     // Pagination
     const from = (page - 1) * limit;
     const to = from + limit - 1;
-    
-    const { data: rexList, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
+
+    const {
+      data: rexList,
+      error,
+      count,
+    } = await query.order('created_at', { ascending: false }).range(from, to);
 
     if (error) {
       logger.error('Error fetching REX:', error);

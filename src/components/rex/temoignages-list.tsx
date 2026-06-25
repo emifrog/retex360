@@ -32,9 +32,7 @@ export function TemoignagesList({ temoignages }: TemoignagesListProps) {
               {temoignage.auteur_fonction && (
                 <span className="font-medium">{temoignage.auteur_fonction}</span>
               )}
-              {temoignage.contexte && (
-                <span> — {temoignage.contexte}</span>
-              )}
+              {temoignage.contexte && <span> — {temoignage.contexte}</span>}
             </footer>
           </blockquote>
         ))}

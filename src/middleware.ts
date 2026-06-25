@@ -25,9 +25,11 @@ function getGlobalRateLimiter(): Ratelimit | null {
 }
 
 function getIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0].trim()
-    || request.headers.get('x-real-ip')
-    || 'unknown';
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
 }
 
 export async function middleware(request: NextRequest) {

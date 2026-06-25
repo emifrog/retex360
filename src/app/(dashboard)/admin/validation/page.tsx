@@ -6,7 +6,9 @@ export default async function ValidationPage() {
   const supabase = await createClient();
 
   // Check auth and role
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     redirect('/login');
   }
@@ -24,11 +26,13 @@ export default async function ValidationPage() {
   // Fetch pending REX
   const { data: pendingRex } = await supabase
     .from('rex')
-    .select(`
+    .select(
+      `
       *,
       author:profiles!author_id(id, full_name, grade, email),
       sdis:sdis!sdis_id(id, code, name)
-    `)
+    `
+    )
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 

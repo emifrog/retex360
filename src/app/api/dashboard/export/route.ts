@@ -1,9 +1,23 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { requireRole } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 
-const CSV_HEADERS = ['Titre', 'Type', 'Sévérité', 'Statut', 'Production', 'Date intervention', 'Visibilité', 'SDIS', 'Auteur', 'Créé le'];
+const CSV_HEADERS = [
+  'Titre',
+  'Type',
+  'Sévérité',
+  'Statut',
+  'Production',
+  'Date intervention',
+  'Visibilité',
+  'SDIS',
+  'Auteur',
+  'Créé le',
+];
 const PAGE_SIZE = 500;
+const MAX_ROWS = 10000; // borne anti-exfiltration / DoS
 
 function formatRow(rex: {
   title: string;
@@ -33,14 +47,19 @@ function formatRow(rex: {
   ].join(';');
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
-    }
+    // Export réservé aux rôles d'encadrement, scopé au SDIS (super_admin transverse).
+    const auth = await requireRole(supabase, ['validator', 'admin', 'super_admin']);
+    if ('response' in auth) return auth.response;
+    const { profile } = auth;
+    const isSuperAdmin = profile.role === 'super_admin';
 
     const encoder = new TextEncoder();
 
@@ -48,17 +67,26 @@ export async function GET() {
       async start(controller) {
         try {
           // BOM + header row
-          controller.enqueue(encoder.encode('\uFEFF' + CSV_HEADERS.join(';') + '\n'));
+          controller.enqueue(encoder.encode('﻿' + CSV_HEADERS.join(';') + '\n'));
 
           let offset = 0;
           let hasMore = true;
+          let exported = 0;
 
-          while (hasMore) {
-            const { data: rexList, error } = await supabase
+          while (hasMore && exported < MAX_ROWS) {
+            let query = supabase
               .from('rex')
-              .select('title, type, severity, status, type_production, intervention_date, visibility, created_at, sdis:sdis_id(code, name), author:profiles!author_id(full_name)')
+              .select(
+                'title, type, severity, status, type_production, intervention_date, visibility, created_at, sdis:sdis_id(code, name), author:profiles!author_id(full_name)'
+              )
               .order('created_at', { ascending: false })
               .range(offset, offset + PAGE_SIZE - 1);
+
+            if (!isSuperAdmin) {
+              query = query.eq('sdis_id', profile.sdis_id);
+            }
+
+            const { data: rexList, error } = await query;
 
             if (error) {
               logger.error('Export stream error:', error);
@@ -70,6 +98,7 @@ export async function GET() {
               controller.enqueue(encoder.encode(formatRow(rex) + '\n'));
             }
 
+            exported += rows.length;
             hasMore = rows.length === PAGE_SIZE;
             offset += PAGE_SIZE;
           }

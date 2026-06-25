@@ -6,11 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Quote, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Temoignage } from '@/types';
@@ -56,9 +52,7 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
           <div className="flex items-center gap-3">
             <Quote className="w-5 h-5 text-primary" />
             <span className="font-medium">Témoignages / Verbatims</span>
-            {value.length > 0 && (
-              <Badge variant="secondary">{value.length}</Badge>
-            )}
+            {value.length > 0 && <Badge variant="secondary">{value.length}</Badge>}
           </div>
           <ChevronDown
             className={cn(
@@ -94,9 +88,7 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                Fonction de l&apos;auteur
-              </Label>
+              <Label className="text-xs text-muted-foreground">Fonction de l&apos;auteur</Label>
               <Input
                 placeholder="Ex : Chef d'agrès, COS, médecin SAMU..."
                 value={temoignage.auteur_fonction}
@@ -118,9 +110,7 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                Contexte (optionnel)
-              </Label>
+              <Label className="text-xs text-muted-foreground">Contexte (optionnel)</Label>
               <Input
                 placeholder="Ex : Lors de la phase de reconnaissance..."
                 value={temoignage.contexte || ''}

@@ -12,7 +12,10 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -51,10 +54,7 @@ export async function DELETE(
     ]);
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from('rex_attachments')
-      .delete()
-      .eq('id', id);
+    const { error: deleteError } = await supabase.from('rex_attachments').delete().eq('id', id);
 
     if (deleteError) {
       logger.error('Database delete error:', deleteError);

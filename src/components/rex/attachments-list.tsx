@@ -12,7 +12,7 @@ import {
   Download,
   Eye,
   Loader2,
-  Paperclip
+  Paperclip,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { logger } from '@/lib/logger';
@@ -113,12 +113,15 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
                     <FileIcon className="w-5 h-5 text-primary" />
                   </div>
                 )}
-                
+
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{attachment.file_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatFileSize(attachment.file_size)} • 
-                    Ajouté {formatDistanceToNow(new Date(attachment.created_at), { addSuffix: true, locale: fr })}
+                    {formatFileSize(attachment.file_size)} • Ajouté{' '}
+                    {formatDistanceToNow(new Date(attachment.created_at), {
+                      addSuffix: true,
+                      locale: fr,
+                    })}
                   </p>
                 </div>
 

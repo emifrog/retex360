@@ -19,16 +19,7 @@ import { InterventionTimeline } from './intervention-timeline';
 import { PrescriptionsList } from './prescriptions-list';
 import { TemoignagesList } from './temoignages-list';
 import { RessourcesList } from './ressources-list';
-import {
-  Calendar,
-  Eye,
-  Star,
-  Share2,
-  Pencil,
-  CheckCircle,
-  Clock,
-  Building2,
-} from 'lucide-react';
+import { Calendar, Eye, Star, Share2, Pencil, CheckCircle, Clock, Building2 } from 'lucide-react';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -55,6 +46,7 @@ interface RexDetailProps {
   };
   isFavorited: boolean;
   currentUser: Profile | null;
+  canWrite?: boolean;
 }
 
 const statusConfig = {
@@ -64,7 +56,12 @@ const statusConfig = {
   archived: { label: 'Archivé', icon: Clock, color: 'text-gray-400' },
 };
 
-export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavorited, currentUser }: RexDetailProps) {
+export const RexDetail = memo(function RexDetail({
+  rex,
+  isFavorited: initialFavorited,
+  currentUser,
+  canWrite = true,
+}: RexDetailProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [favoritesCount, setFavoritesCount] = useState(rex.favorites_count || 0);
 
@@ -77,12 +74,13 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
   const isAuthor = currentUser?.id === rex.author_id;
   const canEdit = isAuthor || currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
 
-  const authorInitials = rex.author?.full_name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U';
+  const authorInitials =
+    rex.author?.full_name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
 
   const handleFavorite = async () => {
     if (!currentUser) {
@@ -99,6 +97,8 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
         setIsFavorited(!isFavorited);
         setFavoritesCount((prev) => (isFavorited ? prev - 1 : prev + 1));
         toast.success(isFavorited ? 'Retiré des favoris' : 'Ajouté aux favoris');
+      } else {
+        toast.error('Erreur lors de la mise à jour des favoris');
       }
     } catch {
       toast.error('Erreur lors de la mise à jour');
@@ -117,10 +117,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
-      <Breadcrumb items={[
-        { label: 'REX', href: '/rex' },
-        { label: rex.title || 'Détail' },
-      ]} />
+      <Breadcrumb items={[{ label: 'REX', href: '/rex' }, { label: rex.title || 'Détail' }]} />
 
       {/* Header Card */}
       <Card className="border-border/50 bg-card/80 overflow-hidden">
@@ -160,8 +157,8 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
                     rex.status === 'validated'
                       ? 'bg-green-500/10 text-green-500 border-green-500/30'
                       : rex.status === 'pending'
-                      ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
-                      : 'bg-muted/50'
+                        ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
+                        : 'bg-muted/50'
                   )}
                 >
                   <StatusIcon className="w-3 h-3" />
@@ -213,22 +210,22 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
                 size="icon"
                 onClick={handleFavorite}
                 aria-label={isFavorited ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-                className={cn(
-                  isFavorited && 'bg-yellow-500/10 border-yellow-500/30'
-                )}
+                className={cn(isFavorited && 'bg-yellow-500/10 border-yellow-500/30')}
               >
                 <Star
-                  className={cn(
-                    'w-4 h-4',
-                    isFavorited ? 'fill-yellow-500 text-yellow-500' : ''
-                  )}
+                  className={cn('w-4 h-4', isFavorited ? 'fill-yellow-500 text-yellow-500' : '')}
                 />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleShare} aria-label="Partager le lien">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleShare}
+                aria-label="Partager le lien"
+              >
                 <Share2 className="w-4 h-4" />
               </Button>
               <ExportPdfButton rexId={rex.id} rexTitle={rex.title} />
-              {canEdit && rex.type_production !== 'retex' && (
+              {canEdit && canWrite && rex.type_production !== 'retex' && (
                 <PromotionButton
                   rexId={rex.id}
                   currentType={rex.type_production || 'retex'}
@@ -241,11 +238,13 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
                     context: rex.context || '',
                     means_deployed: rex.means_deployed || '',
                     lessons_learned: rex.lessons_learned || '',
-                    focus_thematiques: (rex.focus_thematiques as unknown) as import('@/types').FocusThematique[] || [],
+                    focus_thematiques:
+                      (rex.focus_thematiques as unknown as import('@/types').FocusThematique[]) ||
+                      [],
                   }}
                 />
               )}
-              {canEdit && (
+              {canEdit && canWrite && (
                 <Link href={`/rex/${rex.id}/edit`}>
                   <Button variant="outline" size="sm">
                     <Pencil className="w-4 h-4 mr-2" />
@@ -269,8 +268,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
               <p className="font-medium">{rex.author?.full_name || 'Auteur inconnu'}</p>
               <p className="text-sm text-muted-foreground">
                 {rex.author?.grade && `${rex.author.grade} • `}
-                Publié le{' '}
-                {new Date(rex.created_at).toLocaleDateString('fr-FR')}
+                Publié le {new Date(rex.created_at).toLocaleDateString('fr-FR')}
               </p>
             </div>
           </div>
@@ -304,7 +302,8 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
               elements_favorables: rex.elements_favorables || '',
               elements_defavorables: rex.elements_defavorables || '',
               documentation_operationnelle: rex.documentation_operationnelle || '',
-              focus_thematiques: (rex.focus_thematiques as unknown) as import('@/types').FocusThematique[] || [],
+              focus_thematiques:
+                (rex.focus_thematiques as unknown as import('@/types').FocusThematique[]) || [],
             }}
             variant="detailed"
           />
@@ -314,7 +313,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       {/* Key Figures */}
       {rex.key_figures && Object.keys(rex.key_figures).length > 0 && (
         <KeyFigures
-          data={(rex.key_figures as unknown) as import('@/types').KeyFigures}
+          data={rex.key_figures as unknown as import('@/types').KeyFigures}
           variant="detailed"
         />
       )}
@@ -365,7 +364,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       {/* Timeline chronologique */}
       {rex.chronologie && Array.isArray(rex.chronologie) && rex.chronologie.length > 0 && (
         <InterventionTimeline
-          events={(rex.chronologie as unknown) as import('@/types').TimelineEvent[]}
+          events={rex.chronologie as unknown as import('@/types').TimelineEvent[]}
           variant="vertical"
         />
       )}
@@ -401,14 +400,14 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       {/* Prescriptions */}
       {rex.prescriptions && Array.isArray(rex.prescriptions) && rex.prescriptions.length > 0 && (
         <PrescriptionsList
-          prescriptions={(rex.prescriptions as unknown) as import('@/types').Prescription[]}
+          prescriptions={rex.prescriptions as unknown as import('@/types').Prescription[]}
         />
       )}
 
       {/* Témoignages */}
       {rex.temoignages && Array.isArray(rex.temoignages) && rex.temoignages.length > 0 && (
         <TemoignagesList
-          temoignages={(rex.temoignages as unknown) as import('@/types').Temoignage[]}
+          temoignages={rex.temoignages as unknown as import('@/types').Temoignage[]}
         />
       )}
 
@@ -430,11 +429,15 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       )}
 
       {/* Ressources complémentaires */}
-      {rex.ressources_complementaires && Array.isArray(rex.ressources_complementaires) && rex.ressources_complementaires.length > 0 && (
-        <RessourcesList
-          ressources={(rex.ressources_complementaires as unknown) as import('@/types').RessourceComplementaire[]}
-        />
-      )}
+      {rex.ressources_complementaires &&
+        Array.isArray(rex.ressources_complementaires) &&
+        rex.ressources_complementaires.length > 0 && (
+          <RessourcesList
+            ressources={
+              rex.ressources_complementaires as unknown as import('@/types').RessourceComplementaire[]
+            }
+          />
+        )}
 
       {/* Attachments */}
       {rex.attachments && rex.attachments.length > 0 && (
@@ -471,6 +474,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
         currentStatus={rex.status}
         isAdmin={currentUser?.role === 'admin' || currentUser?.role === 'super_admin'}
         isAuthor={isAuthor}
+        canWrite={canWrite}
       />
 
       <Separator />
@@ -478,7 +482,7 @@ export const RexDetail = memo(function RexDetail({ rex, isFavorited: initialFavo
       {/* Comments */}
       <Card className="border-border/50 bg-card/80">
         <CardContent className="pt-6">
-          <CommentList rexId={rex.id} currentUser={currentUser} />
+          <CommentList rexId={rex.id} currentUser={currentUser} canWrite={canWrite} />
         </CardContent>
       </Card>
     </div>

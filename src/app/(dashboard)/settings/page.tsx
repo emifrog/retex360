@@ -15,7 +15,9 @@ export const metadata = {
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     redirect('/login');
   }
@@ -23,7 +25,8 @@ export default async function SettingsPage() {
   // Fetch user profile with SDIS
   const { data: profile } = await supabase
     .from('profiles')
-    .select(`
+    .select(
+      `
       id,
       email,
       full_name,
@@ -31,19 +34,19 @@ export default async function SettingsPage() {
       avatar_url,
       role,
       sdis:sdis_id(id, code, name)
-    `)
+    `
+    )
     .eq('id', user.id)
     .single();
 
   // Fetch SDIS list for potential change
-  const { data: sdisList } = await supabase
-    .from('sdis')
-    .select('id, code, name')
-    .order('code');
+  const { data: sdisList } = await supabase.from('sdis').select('id, code, name').order('code');
 
   // Normalize sdis
-  const userSdis = profile?.sdis 
-    ? (Array.isArray(profile.sdis) ? profile.sdis[0] : profile.sdis)
+  const userSdis = profile?.sdis
+    ? Array.isArray(profile.sdis)
+      ? profile.sdis[0]
+      : profile.sdis
     : null;
 
   return (
@@ -54,9 +57,7 @@ export default async function SettingsPage() {
           <Settings className="w-7 h-7 text-primary" />
           Paramètres
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Gérez votre profil et vos préférences
-        </p>
+        <p className="text-muted-foreground mt-1">Gérez votre profil et vos préférences</p>
       </div>
 
       {/* Tabs */}

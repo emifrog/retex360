@@ -61,10 +61,7 @@ export function StatsCards() {
                 )}
               </p>
             </div>
-            <div
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: `${stat.color}20` }}
-            >
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${stat.color}20` }}>
               <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
             </div>
           </div>

@@ -37,10 +37,9 @@ interface ValidationListProps {
   })[];
 }
 
-
 export function ValidationList({ initialRex }: ValidationListProps) {
   const [rexList, setRexList] = useState(initialRex);
-  const [selectedRex, setSelectedRex] = useState<typeof initialRex[0] | null>(null);
+  const [selectedRex, setSelectedRex] = useState<(typeof initialRex)[0] | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -68,7 +67,7 @@ export function ValidationList({ initialRex }: ValidationListProps) {
 
   const handleReject = async () => {
     if (!selectedRex) return;
-    
+
     setIsRejecting(true);
     try {
       const response = await fetch(`/api/admin/rex/${selectedRex.id}/reject`, {
@@ -248,11 +247,7 @@ export function ValidationList({ initialRex }: ValidationListProps) {
             >
               Annuler
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={isRejecting}
-            >
+            <Button variant="destructive" onClick={handleReject} disabled={isRejecting}>
               {isRejecting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (

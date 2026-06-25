@@ -33,7 +33,13 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { PLANS, PLAN_CONFIG, SUBSCRIPTION_STATUSES, type Plan, type SubscriptionStatus } from '@/types';
+import {
+  PLANS,
+  PLAN_CONFIG,
+  SUBSCRIPTION_STATUSES,
+  type Plan,
+  type SubscriptionStatus,
+} from '@/types';
 
 interface Props {
   availableSdis: { id: string; code: string; name: string }[];
@@ -164,7 +170,7 @@ export function AddSdisWizard({ availableSdis }: Props) {
       toast.success(
         data.emailSent
           ? `SDIS créé — invitation envoyée à ${adminEmail.trim()}`
-          : 'SDIS créé — lien d\'invitation à transmettre'
+          : "SDIS créé — lien d'invitation à transmettre"
       );
       router.refresh();
     } finally {
@@ -215,7 +221,11 @@ export function AddSdisWizard({ availableSdis }: Props) {
               <div className="flex gap-2">
                 <Input readOnly value={result.url} className="font-mono text-xs" />
                 <Button type="button" variant="outline" size="icon" onClick={copyLink}>
-                  {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -305,7 +315,12 @@ export function AddSdisWizard({ availableSdis }: Props) {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="wiz-code">Code</Label>
-                        <Input id="wiz-code" placeholder="06" value={code} onChange={(e) => setCode(e.target.value)} />
+                        <Input
+                          id="wiz-code"
+                          placeholder="06"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="wiz-name">Nom</Label>
@@ -322,16 +337,31 @@ export function AddSdisWizard({ availableSdis }: Props) {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="wiz-dep">Département (optionnel)</Label>
-                      <Input id="wiz-dep" placeholder="06" value={departement} onChange={(e) => setDepartement(e.target.value)} />
+                      <Input
+                        id="wiz-dep"
+                        placeholder="06"
+                        value={departement}
+                        onChange={(e) => setDepartement(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="wiz-region">Région (optionnel)</Label>
-                      <Input id="wiz-region" placeholder="PACA" value={region} onChange={(e) => setRegion(e.target.value)} />
+                      <Input
+                        id="wiz-region"
+                        placeholder="PACA"
+                        value={region}
+                        onChange={(e) => setRegion(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wiz-logo">URL du logo (optionnel)</Label>
-                    <Input id="wiz-logo" placeholder="https://…/logo.png" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+                    <Input
+                      id="wiz-logo"
+                      placeholder="https://…/logo.png"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                    />
                   </div>
                 </div>
               )}
@@ -365,7 +395,12 @@ export function AddSdisWizard({ availableSdis }: Props) {
                       </Button>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => setDomains([...domains, ''])}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDomains([...domains, ''])}
+                  >
                     <Plus className="w-4 h-4 mr-1" />
                     Ajouter un domaine
                   </Button>
@@ -393,7 +428,10 @@ export function AddSdisWizard({ availableSdis }: Props) {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="wiz-status">Statut</Label>
-                      <Select value={status} onValueChange={(v) => setStatus(v as SubscriptionStatus)}>
+                      <Select
+                        value={status}
+                        onValueChange={(v) => setStatus(v as SubscriptionStatus)}
+                      >
                         <SelectTrigger id="wiz-status">
                           <SelectValue />
                         </SelectTrigger>
@@ -410,30 +448,59 @@ export function AddSdisWizard({ availableSdis }: Props) {
 
                   {status === 'trial' && (
                     <div className="space-y-2">
-                      <Label htmlFor="wiz-trial">Fin de période d&apos;essai (défaut : +30 jours)</Label>
-                      <Input id="wiz-trial" type="date" value={trialEndsAt} onChange={(e) => setTrialEndsAt(e.target.value)} />
+                      <Label htmlFor="wiz-trial">
+                        Fin de période d&apos;essai (défaut : +30 jours)
+                      </Label>
+                      <Input
+                        id="wiz-trial"
+                        type="date"
+                        value={trialEndsAt}
+                        onChange={(e) => setTrialEndsAt(e.target.value)}
+                      />
                     </div>
                   )}
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="wiz-pstart">Début de période</Label>
-                      <Input id="wiz-pstart" type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+                      <Input
+                        id="wiz-pstart"
+                        type="date"
+                        value={periodStart}
+                        onChange={(e) => setPeriodStart(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="wiz-pend">Fin de période</Label>
-                      <Input id="wiz-pend" type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+                      <Input
+                        id="wiz-pend"
+                        type="date"
+                        value={periodEnd}
+                        onChange={(e) => setPeriodEnd(e.target.value)}
+                      />
                     </div>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="wiz-maxusers">Max utilisateurs (vide = illimité)</Label>
-                      <Input id="wiz-maxusers" type="number" min={1} value={maxUsers} onChange={(e) => setMaxUsers(e.target.value)} />
+                      <Input
+                        id="wiz-maxusers"
+                        type="number"
+                        min={1}
+                        value={maxUsers}
+                        onChange={(e) => setMaxUsers(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="wiz-maxrex">Max REX / mois (vide = illimité)</Label>
-                      <Input id="wiz-maxrex" type="number" min={1} value={maxRex} onChange={(e) => setMaxRex(e.target.value)} />
+                      <Input
+                        id="wiz-maxrex"
+                        type="number"
+                        min={1}
+                        value={maxRex}
+                        onChange={(e) => setMaxRex(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -482,7 +549,9 @@ export function AddSdisWizard({ availableSdis }: Props) {
               {step < STEPS.length - 1 ? (
                 <Button
                   type="button"
-                  onClick={() => canAdvance() ? setStep((s) => s + 1) : toast.error('Complétez cette étape')}
+                  onClick={() =>
+                    canAdvance() ? setStep((s) => s + 1) : toast.error('Complétez cette étape')
+                  }
                 >
                   Suivant
                   <ChevronRight className="w-4 h-4 ml-1" />

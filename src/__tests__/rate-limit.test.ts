@@ -18,8 +18,10 @@ jest.mock('@upstash/redis', () => ({
 // `import`) runs after these deletes, before the module reads the env.
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { rateLimiters, getClientIp } = require('@/lib/rate-limit') as typeof import('@/lib/rate-limit');
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { rateLimiters, getClientIp } =
+  require('@/lib/rate-limit') as typeof import('@/lib/rate-limit');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 describe('Rate limiting', () => {
   describe('getClientIp', () => {

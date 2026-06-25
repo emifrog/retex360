@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { strongPasswordSchema } from './auth';
 
-// Profile update schema
+// Profile update schema — `sdis_id` n'est volontairement PAS modifiable ici :
+// l'affectation au SDIS vient de l'invitation / d'un admin, jamais de l'utilisateur
+// (sinon évasion cross-tenant). Verrou DB en complément (migration 019).
 export const profileUpdateSchema = z.object({
   full_name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(255),
   grade: z.string().max(100).nullable().optional(),
-  sdis_id: z.string().uuid('SDIS invalide').nullable().optional(),
 });
 
 // Password change schema — applique la même politique forte que l'inscription.
@@ -26,7 +27,7 @@ export const commentSchema = z.object({
 // l'utilisateur ne fournit que le token + son nom/grade + son mot de passe.
 export const invitationRegisterSchema = z
   .object({
-    token: z.string().min(20, 'Lien d\'invitation invalide'),
+    token: z.string().min(20, "Lien d'invitation invalide"),
     fullName: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(255),
     grade: z.string().max(100).optional(),
     password: strongPasswordSchema,
@@ -69,7 +70,7 @@ export const roleUpdateSchema = z.object({
 export const aiAnalysisSchema = z.object({
   rexId: z.string().uuid('ID REX invalide'),
   type: z.enum(['summary', 'suggestions', 'patterns', 'tags'], {
-    message: 'Type d\'analyse invalide',
+    message: "Type d'analyse invalide",
   }),
 });
 

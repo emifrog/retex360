@@ -6,10 +6,7 @@ import { commentSchema } from '@/lib/validators/api';
 import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // PUT - Update a comment
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -18,7 +15,9 @@ export async function PUT(
     const { id: commentId } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -42,10 +41,7 @@ export async function PUT(
 
     const validated = commentSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     const content = sanitizePlainText(validated.data.content).trim();
@@ -61,15 +57,20 @@ export async function PUT(
         updated_at: new Date().toISOString(),
       })
       .eq('id', commentId)
-      .select(`
+      .select(
+        `
         *,
         author:profiles!author_id(id, full_name, grade, avatar_url, role)
-      `)
+      `
+      )
       .single();
 
     if (error) {
       logger.error('Comment update error:', error);
-      return NextResponse.json({ error: 'Erreur lors de la modification du commentaire' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors de la modification du commentaire' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ data: comment });
@@ -88,7 +89,9 @@ export async function DELETE(
     const { id: commentId } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -118,14 +121,14 @@ export async function DELETE(
     }
 
     // Delete the comment (and its replies via cascade)
-    const { error } = await supabase
-      .from('comments')
-      .delete()
-      .eq('id', commentId);
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
 
     if (error) {
       logger.error('Comment delete error:', error);
-      return NextResponse.json({ error: 'Erreur lors de la suppression du commentaire' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors de la suppression du commentaire' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });

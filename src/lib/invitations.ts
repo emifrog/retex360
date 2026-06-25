@@ -73,7 +73,8 @@ export async function acceptInvitationAndRegister(params: {
 
   if (await isPasswordCompromised(params.password)) {
     return {
-      error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.',
+      error:
+        'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.',
     };
   }
 
@@ -124,6 +125,9 @@ export async function acceptInvitationAndRegister(params: {
     { onConflict: 'id' }
   );
   if (profileError) {
+    // Rollback : supprime le compte auth tout juste créé pour que l'invitation
+    // reste réutilisable (sinon le compte est orphelin et l'email « déjà pris »).
+    await admin.auth.admin.deleteUser(created.user.id);
     return { error: 'Erreur lors de la création du profil.' };
   }
 

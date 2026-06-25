@@ -1,13 +1,16 @@
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  Image,
-  StyleSheet,
-} from '@react-pdf/renderer';
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { decode } from 'html-entities';
-import type { Rex, Sdis, Profile, FocusThematique, ProductionType, KeyFigures, BilanHumain, TimelineEvent, Prescription } from '@/types';
+import type {
+  Rex,
+  Sdis,
+  Profile,
+  FocusThematique,
+  ProductionType,
+  KeyFigures,
+  BilanHumain,
+  TimelineEvent,
+  Prescription,
+} from '@/types';
 import { TIMELINE_EVENT_CONFIG, PRESCRIPTION_CATEGORY_CONFIG } from '@/types';
 
 const styles = StyleSheet.create({
@@ -405,17 +408,19 @@ interface RexPdfTemplateProps {
  */
 function stripHtml(html: string | null | undefined): string {
   if (!html) return '';
-  return decode(
-    html
-      // Replace block-level tags with newlines for readability
-      .replace(/<\/(p|div|li|br|h[1-6])>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      // Strip all remaining HTML tags
-      .replace(/<[^>]*>/g, '')
-  )
-    // Collapse multiple newlines
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return (
+    decode(
+      html
+        // Replace block-level tags with newlines for readability
+        .replace(/<\/(p|div|li|br|h[1-6])>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        // Strip all remaining HTML tags
+        .replace(/<[^>]*>/g, '')
+    )
+      // Collapse multiple newlines
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  );
 }
 
 export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTemplateProps) {
@@ -445,10 +450,10 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
       case 'signalement':
         return { badge: styles.productionTypeSignalement, label: 'SIGNALEMENT' };
       case 'pex':
-        return { badge: styles.productionTypePex, label: 'PEX - Point d\'Étape eXpérience' };
+        return { badge: styles.productionTypePex, label: "PEX - Point d'Étape eXpérience" };
       case 'retex':
       default:
-        return { badge: styles.productionTypeRetex, label: 'RETEX - Retour d\'Expérience' };
+        return { badge: styles.productionTypeRetex, label: "RETEX - Retour d'Expérience" };
     }
   };
 
@@ -458,8 +463,20 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
   const keyFigures = (rex.key_figures as unknown as KeyFigures) || {};
   const chronologie = (rex.chronologie as unknown as TimelineEvent[]) || [];
   const prescriptions = (rex.prescriptions as unknown as Prescription[]) || [];
-  const temoignages = (rex.temoignages as unknown as { id: string; auteur_fonction: string; citation: string; contexte?: string }[]) || [];
-  const ressources = (rex.ressources_complementaires as unknown as { id: string; titre: string; type: string; url_ou_reference: string }[]) || [];
+  const temoignages =
+    (rex.temoignages as unknown as {
+      id: string;
+      auteur_fonction: string;
+      citation: string;
+      contexte?: string;
+    }[]) || [];
+  const ressources =
+    (rex.ressources_complementaires as unknown as {
+      id: string;
+      titre: string;
+      type: string;
+      url_ou_reference: string;
+    }[]) || [];
 
   const getTimelineColor = (type: string): string => {
     const colors: Record<string, string> = {
@@ -486,9 +503,12 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
 
   const getPrescriptionStatusColor = (status?: string): string => {
     switch (status) {
-      case 'fait': return '#22c55e';
-      case 'en_cours': return '#f59e0b';
-      default: return '#9ca3af';
+      case 'fait':
+        return '#22c55e';
+      case 'en_cours':
+        return '#f59e0b';
+      default:
+        return '#9ca3af';
     }
   };
 
@@ -504,19 +524,21 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
 
   const getBilanTotal = (bilan: BilanHumain | undefined): number => {
     if (!bilan) return 0;
-    return (bilan.victimes_decedees || 0) + 
-           (bilan.victimes_urgence_absolue || 0) + 
-           (bilan.victimes_urgence_relative || 0) + 
-           (bilan.impliques || 0);
+    return (
+      (bilan.victimes_decedees || 0) +
+      (bilan.victimes_urgence_absolue || 0) +
+      (bilan.victimes_urgence_relative || 0) +
+      (bilan.impliques || 0)
+    );
   };
 
-  const hasKeyFigures = keyFigures && (
-    keyFigures.nb_sp_engages ||
-    keyFigures.duree_intervention ||
-    keyFigures.nb_vehicules ||
-    keyFigures.bilan_humain ||
-    keyFigures.sdis_impliques?.length
-  );
+  const hasKeyFigures =
+    keyFigures &&
+    (keyFigures.nb_sp_engages ||
+      keyFigures.duree_intervention ||
+      keyFigures.nb_vehicules ||
+      keyFigures.bilan_humain ||
+      keyFigures.sdis_impliques?.length);
 
   const getAuthorDisplay = () => {
     if (!rex.author) return '';
@@ -539,9 +561,7 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
               <Text style={styles.brandName}>
                 {rex.sdis ? `SDIS ${rex.sdis.code}` : 'MEMO-OPS'}
               </Text>
-              <Text style={styles.brandSubtitle}>
-                {rex.sdis?.name || 'RETOUR D\'EXPÉRIENCE'}
-              </Text>
+              <Text style={styles.brandSubtitle}>{rex.sdis?.name || "RETOUR D'EXPÉRIENCE"}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -575,9 +595,7 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
             </Text>
           </View>
           <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
-            <Text style={[styles.metaText, styles.metaTextDefault]}>
-              {rex.type}
-            </Text>
+            <Text style={[styles.metaText, styles.metaTextDefault]}>{rex.type}</Text>
           </View>
           <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
             <Text style={[styles.metaText, styles.metaTextDefault]}>
@@ -586,9 +604,7 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           </View>
           {rex.author && (
             <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
-              <Text style={[styles.metaText, styles.metaTextDefault]}>
-                {getAuthorDisplay()}
-              </Text>
+              <Text style={[styles.metaText, styles.metaTextDefault]}>{getAuthorDisplay()}</Text>
             </View>
           )}
         </View>
@@ -612,7 +628,9 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
               <View style={styles.keyFigureCard}>
                 <Text style={styles.keyFigureValue}>{getBilanTotal(keyFigures.bilan_humain)}</Text>
                 <Text style={styles.keyFigureLabel}>Bilan humain</Text>
-                <Text style={styles.keyFigureSubValue}>{formatBilanHumain(keyFigures.bilan_humain)}</Text>
+                <Text style={styles.keyFigureSubValue}>
+                  {formatBilanHumain(keyFigures.bilan_humain)}
+                </Text>
               </View>
             )}
             {keyFigures.nb_vehicules && (
@@ -660,9 +678,13 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
             <View style={styles.timelineContainer}>
               {chronologie.map((event, index) => (
                 <View key={index} style={styles.timelineItem}>
-                  <View style={[styles.timelineDot, { backgroundColor: getTimelineColor(event.type) }]} />
+                  <View
+                    style={[styles.timelineDot, { backgroundColor: getTimelineColor(event.type) }]}
+                  />
                   <View style={styles.timelineContent}>
-                    <Text style={styles.timelineHeure}>{event.heure} - {TIMELINE_EVENT_CONFIG[event.type]?.label || event.type}</Text>
+                    <Text style={styles.timelineHeure}>
+                      {event.heure} - {TIMELINE_EVENT_CONFIG[event.type]?.label || event.type}
+                    </Text>
                     <Text style={styles.timelineTitre}>{event.titre}</Text>
                     {event.description && (
                       <Text style={styles.timelineDescription}>{event.description}</Text>
@@ -696,18 +718,26 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
               {Object.entries(groupPrescriptionsByCategory()).map(([category, items]) => (
                 <View key={category} style={{ marginBottom: 10 }}>
                   <Text style={styles.prescriptionCategory}>
-                    {PRESCRIPTION_CATEGORY_CONFIG[category as keyof typeof PRESCRIPTION_CATEGORY_CONFIG]?.label || category}
+                    {PRESCRIPTION_CATEGORY_CONFIG[
+                      category as keyof typeof PRESCRIPTION_CATEGORY_CONFIG
+                    ]?.label || category}
                   </Text>
                   {items.map((prescription, index) => (
                     <View key={index} style={styles.prescriptionItem}>
-                      <View style={[styles.prescriptionBullet, { backgroundColor: getPrescriptionStatusColor(prescription.statut) }]} />
+                      <View
+                        style={[
+                          styles.prescriptionBullet,
+                          { backgroundColor: getPrescriptionStatusColor(prescription.statut) },
+                        ]}
+                      />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.prescriptionText}>{prescription.description}</Text>
                         {(prescription.responsable || prescription.echeance) && (
                           <Text style={styles.prescriptionMeta}>
                             {prescription.responsable && `Responsable: ${prescription.responsable}`}
                             {prescription.responsable && prescription.echeance && ' • '}
-                            {prescription.echeance && `Échéance: ${new Date(prescription.echeance).toLocaleDateString('fr-FR')}`}
+                            {prescription.echeance &&
+                              `Échéance: ${new Date(prescription.echeance).toLocaleDateString('fr-FR')}`}
                           </Text>
                         )}
                       </View>
@@ -724,12 +754,18 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Témoignages</Text>
             {temoignages.map((t, index) => (
-              <View key={index} style={{ marginBottom: 8, paddingLeft: 10, borderLeft: '3px solid #f59e0b' }}>
-                <Text style={{ fontSize: 10, fontStyle: 'italic', color: '#374151', lineHeight: 1.5 }}>
+              <View
+                key={index}
+                style={{ marginBottom: 8, paddingLeft: 10, borderLeft: '3px solid #f59e0b' }}
+              >
+                <Text
+                  style={{ fontSize: 10, fontStyle: 'italic', color: '#374151', lineHeight: 1.5 }}
+                >
                   « {t.citation} »
                 </Text>
                 <Text style={{ fontSize: 8, color: '#6b7280', marginTop: 2 }}>
-                  {t.auteur_fonction}{t.contexte ? ` — ${t.contexte}` : ''}
+                  {t.auteur_fonction}
+                  {t.contexte ? ` — ${t.contexte}` : ''}
                 </Text>
               </View>
             ))}
@@ -765,13 +801,17 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           <View style={styles.twoColumnContainer}>
             {rex.elements_favorables && (
               <View style={[styles.column, styles.elementFavorable]}>
-                <Text style={[styles.elementTitle, { color: '#059669' }]}>✓ Éléments favorables</Text>
+                <Text style={[styles.elementTitle, { color: '#059669' }]}>
+                  ✓ Éléments favorables
+                </Text>
                 <Text style={styles.elementContent}>{stripHtml(rex.elements_favorables)}</Text>
               </View>
             )}
             {rex.elements_defavorables && (
               <View style={[styles.column, styles.elementDefavorable]}>
-                <Text style={[styles.elementTitle, { color: '#dc2626' }]}>✗ Éléments défavorables</Text>
+                <Text style={[styles.elementTitle, { color: '#dc2626' }]}>
+                  ✗ Éléments défavorables
+                </Text>
                 <Text style={styles.elementContent}>{stripHtml(rex.elements_defavorables)}</Text>
               </View>
             )}
@@ -793,19 +833,25 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
                 )}
                 {focus.points_forts && (
                   <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#059669' }]}>Points forts :</Text>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#059669' }]}>
+                      Points forts :
+                    </Text>
                     <Text style={styles.focusContent}>{focus.points_forts}</Text>
                   </View>
                 )}
                 {focus.points_amelioration && (
                   <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#dc2626' }]}>Points d&apos;amélioration :</Text>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#dc2626' }]}>
+                      Points d&apos;amélioration :
+                    </Text>
                     <Text style={styles.focusContent}>{focus.points_amelioration}</Text>
                   </View>
                 )}
                 {focus.propositions && (
                   <View>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#2563eb' }]}>Propositions :</Text>
+                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#2563eb' }]}>
+                      Propositions :
+                    </Text>
                     <Text style={styles.focusContent}>{focus.propositions}</Text>
                   </View>
                 )}
@@ -825,7 +871,9 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
         {/* Pièces jointes images */}
         {images.length > 0 && (
           <View style={styles.section} break={images.length > 4}>
-            <Text style={styles.sectionTitle}>Pièces jointes ({images.length} image{images.length > 1 ? 's' : ''})</Text>
+            <Text style={styles.sectionTitle}>
+              Pièces jointes ({images.length} image{images.length > 1 ? 's' : ''})
+            </Text>
             <View style={styles.imagesGrid}>
               {images.map((img, index) => (
                 <View key={index} style={styles.imageWrapper}>
@@ -858,11 +906,14 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
             <Text style={styles.sectionTitle}>Pour aller plus loin</Text>
             {ressources.map((r, index) => (
               <View key={index} style={{ flexDirection: 'row', marginBottom: 4, gap: 6 }}>
-                <Text style={{ fontSize: 8, color: '#6b7280', width: 40, textTransform: 'uppercase' }}>
+                <Text
+                  style={{ fontSize: 8, color: '#6b7280', width: 40, textTransform: 'uppercase' }}
+                >
                   [{r.type}]
                 </Text>
                 <Text style={{ fontSize: 9, color: '#374151', flex: 1 }}>
-                  {r.titre}{r.url_ou_reference ? ` — ${r.url_ou_reference}` : ''}
+                  {r.titre}
+                  {r.url_ou_reference ? ` — ${r.url_ou_reference}` : ''}
                 </Text>
               </View>
             ))}
@@ -871,14 +922,10 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
 
         {/* Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            RETEX360 - Plateforme RETEX Collaborative
-          </Text>
+          <Text style={styles.footerText}>RETEX360 - Plateforme RETEX Collaborative</Text>
           <Text
             style={styles.pageNumber}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} / ${totalPages}`
-            }
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}
           />
         </View>
       </Page>

@@ -7,7 +7,7 @@
 4. ✅ Sentry sampling réduit (traces: 0.2, profiles: 0.1)
 
 ## Phase 2 — Qualité (première semaine) : ✅ TERMINÉE
-5. ✅ Jest + React Testing Library + 70 tests critiques (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
+5. ✅ Jest + React Testing Library + 73 tests critiques (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
 6. ✅ Pipeline CI GitHub Actions (lint + typecheck + tests + build)
 
 ## Phase 3 — Polish (avant commercialisation) :
@@ -200,15 +200,15 @@
 - ⚠️ Tester un cycle complet création/édition/commentaire/validation **inter-SDIS** (cloisonnement RLS)
 
 ### 9D — Suivi sécurité (recommandé, non bloquant) :
-85. [ ] Bump `next@16.2.9` (corrige la seule vuln npm restante de sévérité haute, dans le framework)
+85. ✅ Bump `next@16.2.9` (corrige le bypass middleware + la vuln npm haute) — audit 9F
 86. [ ] Étendre `requireRole` aux ~25 routes restantes
 87. [ ] CSP à nonce (retirer `unsafe-inline` / `unsafe-eval`)
-88. [ ] Validation des magic bytes des uploads (pas seulement le Content-Type déclaré ; PDF inspecté)
-89. [ ] Validation Zod du PUT `/api/rex/[id]` (actuellement non validé)
+88. [ ] Validation des magic bytes des uploads (extension/ré-encodage faits en 9F ; magic bytes encore à faire)
+89. ✅ Validation Zod du PUT `/api/rex/[id]` (+ rate-limit) — audit 9F
 90. [ ] Tests serveur d'autorisation (RBAC) + isolation multi-SDIS + seuil de couverture en CI
-91. [ ] Durcir la CI : `npm audit`, `format:check`
-92. [ ] Supprimer la route de debug `/api/sentry-test`
-93. [ ] Quotas IA par utilisateur (coût borné) + délimitation anti prompt-injection
+91. ✅ Durcir la CI : `npm audit` (seuil haut) + `format:check` — audit 9F
+92. ✅ Supprimer la route de debug `/api/sentry-test` — audit 9F
+93. [ ] Quotas IA par utilisateur (coût borné) — délimitation anti prompt-injection faite en 9F (insights)
 
 
 ### 9E — Durcissements complémentaires (juin 2026) : ✅ TERMINÉE
@@ -223,12 +223,51 @@
 - [ ] Étendre `requireRole` aux routes restantes ; CSP à nonce ; magic bytes uploads ; tests RBAC ; CI (`npm audit`, `format:check`) ; suppression `/api/sentry-test`.
 
 
+### 9F — Audit complet & corrections (juin 2026) : ✅ TERMINÉE
+> Audit multi-axes (sécurité, back-end, base de données, front-end, prod-readiness),
+> corrigé en 3 lots : A (bugs visibles), B (sécurité), C (intégrité/perf/finitions).
+> Vérifié : typecheck + lint + format + build OK, 73/73 tests, `npm audit` haute = 0.
+
+**Isolation multi-tenant (migration 019)**
+97. ✅ `profiles` n'est plus lisible globalement : SELECT scopé SDIS + super_admin + auteurs de REX partagés (helpers SECURITY DEFINER, anti-récursion).
+98. ✅ Verrou `role`/`sdis_id` sur `profiles` (trigger) : un utilisateur ne peut plus changer de SDIS ni de rôle (écritures service-role préservées). `sdis_id` retiré de `profileUpdateSchema`.
+99. ✅ `rex` INSERT impose `sdis_id = SDIS de l'auteur` (plus d'insertion cross-tenant).
+100. ✅ Anti auto-validation : passer un REX à `validated` exige le rôle validateur+ (trigger).
+101. ✅ Embedding écrit via le client RLS (plus d'overwrite cross-tenant via service-role).
+
+**Bugs visibles (Lot A)**
+102. ✅ Notifications en double supprimées (drop triggers 003 mention/validation ; l'app les insère déjà).
+103. ✅ Mode lecture seule complet en UI : `canWrite` propagé (édition/promotion/suppression/validation/rejet + composer commentaires) + garde de `/rex/[id]/edit`.
+104. ✅ validate/reject : contrôle du nombre de lignes (404/409 au lieu d'un faux succès + fausse notification).
+105. ✅ Page `/notifications` créée ; retour d'erreur sur échec favori ; mentions `@` fiabilisées (Map persistante).
+106. ✅ Liens légaux dé-codés en dur (`lib/legal.ts`, `NEXT_PUBLIC_LEGAL_BASE_URL`).
+
+**Sécurité (Lot B)**
+107. ✅ `dashboard/export` : réservé validateur+, scopé SDIS, rate-limité, plafonné (10k lignes).
+108. ✅ `dashboard/insights` : données REX délimitées + consigne anti prompt-injection.
+109. ✅ Uploads : extension dérivée du type réel ; avatar re-encodé, SVG/GIF refusés (anti-XSS bucket public) ; `rexId` validé.
+110. ✅ PUT `/api/rex/[id]` validé (Zod) + rate-limité ; `next@16.2.9` ; `/api/sentry-test` supprimée ; check des variables d'env critiques au boot.
+
+**Intégrité & perf (Lot C)**
+111. ✅ Onboarding SDIS : rollback du SDIS créé si une étape échoue (plus d'orphelin).
+112. ✅ Inscription : rollback du compte auth si la création de profil échoue (invitation réutilisable).
+113. ✅ Quota mensuel REX en UTC ; `allowed_domains` unique par SDIS (migration 019).
+114. ✅ Perf : vue `rex_counts_by_sdis` (fin du N+1 super_admin) + index `rex(author_id)` et `rex(sdis_id, created_at)`.
+115. ✅ SEO/PWA (`robots`/`sitemap`/`manifest`) ; CI durcie ; `error.tsx` via Sentry ; code mort retiré ; doc à jour.
+
+> ⚠️ Déploiement : appliquer les migrations **018** puis **019** avec ce code.
+> ℹ️ Restant (hors lots, recommandé, non bloquant) : suppression admin de commentaires/PJ en no-op
+> silencieux (policy RLS admin), re-auth du changement de mot de passe sur client dédié, scoping SDIS
+> des widgets dashboard (contributeurs/stats), clé de rate-limit anti-spoof XFF, durcissement `search`
+> (filtre PostgREST) et `promote` (message d'erreur générique), magic bytes uploads, quotas IA, tests RBAC/RLS.
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
 Validation des entrées	A	Zod sur les API (REX, commentaires, mentions) + sanitization XSS serveur (stockage) ET client (rendu)
 RGPD/GDPR	A	Export données, suppression compte, cookie consent, mentions légales
-Base de données	A	13 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
+Base de données	A	19 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
 Stockage fichiers	A	Bucket rex-attachments privé + URLs signées (accès lié à la visibilité du REX)
 Responsive mobile	A	Tailwind breakpoints, mobile-first, popovers/table/timeline/charts adaptifs (Phase 6)
 Optimisation images	A	Sharp + WebP + thumbnails
@@ -239,7 +278,7 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	B	70 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer) ; routes API / RBAC / RLS encore non couvertes
+Tests	B	73 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer) ; routes API / RBAC / RLS encore non couvertes
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod

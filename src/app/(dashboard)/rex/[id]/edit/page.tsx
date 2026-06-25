@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { RexForm } from '@/components/rex/rex-form';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { getSubscriptionState } from '@/lib/subscription';
 
 interface EditRexPageProps {
   params: Promise<{ id: string }>;
@@ -12,17 +13,15 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
   const supabase = await createClient();
 
   // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     redirect('/login');
   }
 
   // Get REX data
-  const { data: rex, error } = await supabase
-    .from('rex')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data: rex, error } = await supabase.from('rex').select('*').eq('id', id).single();
 
   if (error || !rex) {
     notFound();
@@ -31,7 +30,7 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
   // Check if user is author or admin
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, sdis_id')
     .eq('id', user.id)
     .single();
 
@@ -45,6 +44,12 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
   // Can only edit draft or rejected REX (unless admin)
   if (!isAdmin && rex.status !== 'draft') {
     redirect(`/rex/${id}`);
+  }
+
+  // Mode lecture seule (abonnement suspendu/expiré) : édition désactivée.
+  if (profile?.role !== 'super_admin') {
+    const sub = await getSubscriptionState(profile?.sdis_id);
+    if (!sub.canWrite) redirect(`/rex/${id}`);
   }
 
   // Transform data for form (include all DGSCGC fields to prevent data loss)
@@ -76,11 +81,13 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
-      <Breadcrumb items={[
-        { label: 'REX', href: '/rex' },
-        { label: rex.title, href: `/rex/${id}` },
-        { label: 'Modifier' },
-      ]} />
+      <Breadcrumb
+        items={[
+          { label: 'REX', href: '/rex' },
+          { label: rex.title, href: `/rex/${id}` },
+          { label: 'Modifier' },
+        ]}
+      />
 
       <div>
         <h1 className="text-2xl font-bold">Modifier le REX</h1>

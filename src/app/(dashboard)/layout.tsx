@@ -6,13 +6,10 @@ import { getUser } from '@/lib/actions/auth';
 import { getSubscriptionState } from '@/lib/subscription';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'validator';
+  const isAdmin =
+    user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'validator';
   const isSuperAdmin = user?.role === 'super_admin';
 
   // Abonnement : le super_admin n'est jamais bloqué (il pilote l'onboarding).
@@ -35,9 +32,20 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} canWrite={canWrite} pendingCount={pendingCount} />
+      <Sidebar
+        isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+        canWrite={canWrite}
+        pendingCount={pendingCount}
+      />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} canWrite={canWrite} pendingCount={pendingCount} />
+        <Header
+          user={user}
+          isAdmin={isAdmin}
+          isSuperAdmin={isSuperAdmin}
+          canWrite={canWrite}
+          pendingCount={pendingCount}
+        />
         <main id="main-content" className="flex-1 p-4 md:p-6 overflow-auto space-y-4">
           {!isSuperAdmin && <SubscriptionBanner state={subscription} />}
           {children}

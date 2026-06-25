@@ -55,7 +55,12 @@ export async function notifyRexValidated(rexId: string, rexTitle: string, author
 /**
  * Notify user when their REX is rejected
  */
-export async function notifyRexRejected(rexId: string, rexTitle: string, authorId: string, reason?: string) {
+export async function notifyRexRejected(
+  rexId: string,
+  rexTitle: string,
+  authorId: string,
+  reason?: string
+) {
   return createNotification({
     userId: authorId,
     type: 'rejection',
@@ -104,11 +109,7 @@ export async function notifyMention(
 /**
  * Notify validators when a new REX is submitted for validation
  */
-export async function notifyNewRexForValidation(
-  rexId: string,
-  rexTitle: string,
-  sdisId: string
-) {
+export async function notifyNewRexForValidation(rexId: string, rexTitle: string, sdisId: string) {
   const supabase = await createClient();
 
   // Get all validators and admins for this SDIS

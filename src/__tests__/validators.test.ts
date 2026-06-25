@@ -126,12 +126,18 @@ describe('API validators', () => {
     });
 
     it('rejects weak new password (< 12 chars or missing class)', () => {
-      expect(passwordChangeSchema.safeParse({
-        currentPassword: 'oldpass', newPassword: 'short',
-      }).success).toBe(false);
-      expect(passwordChangeSchema.safeParse({
-        currentPassword: 'oldpass', newPassword: 'newpassword123', // pas de majuscule
-      }).success).toBe(false);
+      expect(
+        passwordChangeSchema.safeParse({
+          currentPassword: 'oldpass',
+          newPassword: 'short',
+        }).success
+      ).toBe(false);
+      expect(
+        passwordChangeSchema.safeParse({
+          currentPassword: 'oldpass',
+          newPassword: 'newpassword123', // pas de majuscule
+        }).success
+      ).toBe(false);
     });
   });
 

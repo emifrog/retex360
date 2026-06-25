@@ -44,9 +44,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -64,15 +62,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Auth routes (pages de connexion/inscription)
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
-                      request.nextUrl.pathname.startsWith('/register') ||
-                      request.nextUrl.pathname.startsWith('/forgot-password') ||
-                      request.nextUrl.pathname.startsWith('/reset-password');
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith('/login') ||
+    request.nextUrl.pathname.startsWith('/register') ||
+    request.nextUrl.pathname.startsWith('/forgot-password') ||
+    request.nextUrl.pathname.startsWith('/reset-password');
 
   // Toutes les routes sauf auth, api et _next sont protégées
-  const isProtectedRoute = !isAuthRoute &&
-                           !request.nextUrl.pathname.startsWith('/api') &&
-                           !request.nextUrl.pathname.startsWith('/_next');
+  const isProtectedRoute =
+    !isAuthRoute &&
+    !request.nextUrl.pathname.startsWith('/api') &&
+    !request.nextUrl.pathname.startsWith('/_next');
 
   // Rediriger vers /login si non connecté et route protégée
   if (!user && isProtectedRoute) {

@@ -26,13 +26,7 @@ interface ImageUploadProps {
   maxSizeMB?: number;
 }
 
-const ACCEPTED_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-];
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 
 export function ImageUpload({
   rexId,
@@ -44,64 +38,70 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  const handleUpload = useCallback(async (fileList: FileList) => {
-    if (files.length >= maxFiles) {
-      toast.error(`Maximum ${maxFiles} fichiers autorisés`);
-      return;
-    }
-
-    const filesToUpload = Array.from(fileList).slice(0, maxFiles - files.length);
-    
-    for (const file of filesToUpload) {
-      // Validate type
-      if (!ACCEPTED_TYPES.includes(file.type)) {
-        toast.error(`Type non supporté: ${file.name}`);
-        continue;
+  const handleUpload = useCallback(
+    async (fileList: FileList) => {
+      if (files.length >= maxFiles) {
+        toast.error(`Maximum ${maxFiles} fichiers autorisés`);
+        return;
       }
 
-      // Validate size
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        toast.error(`${file.name} dépasse ${maxSizeMB} Mo`);
-        continue;
-      }
+      const filesToUpload = Array.from(fileList).slice(0, maxFiles - files.length);
 
-      setIsUploading(true);
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        if (rexId) {
-          formData.append('rexId', rexId);
+      for (const file of filesToUpload) {
+        // Validate type
+        if (!ACCEPTED_TYPES.includes(file.type)) {
+          toast.error(`Type non supporté: ${file.name}`);
+          continue;
         }
 
-        const response = await fetch('/api/rex/attachments', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Erreur lors de l\'upload');
+        // Validate size
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          toast.error(`${file.name} dépasse ${maxSizeMB} Mo`);
+          continue;
         }
 
-        const uploadedFile = await response.json();
-        onFilesChange([...files, uploadedFile]);
-        toast.success(`${file.name} uploadé`);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+        setIsUploading(true);
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          if (rexId) {
+            formData.append('rexId', rexId);
+          }
+
+          const response = await fetch('/api/rex/attachments', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Erreur lors de l'upload");
+          }
+
+          const uploadedFile = await response.json();
+          onFilesChange([...files, uploadedFile]);
+          toast.success(`${file.name} uploadé`);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Erreur lors de l'upload");
+        }
       }
-    }
 
-    setIsUploading(false);
-  }, [files, maxFiles, maxSizeMB, onFilesChange, rexId]);
+      setIsUploading(false);
+    },
+    [files, maxFiles, maxSizeMB, onFilesChange, rexId]
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    if (e.dataTransfer.files?.length) {
-      handleUpload(e.dataTransfer.files);
-    }
-  }, [handleUpload]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragActive(false);
+      if (e.dataTransfer.files?.length) {
+        handleUpload(e.dataTransfer.files);
+      }
+    },
+    [handleUpload]
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -147,9 +147,7 @@ export function ImageUpload({
         onDragLeave={handleDragLeave}
         className={cn(
           'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
-          dragActive
-            ? 'border-primary bg-primary/5'
-            : 'border-border hover:border-primary/50',
+          dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50',
           isUploading && 'opacity-50 pointer-events-none'
         )}
       >
@@ -162,10 +160,7 @@ export function ImageUpload({
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
           disabled={isUploading}
         />
-        <label
-          htmlFor="file-upload"
-          className="cursor-pointer flex flex-col items-center gap-2"
-        >
+        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
           {isUploading ? (
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           ) : (
@@ -185,10 +180,7 @@ export function ImageUpload({
       {files.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {files.map((file) => (
-            <Card
-              key={file.id}
-              className="relative group overflow-hidden bg-muted/50"
-            >
+            <Card key={file.id} className="relative group overflow-hidden bg-muted/50">
               {isImage(file.file_type) ? (
                 <div className="aspect-square relative">
                   <Image
@@ -208,15 +200,11 @@ export function ImageUpload({
                   </span>
                 </div>
               )}
-              
+
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                <p className="text-xs text-white text-center truncate w-full">
-                  {file.file_name}
-                </p>
-                <p className="text-xs text-white/70">
-                  {formatFileSize(file.file_size)}
-                </p>
+                <p className="text-xs text-white text-center truncate w-full">{file.file_name}</p>
+                <p className="text-xs text-white/70">{formatFileSize(file.file_size)}</p>
                 <Button
                   type="button"
                   variant="destructive"

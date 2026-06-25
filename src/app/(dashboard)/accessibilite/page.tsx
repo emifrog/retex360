@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata = {
   title: 'Accessibilité | RETEX360',
-  description: 'Déclaration d\'accessibilité de la plateforme RETEX360',
+  description: "Déclaration d'accessibilité de la plateforme RETEX360",
 };
 
 export default function AccessibilitePage() {
@@ -31,11 +31,12 @@ export default function AccessibilitePage() {
             d&apos;Amélioration de l&apos;Accessibilité).
           </p>
           <p>
-            <strong className="text-foreground">Niveau visé :</strong> AA (conforme au WCAG 2.1 niveau AA)
+            <strong className="text-foreground">Niveau visé :</strong> AA (conforme au WCAG 2.1
+            niveau AA)
           </p>
           <p>
-            <strong className="text-foreground">État actuel :</strong> Partiellement conforme.
-            Un audit complet est en cours pour identifier et corriger les non-conformités restantes.
+            <strong className="text-foreground">État actuel :</strong> Partiellement conforme. Un
+            audit complet est en cours pour identifier et corriger les non-conformités restantes.
           </p>
         </CardContent>
       </Card>
@@ -46,7 +47,10 @@ export default function AccessibilitePage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-            <li>Langue de la page déclarée (<code className="text-xs bg-muted px-1 py-0.5 rounded">lang=&quot;fr&quot;</code>)</li>
+            <li>
+              Langue de la page déclarée (
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">lang=&quot;fr&quot;</code>)
+            </li>
             <li>Lien d&apos;évitement &quot;Aller au contenu principal&quot;</li>
             <li>Labels associés aux champs de formulaire</li>
             <li>Composants accessibles (Radix UI) avec gestion du focus clavier</li>
@@ -64,7 +68,10 @@ export default function AccessibilitePage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-            <li>Certains graphiques du tableau de bord ne disposent pas encore de descriptions textuelles alternatives</li>
+            <li>
+              Certains graphiques du tableau de bord ne disposent pas encore de descriptions
+              textuelles alternatives
+            </li>
             <li>Certains indicateurs de statut reposent uniquement sur la couleur</li>
             <li>La hiérarchie des titres peut présenter des sauts sur certaines pages</li>
           </ul>
@@ -91,8 +98,9 @@ export default function AccessibilitePage() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Si vous constatez un défaut d&apos;accessibilité vous empêchant d&apos;accéder à un contenu
-            ou une fonctionnalité, vous pouvez nous contacter pour obtenir une alternative accessible.
+            Si vous constatez un défaut d&apos;accessibilité vous empêchant d&apos;accéder à un
+            contenu ou une fonctionnalité, vous pouvez nous contacter pour obtenir une alternative
+            accessible.
           </p>
           <p>
             Si vous n&apos;obtenez pas de réponse, vous pouvez adresser une réclamation au{' '}

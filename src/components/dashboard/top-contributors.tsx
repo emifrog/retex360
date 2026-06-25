@@ -86,9 +86,7 @@ export function TopContributors() {
                 <p className="text-xs text-muted-foreground">{contributor.sdis}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-primary">
-                  {contributor.count}
-                </p>
+                <p className="text-sm font-semibold text-primary">{contributor.count}</p>
                 <p className="text-xs text-muted-foreground">REX</p>
               </div>
             </div>

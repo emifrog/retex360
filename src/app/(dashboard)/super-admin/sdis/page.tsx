@@ -62,17 +62,18 @@ export default async function SuperAdminSdisPage() {
     profiles = data || [];
   }
 
-  // Compteur de REX par SDIS (table volumineuse → count ciblé, en parallèle).
-  const rexEntries = await Promise.all(
-    clientIds.map(async (id) => {
-      const { count } = await admin
-        .from('rex')
-        .select('*', { count: 'exact', head: true })
-        .eq('sdis_id', id);
-      return [id, count ?? 0] as const;
-    })
-  );
-  const rexCountMap = new Map(rexEntries);
+  // Compteur de REX par SDIS en une seule requête (vue rex_counts_by_sdis,
+  // migration 019) au lieu d'un COUNT par SDIS (N+1).
+  const rexCountMap = new Map<string, number>();
+  if (clientIds.length > 0) {
+    const { data: counts } = await admin
+      .from('rex_counts_by_sdis')
+      .select('sdis_id, rex_count')
+      .in('sdis_id', clientIds);
+    for (const c of (counts || []) as Array<{ sdis_id: string; rex_count: number }>) {
+      rexCountMap.set(c.sdis_id, c.rex_count ?? 0);
+    }
+  }
 
   const rows: ClientRow[] = subs.map((s) => {
     const sdisRel = (Array.isArray(s.sdis) ? s.sdis[0] : s.sdis) as SdisRel | null;

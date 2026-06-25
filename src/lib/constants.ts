@@ -34,11 +34,14 @@ export type SeverityKey = keyof typeof SEVERITY_CONFIG;
 
 // --- Production Type ---
 
-export const PRODUCTION_TYPE_CONFIG: Record<ProductionType, {
-  label: string;
-  icon: typeof Zap;
-  className: string;
-}> = {
+export const PRODUCTION_TYPE_CONFIG: Record<
+  ProductionType,
+  {
+    label: string;
+    icon: typeof Zap;
+    className: string;
+  }
+> = {
   signalement: {
     label: 'Signalement',
     icon: Zap,

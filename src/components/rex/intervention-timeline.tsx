@@ -1,15 +1,7 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import {
-  Bell,
-  MapPin,
-  Zap,
-  Radio,
-  CheckCircle,
-  Circle,
-  Clock,
-} from 'lucide-react';
+import { Bell, MapPin, Zap, Radio, CheckCircle, Circle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TimelineEvent, TimelineEventType } from '@/types';
 import { TIMELINE_EVENT_CONFIG } from '@/types';
@@ -35,7 +27,11 @@ function getIcon(type: TimelineEventType) {
   return IconComponent;
 }
 
-export function InterventionTimeline({ events, variant = 'vertical', className }: InterventionTimelineProps) {
+export function InterventionTimeline({
+  events,
+  variant = 'vertical',
+  className,
+}: InterventionTimelineProps) {
   if (!events || events.length === 0) return null;
 
   const sortedEvents = [...events].sort((a, b) => {
@@ -62,12 +58,19 @@ export function InterventionTimeline({ events, variant = 'vertical', className }
               const isLast = index === sortedEvents.length - 1;
               return (
                 <div key={event.id} className="relative flex items-start gap-4">
-                  <div className={cn('relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0', config.bgColor)}>
+                  <div
+                    className={cn(
+                      'relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+                      config.bgColor
+                    )}
+                  >
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                   <div className={cn('flex-1 pb-4', isLast && 'pb-0')}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">{event.heure}</span>
+                      <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {event.heure}
+                      </span>
                       <span className={cn('text-xs', config.color)}>{config.label}</span>
                     </div>
                     <p className="font-medium text-foreground">{event.titre}</p>
@@ -92,10 +95,12 @@ export function InterventionTimeline({ events, variant = 'vertical', className }
               return (
                 <div key={event.id} className="flex items-start">
                   <div className="flex flex-col items-center min-w-[120px]">
-                    <div className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center',
-                      config.bgColor
-                    )}>
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center',
+                        config.bgColor
+                      )}
+                    >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="mt-2 text-center">
@@ -108,9 +113,7 @@ export function InterventionTimeline({ events, variant = 'vertical', className }
                       )}
                     </div>
                   </div>
-                  {!isLast && (
-                    <div className="shrink-0 w-8 h-0.5 bg-border mt-5 mx-1" />
-                  )}
+                  {!isLast && <div className="shrink-0 w-8 h-0.5 bg-border mt-5 mx-1" />}
                 </div>
               );
             })}
@@ -139,31 +142,26 @@ export function InterventionTimeline({ events, variant = 'vertical', className }
             return (
               <div key={event.id} className="relative flex items-start gap-4">
                 {/* Icon */}
-                <div className={cn(
-                  'relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
-                  config.bgColor
-                )}>
+                <div
+                  className={cn(
+                    'relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
+                    config.bgColor
+                  )}
+                >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
 
                 {/* Content */}
-                <div className={cn(
-                  'flex-1 pb-4',
-                  isLast && 'pb-0'
-                )}>
+                <div className={cn('flex-1 pb-4', isLast && 'pb-0')}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">
                       {event.heure}
                     </span>
-                    <span className={cn('text-xs', config.color)}>
-                      {config.label}
-                    </span>
+                    <span className={cn('text-xs', config.color)}>{config.label}</span>
                   </div>
                   <p className="font-medium text-foreground">{event.titre}</p>
                   {event.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {event.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
                   )}
                 </div>
               </div>

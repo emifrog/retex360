@@ -54,12 +54,13 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [isUploading, setIsUploading] = useState(false);
 
-  const initials = fullName
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || profile.email[0].toUpperCase();
+  const initials =
+    fullName
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || profile.email[0].toUpperCase();
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,7 +73,7 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('L\'image ne doit pas dépasser 2 Mo');
+      toast.error("L'image ne doit pas dépasser 2 Mo");
       return;
     }
 
@@ -89,7 +90,7 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de l\'upload');
+        throw new Error(data.error || "Erreur lors de l'upload");
       }
 
       const { url } = await response.json();
@@ -97,7 +98,7 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
       toast.success('Avatar mis à jour');
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+      toast.error(error instanceof Error ? error.message : "Erreur lors de l'upload");
     } finally {
       setIsUploading(false);
     }
@@ -140,9 +141,7 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
     <Card className="bg-card border-border">
       <CardHeader>
         <CardTitle>Informations personnelles</CardTitle>
-        <CardDescription>
-          Mettez à jour vos informations de profil
-        </CardDescription>
+        <CardDescription>Mettez à jour vos informations de profil</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,16 +183,8 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
               <Mail className="w-4 h-4 inline mr-2" />
               Email
             </Label>
-            <Input
-              id="email"
-              type="email"
-              value={profile.email}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              L&apos;email ne peut pas être modifié
-            </p>
+            <Input id="email" type="email" value={profile.email} disabled className="bg-muted" />
+            <p className="text-xs text-muted-foreground">L&apos;email ne peut pas être modifié</p>
           </div>
 
           {/* Full Name */}

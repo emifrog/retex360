@@ -1,18 +1,18 @@
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
-import { Providers } from "@/lib/providers";
-import { CookieConsent } from "@/components/cookie-consent";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Toaster } from '@/components/ui/sonner';
+import { Providers } from '@/lib/providers';
+import { CookieConsent } from '@/components/cookie-consent';
+import './globals.css';
 
 const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
+  variable: '--font-sans',
+  subsets: ['latin'],
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
+  variable: '--font-mono',
+  subsets: ['latin'],
 });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://retex360.fr';
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s | RETEX360',
   },
   description:
-    'Plateforme collaborative des Retours d\'Expérience (RETEX) pour les SDIS français. Partagez, analysez et capitalisez vos interventions.',
+    "Plateforme collaborative des Retours d'Expérience (RETEX) pour les SDIS français. Partagez, analysez et capitalisez vos interventions.",
   metadataBase: new URL(appUrl),
   openGraph: {
     type: 'website',
@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     siteName: 'RETEX360',
     title: 'RETEX360 | Plateforme Collaborative RETEX SDIS',
     description:
-      'Partagez, analysez et capitalisez les retours d\'expérience des interventions des SDIS français.',
+      "Partagez, analysez et capitalisez les retours d'expérience des interventions des SDIS français.",
     url: appUrl,
   },
   twitter: {
     card: 'summary',
     title: 'RETEX360 | Plateforme Collaborative RETEX SDIS',
     description:
-      'Partagez, analysez et capitalisez les retours d\'expérience des interventions des SDIS français.',
+      "Partagez, analysez et capitalisez les retours d'expérience des interventions des SDIS français.",
   },
   robots: {
     index: true,

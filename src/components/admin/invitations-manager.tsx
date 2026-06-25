@@ -61,9 +61,13 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super admin',
 };
 
-function invitationStatus(inv: Invitation): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+function invitationStatus(inv: Invitation): {
+  label: string;
+  variant: 'default' | 'secondary' | 'destructive' | 'outline';
+} {
   if (inv.accepted_at) return { label: 'Accepté', variant: 'default' };
-  if (new Date(inv.expires_at).getTime() <= Date.now()) return { label: 'Expiré', variant: 'destructive' };
+  if (new Date(inv.expires_at).getTime() <= Date.now())
+    return { label: 'Expiré', variant: 'destructive' };
   return { label: 'En attente', variant: 'secondary' };
 }
 
@@ -73,7 +77,11 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('user');
   const [sdisId, setSdisId] = useState('');
-  const [inviteResult, setInviteResult] = useState<{ url: string; emailSent: boolean; email: string } | null>(null);
+  const [inviteResult, setInviteResult] = useState<{
+    url: string;
+    emailSent: boolean;
+    email: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const roleOptions = isSuperAdmin
@@ -143,12 +151,15 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
             Nouvelle invitation
           </CardTitle>
           <CardDescription>
-            L&apos;invité recevra un lien à usage unique (valable 7 jours). Le SDIS et le rôle
-            sont définis ici.
+            L&apos;invité recevra un lien à usage unique (valable 7 jours). Le SDIS et le rôle sont
+            définis ici.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
+          <form
+            onSubmit={handleCreate}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end"
+          >
             <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label htmlFor="invite-email">Email</Label>
               <Input
@@ -207,7 +218,11 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
               <div className="flex gap-2">
                 <Input readOnly value={inviteResult.url} className="font-mono text-xs" />
                 <Button type="button" variant="outline" size="icon" onClick={copyLink}>
-                  {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -263,7 +278,10 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
                           {format(new Date(inv.expires_at), 'dd/MM/yyyy', { locale: fr })}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">
-                          {formatDistanceToNow(new Date(inv.created_at), { addSuffix: true, locale: fr })}
+                          {formatDistanceToNow(new Date(inv.created_at), {
+                            addSuffix: true,
+                            locale: fr,
+                          })}
                         </TableCell>
                         <TableCell className="text-right">
                           {pending && (

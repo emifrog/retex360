@@ -36,6 +36,9 @@ export function CommentForm({
   const [mentionIndex, setMentionIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Mémorise chaque mention insérée (nom affiché -> id) pour les résoudre à l'envoi,
+  // même si la liste de recherche transitoire a changé entre-temps.
+  const mentionMapRef = useRef<Map<string, string>>(new Map());
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,24 +46,29 @@ export function CommentForm({
   );
 
   // Search users for mentions
-  const searchUsers = useCallback(async (search: string) => {
-    if (!search) {
-      setMentionUsers([]);
-      return;
-    }
+  const searchUsers = useCallback(
+    async (search: string) => {
+      if (!search) {
+        setMentionUsers([]);
+        return;
+      }
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url')
-      .ilike('full_name', `%${search}%`)
-      .limit(5);
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .ilike('full_name', `%${search}%`)
+        .limit(5);
 
-    setMentionUsers(data || []);
-  }, [supabase]);
+      setMentionUsers(data || []);
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     if (mentionSearch) {
       searchUsers(mentionSearch);
+    } else {
+      setMentionUsers([]);
     }
   }, [mentionSearch, searchUsers]);
 
@@ -93,6 +101,7 @@ export function CommentForm({
       const newTextBefore = textBeforeCursor.slice(0, -mentionMatch[0].length);
       const mention = `@${user.full_name.replace(/\s+/g, '_')} `;
       setContent(newTextBefore + mention + textAfterCursor);
+      mentionMapRef.current.set(user.full_name, user.id);
     }
 
     setShowMentions(false);
@@ -125,9 +134,9 @@ export function CommentForm({
 
     while ((match = mentionPattern.exec(text)) !== null) {
       const mentionName = match[1].replace(/_/g, ' ');
-      const user = mentionUsers.find(u => u.full_name === mentionName);
-      if (user) {
-        mentions.push(user.id);
+      const id = mentionMapRef.current.get(mentionName);
+      if (id && !mentions.includes(id)) {
+        mentions.push(id);
       }
     }
 
@@ -136,7 +145,7 @@ export function CommentForm({
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
       const mentions = extractMentions(content);
@@ -150,9 +159,7 @@ export function CommentForm({
   return (
     <div className="flex gap-3">
       <Avatar className="w-8 h-8 shrink-0">
-        <AvatarFallback className="bg-muted text-xs">
-          {userInitials}
-        </AvatarFallback>
+        <AvatarFallback className="bg-muted text-xs">{userInitials}</AvatarFallback>
       </Avatar>
       <div className="flex-1 space-y-2 relative">
         <div className="relative">

@@ -6,7 +6,10 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -21,7 +24,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 
-    const favoriteIds = favorites?.map(f => f.rex_id) || [];
+    const favoriteIds = favorites?.map((f) => f.rex_id) || [];
     return NextResponse.json({ favorites: favoriteIds });
   } catch (error) {
     logger.error('Favorites error:', error);

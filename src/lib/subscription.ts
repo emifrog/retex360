@@ -129,7 +129,9 @@ export function deriveState(sub: SubscriptionRow): SubscriptionState {
 }
 
 /** Récupère et interprète l'état d'abonnement d'un SDIS (via le rôle service). */
-export async function getSubscriptionState(sdisId: string | null | undefined): Promise<SubscriptionState> {
+export async function getSubscriptionState(
+  sdisId: string | null | undefined
+): Promise<SubscriptionState> {
   if (!sdisId) return UNMANAGED;
   try {
     const admin = createAdminClient();

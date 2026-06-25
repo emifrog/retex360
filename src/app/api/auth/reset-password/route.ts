@@ -21,10 +21,7 @@ export async function POST(request: NextRequest) {
     // Validation Zod
     const validated = resetPasswordSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     const { password } = validated.data;
@@ -32,7 +29,10 @@ export async function POST(request: NextRequest) {
     // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
     if (await isPasswordCompromised(password)) {
       return NextResponse.json(
-        { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' },
+        {
+          error:
+            'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.',
+        },
         { status: 400 }
       );
     }
@@ -40,8 +40,11 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check if user is authenticated (via recovery link)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Session invalide ou expirée. Veuillez demander un nouveau lien.' },
@@ -56,14 +59,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       logger.error('Reset password error:', error);
-      
+
       if (error.message.includes('same')) {
         return NextResponse.json(
-          { error: 'Le nouveau mot de passe doit être différent de l\'ancien' },
+          { error: "Le nouveau mot de passe doit être différent de l'ancien" },
           { status: 400 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'Erreur lors de la réinitialisation du mot de passe' },
         { status: 500 }

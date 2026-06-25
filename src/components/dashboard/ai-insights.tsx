@@ -62,7 +62,10 @@ export function AiInsights() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Analyses IA
         </h2>
-        <Badge variant="outline" className="ml-auto text-[9px] px-1.5 py-0 bg-purple-500/10 text-purple-500 border-purple-500/30">
+        <Badge
+          variant="outline"
+          className="ml-auto text-[9px] px-1.5 py-0 bg-purple-500/10 text-purple-500 border-purple-500/30"
+        >
           OpenRouter
         </Badge>
       </div>
@@ -92,14 +95,8 @@ export function AiInsights() {
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Icon
-                    className="w-4 h-4"
-                    style={{ color: config.color }}
-                  />
-                  <span
-                    className="text-xs uppercase font-semibold"
-                    style={{ color: config.color }}
-                  >
+                  <Icon className="w-4 h-4" style={{ color: config.color }} />
+                  <span className="text-xs uppercase font-semibold" style={{ color: config.color }}>
                     {config.label}
                   </span>
                   {insight.priority === 'high' && (
@@ -111,9 +108,7 @@ export function AiInsights() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {insight.text}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{insight.text}</p>
               </div>
             );
           })}

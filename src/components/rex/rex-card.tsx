@@ -16,7 +16,11 @@ interface RexCardProps {
   isFavorite?: boolean;
 }
 
-export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = false }: RexCardProps) {
+export const RexCard = memo(function RexCard({
+  rex,
+  onFavorite,
+  isFavorite = false,
+}: RexCardProps) {
   const severity = SEVERITY_CONFIG[rex.severity];
   const status = STATUS_CONFIG[rex.status];
   const productionType = PRODUCTION_TYPE_CONFIG[rex.type_production || 'retex'];
@@ -35,9 +39,7 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
               boxShadow: `0 0 10px ${severity.hex}40`,
             }}
           />
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">
-            {rex.type}
-          </span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wide">{rex.type}</span>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className={cn('text-xs', productionType.className)}>
@@ -48,7 +50,10 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
             {status.label}
           </Badge>
           {isInterSdis && (
-            <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10">
+            <Badge
+              variant="outline"
+              className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10"
+            >
               <Users className="w-3 h-3 mr-1" />
               Inter-SDIS
             </Badge>
@@ -107,10 +112,7 @@ export const RexCard = memo(function RexCard({ rex, onFavorite, isFavorite = fal
       {rex.tags && rex.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {rex.tags.slice(0, 4).map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground"
-            >
+            <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
               {tag}
             </span>
           ))}

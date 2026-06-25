@@ -11,18 +11,20 @@ import type { CommentWithAuthor, Profile } from '@/types';
 interface CommentListProps {
   rexId: string;
   currentUser?: Profile | null;
+  canWrite?: boolean;
 }
 
-export function CommentList({ rexId, currentUser }: CommentListProps) {
+export function CommentList({ rexId, currentUser, canWrite = true }: CommentListProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const userInitials = currentUser?.full_name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U';
+  const userInitials =
+    currentUser?.full_name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
 
   // Fetch comments
   const fetchComments = useCallback(async () => {
@@ -52,14 +54,14 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout');
+        throw new Error("Erreur lors de l'ajout");
       }
 
       const data = await response.json();
       setComments([{ ...data.data, replies: [] }, ...comments]);
       toast.success('Commentaire ajouté');
     } catch {
-      toast.error('Erreur lors de l\'ajout du commentaire');
+      toast.error("Erreur lors de l'ajout du commentaire");
     }
   };
 
@@ -72,7 +74,7 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout');
+        throw new Error("Erreur lors de l'ajout");
       }
 
       const data = await response.json();
@@ -89,7 +91,7 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
       );
       toast.success('Réponse ajoutée');
     } catch {
-      toast.error('Erreur lors de l\'ajout de la réponse');
+      toast.error("Erreur lors de l'ajout de la réponse");
     }
   };
 
@@ -116,7 +118,7 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
           return item;
         });
       };
-      
+
       setComments(updateComment(comments));
       toast.success('Commentaire modifié');
     } catch {
@@ -142,7 +144,7 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
             replies: item.replies ? deleteComment(item.replies) : undefined,
           }));
       };
-      
+
       setComments(deleteComment(comments));
       toast.success('Commentaire supprimé');
     } catch {
@@ -155,18 +157,17 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <MessageSquare className="w-5 h-5 text-muted-foreground" />
-        <h3 className="font-semibold">
-          Commentaires ({comments.length})
-        </h3>
+        <h3 className="font-semibold">Commentaires ({comments.length})</h3>
       </div>
 
       {/* Add Comment Form */}
-      {currentUser && (
-        <CommentForm
-          rexId={rexId}
-          onSubmit={handleAddComment}
-          userInitials={userInitials}
-        />
+      {currentUser && canWrite && (
+        <CommentForm rexId={rexId} onSubmit={handleAddComment} userInitials={userInitials} />
+      )}
+      {currentUser && !canWrite && (
+        <p className="text-sm text-muted-foreground rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+          Abonnement en lecture seule — l&apos;ajout de commentaires est désactivé.
+        </p>
       )}
 
       {/* Loading State */}
@@ -197,7 +198,8 @@ export function CommentList({ rexId, currentUser }: CommentListProps) {
         <div className="text-center py-8">
           <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">
-            Aucun commentaire pour le moment.<br />
+            Aucun commentaire pour le moment.
+            <br />
             Soyez le premier à partager votre avis !
           </p>
         </div>

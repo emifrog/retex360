@@ -24,16 +24,14 @@ interface SearchResultsProps {
 
 const ITEMS_PER_PAGE = 10;
 
-
 export async function SearchResults({ searchParams }: SearchResultsProps) {
   const supabase = await createClient();
   const page = parseInt(searchParams.page || '1', 10);
   const offset = (page - 1) * ITEMS_PER_PAGE;
 
   // Build query
-  let query = supabase
-    .from('rex')
-    .select(`
+  let query = supabase.from('rex').select(
+    `
       id,
       title,
       description,
@@ -47,7 +45,9 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
       created_at,
       sdis:sdis_id(id, code, name),
       author:author_id(id, full_name, grade)
-    `, { count: 'exact' });
+    `,
+    { count: 'exact' }
+  );
 
   // Apply filters
   if (searchParams.q) {
@@ -78,7 +78,8 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
 
   if (searchParams.interSdis === 'true') {
     // Filter REX with sdis_impliques in key_figures (JSONB array not empty)
-    query = query.not('key_figures->sdis_impliques', 'is', null)
+    query = query
+      .not('key_figures->sdis_impliques', 'is', null)
       .neq('key_figures->sdis_impliques', '[]');
   }
 
@@ -142,7 +143,8 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
       {/* Results count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{count}</span> résultat{count !== 1 ? 's' : ''} trouvé{count !== 1 ? 's' : ''}
+          <span className="font-semibold text-foreground">{count}</span> résultat
+          {count !== 1 ? 's' : ''} trouvé{count !== 1 ? 's' : ''}
         </p>
         {totalPages > 1 && (
           <p className="text-sm text-muted-foreground">
@@ -184,14 +186,19 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                       variant="outline"
                       className={cn(
                         'text-xs',
-                        rex.status === 'validated' && 'bg-green-500/10 text-green-500 border-green-500/30',
-                        rex.status === 'pending' && 'bg-orange-500/10 text-orange-500 border-orange-500/30'
+                        rex.status === 'validated' &&
+                          'bg-green-500/10 text-green-500 border-green-500/30',
+                        rex.status === 'pending' &&
+                          'bg-orange-500/10 text-orange-500 border-orange-500/30'
                       )}
                     >
                       {status?.label}
                     </Badge>
                     {isInterSdis && (
-                      <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10">
+                      <Badge
+                        variant="outline"
+                        className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10"
+                      >
                         <Users className="w-3 h-3 mr-1" />
                         Inter-SDIS
                       </Badge>
@@ -235,10 +242,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                   {rex.tags && rex.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {rex.tags.slice(0, 4).map((tag: string) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 bg-muted rounded text-xs"
-                        >
+                        <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs">
                           {tag}
                         </span>
                       ))}
@@ -259,12 +263,7 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            asChild={page > 1}
-          >
+          <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
             {page > 1 ? (
               <Link href={buildPageUrl(page - 1)}>
                 <ChevronLeft className="w-4 h-4 mr-1" />

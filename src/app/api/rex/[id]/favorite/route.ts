@@ -3,10 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -16,12 +13,12 @@ export async function POST(
     const supabase = await createClient();
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
     // Check if already favorited
@@ -33,35 +30,24 @@ export async function POST(
       .single();
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'Déjà dans les favoris' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Déjà dans les favoris' }, { status: 400 });
     }
 
     // Add to favorites
-    const { error } = await supabase
-      .from('favorites')
-      .insert({
-        user_id: user.id,
-        rex_id: rexId,
-      });
+    const { error } = await supabase.from('favorites').insert({
+      user_id: user.id,
+      rex_id: rexId,
+    });
 
     if (error) {
       logger.error('Favorite error:', error);
-      return NextResponse.json(
-        { error: 'Erreur lors de l\'ajout aux favoris' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Erreur lors de l'ajout aux favoris" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Favorite error:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -78,12 +64,12 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
     // Remove from favorites
@@ -95,18 +81,12 @@ export async function DELETE(
 
     if (error) {
       logger.error('Unfavorite error:', error);
-      return NextResponse.json(
-        { error: 'Erreur lors du retrait des favoris' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Erreur lors du retrait des favoris' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Unfavorite error:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

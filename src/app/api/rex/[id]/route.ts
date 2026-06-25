@@ -4,12 +4,10 @@ import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
+import { validateRexByType } from '@/lib/validators/rex';
 
 // GET - Get single REX
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -20,7 +18,9 @@ export async function GET(
 
     const { data: rex, error } = await supabase
       .from('rex')
-      .select('*, author:profiles!author_id(full_name, avatar_url, grade), sdis:sdis_id(code, name)')
+      .select(
+        '*, author:profiles!author_id(full_name, avatar_url, grade), sdis:sdis_id(code, name)'
+      )
       .eq('id', id)
       .single();
 
@@ -36,15 +36,18 @@ export async function GET(
 }
 
 // PUT - Update REX
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const { id } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -80,6 +83,16 @@ export async function PUT(
     }
 
     const body = await request.json();
+
+    // Validation Zod (parité avec la création) avant sanitisation/écriture.
+    const isDraft = body.status === 'draft';
+    const validation = validateRexByType(body, isDraft);
+    if (!validation.success) {
+      return NextResponse.json(
+        { message: 'Données invalides', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
     // Sanitize HTML rich-text fields server-side before storage.
     const clean = sanitizeRexHtmlFields(body);
@@ -121,7 +134,10 @@ export async function PUT(
 
     if (error) {
       logger.error('Error updating REX:', error);
-      return NextResponse.json({ message: 'Erreur lors de la mise à jour du REX' }, { status: 500 });
+      return NextResponse.json(
+        { message: 'Erreur lors de la mise à jour du REX' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(rex);
@@ -132,15 +148,14 @@ export async function PUT(
 }
 
 // DELETE - Delete REX
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -179,21 +194,18 @@ export async function DELETE(
     if (attachments && attachments.length > 0) {
       // Service-role removal (uploaders may differ from the deleter) + clean up
       // thumbnails. Authorization (author or admin) is enforced above.
-      const paths = attachments.flatMap((a) => [
-        a.storage_path,
-        thumbnailPathFor(a.storage_path),
-      ]);
+      const paths = attachments.flatMap((a) => [a.storage_path, thumbnailPathFor(a.storage_path)]);
       await removeAttachmentObjects(paths);
     }
 
-    const { error } = await supabase
-      .from('rex')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('rex').delete().eq('id', id);
 
     if (error) {
       logger.error('Error deleting REX:', error);
-      return NextResponse.json({ message: 'Erreur lors de la suppression du REX' }, { status: 500 });
+      return NextResponse.json(
+        { message: 'Erreur lors de la suppression du REX' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ message: 'REX supprimé' });

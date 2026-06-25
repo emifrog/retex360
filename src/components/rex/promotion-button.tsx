@@ -15,7 +15,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { ArrowUp, Zap, FileText, ClipboardList, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  ArrowUp,
+  Zap,
+  FileText,
+  ClipboardList,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProductionType, FocusThematique } from '@/types';
 
@@ -36,14 +44,17 @@ interface PromotionButtonProps {
   disabled?: boolean;
 }
 
-const PROMOTION_CONFIG: Record<ProductionType, {
-  next: ProductionType | null;
-  label: string;
-  icon: typeof Zap;
-  color: string;
-  requiredFields: string[];
-  fieldLabels: Record<string, string>;
-}> = {
+const PROMOTION_CONFIG: Record<
+  ProductionType,
+  {
+    next: ProductionType | null;
+    label: string;
+    icon: typeof Zap;
+    color: string;
+    requiredFields: string[];
+    fieldLabels: Record<string, string>;
+  }
+> = {
   signalement: {
     next: 'pex',
     label: 'Promouvoir en PEX',
@@ -85,7 +96,7 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
   const [isPromoting, setIsPromoting] = useState(false);
 
   const config = PROMOTION_CONFIG[currentType];
-  
+
   if (!config.next) {
     return null;
   }
@@ -94,29 +105,29 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
 
   const checkFieldCompletion = () => {
     const results: { field: string; label: string; completed: boolean }[] = [];
-    
+
     for (const field of config.requiredFields) {
       let completed = false;
-      
+
       if (field === 'focus_thematiques') {
         completed = (rexData.focus_thematiques?.length || 0) > 0;
       } else {
         const value = rexData[field as keyof typeof rexData];
         completed = typeof value === 'string' && value.trim().length > 0;
       }
-      
+
       results.push({
         field,
         label: config.fieldLabels[field],
         completed,
       });
     }
-    
+
     return results;
   };
 
   const fieldStatus = checkFieldCompletion();
-  const completedCount = fieldStatus.filter(f => f.completed).length;
+  const completedCount = fieldStatus.filter((f) => f.completed).length;
   const totalCount = fieldStatus.length;
   const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100;
   const canPromote = completedCount === totalCount;
@@ -169,11 +180,14 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <NextIcon className={cn('w-5 h-5', config.next === 'pex' ? 'text-blue-500' : 'text-amber-500')} />
+            <NextIcon
+              className={cn('w-5 h-5', config.next === 'pex' ? 'text-blue-500' : 'text-amber-500')}
+            />
             {config.label}
           </DialogTitle>
           <DialogDescription>
-            Transformez ce {currentType.toUpperCase()} en {config.next?.toUpperCase()} pour enrichir sa documentation.
+            Transformez ce {currentType.toUpperCase()} en {config.next?.toUpperCase()} pour enrichir
+            sa documentation.
           </DialogDescription>
         </DialogHeader>
 
@@ -182,10 +196,9 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Complétion requise</span>
-              <span className={cn(
-                'font-medium',
-                canPromote ? 'text-green-500' : 'text-orange-500'
-              )}>
+              <span
+                className={cn('font-medium', canPromote ? 'text-green-500' : 'text-orange-500')}
+              >
                 {completedCount}/{totalCount} champs
               </span>
             </div>
@@ -209,14 +222,21 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
                 ) : (
                   <AlertCircle className="w-4 h-4 text-orange-500 shrink-0" />
                 )}
-                <span className={cn(
-                  'text-sm',
-                  completed ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'
-                )}>
+                <span
+                  className={cn(
+                    'text-sm',
+                    completed
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-orange-600 dark:text-orange-400'
+                  )}
+                >
                   {label}
                 </span>
                 {completed && (
-                  <Badge variant="outline" className="ml-auto text-xs bg-green-500/10 text-green-500 border-green-500/30">
+                  <Badge
+                    variant="outline"
+                    className="ml-auto text-xs bg-green-500/10 text-green-500 border-green-500/30"
+                  >
                     Complété
                   </Badge>
                 )}

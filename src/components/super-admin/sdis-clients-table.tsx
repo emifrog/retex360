@@ -148,7 +148,11 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
     setAction('reset');
   }
 
-  async function patchSubscription(sdisId: string, body: Record<string, unknown>, successMsg: string) {
+  async function patchSubscription(
+    sdisId: string,
+    body: Record<string, unknown>,
+    successMsg: string
+  ) {
     setBusy(true);
     try {
       const res = await fetch(`/api/super-admin/sdis/${sdisId}`, {
@@ -214,7 +218,9 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
         return;
       }
       setResetResult({ url: data.resetUrl, emailSent: !!data.emailSent });
-      toast.success(data.emailSent ? 'Email de réinitialisation envoyé' : 'Lien de réinitialisation généré');
+      toast.success(
+        data.emailSent ? 'Email de réinitialisation envoyé' : 'Lien de réinitialisation généré'
+      );
     } finally {
       setBusy(false);
     }
@@ -439,7 +445,11 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
             <Button
               onClick={confirmSuspendToggle}
               disabled={busy}
-              className={selected?.status === 'suspended' ? '' : 'bg-orange-600 hover:bg-orange-600/90 text-white'}
+              className={
+                selected?.status === 'suspended'
+                  ? ''
+                  : 'bg-orange-600 hover:bg-orange-600/90 text-white'
+              }
             >
               {busy ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -473,7 +483,11 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
                 <div className="flex gap-2">
                   <Input readOnly value={resetResult.url} className="font-mono text-xs" />
                   <Button type="button" variant="outline" size="icon" onClick={copyReset}>
-                    {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                    {copied ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>

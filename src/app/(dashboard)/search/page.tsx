@@ -9,10 +9,7 @@ import { Search } from 'lucide-react';
 const getCachedSdisList = unstable_cache(
   async () => {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from('sdis')
-      .select('id, code, name')
-      .order('code');
+    const { data } = await supabase.from('sdis').select('id, code, name').order('code');
     return data || [];
   },
   ['sdis-list'],
@@ -23,13 +20,8 @@ const getCachedSdisList = unstable_cache(
 const getCachedTags = unstable_cache(
   async () => {
     const supabase = await createClient();
-    const { data: rexWithTags } = await supabase
-      .from('rex')
-      .select('tags')
-      .not('tags', 'is', null);
-    return Array.from(
-      new Set(rexWithTags?.flatMap((r) => r.tags || []) || [])
-    ).sort();
+    const { data: rexWithTags } = await supabase.from('rex').select('tags').not('tags', 'is', null);
+    return Array.from(new Set(rexWithTags?.flatMap((r) => r.tags || []) || [])).sort();
   },
   ['rex-tags'],
   { revalidate: 600 }
@@ -53,10 +45,7 @@ interface SearchPageProps {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   // Use cached data for quasi-static content
-  const [sdisList, allTags] = await Promise.all([
-    getCachedSdisList(),
-    getCachedTags(),
-  ]);
+  const [sdisList, allTags] = await Promise.all([getCachedSdisList(), getCachedTags()]);
 
   return (
     <div className="space-y-6">
@@ -72,11 +61,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       {/* Filters */}
-      <SearchFilters 
-        sdisList={sdisList || []} 
-        allTags={allTags}
-        currentParams={params}
-      />
+      <SearchFilters sdisList={sdisList || []} allTags={allTags} currentParams={params} />
 
       {/* Results */}
       <Suspense fallback={<SearchResultsSkeleton />}>
@@ -90,10 +75,7 @@ function SearchResultsSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className="bg-card border border-border rounded-xl p-4 animate-pulse"
-        >
+        <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse">
           <div className="h-4 bg-muted rounded w-3/4 mb-3" />
           <div className="h-3 bg-muted rounded w-1/2 mb-2" />
           <div className="h-3 bg-muted rounded w-1/4" />

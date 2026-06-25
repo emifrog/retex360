@@ -15,11 +15,7 @@ import { strongPasswordSchema } from '@/lib/validators/auth';
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button
-      type="submit"
-      className="w-full bg-primary hover:bg-primary/90"
-      disabled={pending}
-    >
+    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={pending}>
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -41,7 +37,7 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Check token validity synchronously during render
   const accessToken = searchParams.get('access_token');
   const type = searchParams.get('type');
@@ -82,7 +78,7 @@ function ResetPasswordForm() {
 
       setSuccess(true);
       toast.success('Mot de passe réinitialisé avec succès');
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         router.push('/login');
@@ -103,12 +99,11 @@ function ResetPasswordForm() {
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-2">Mot de passe réinitialisé !</h1>
         <p className="text-muted-foreground mb-6">
-          Votre mot de passe a été modifié avec succès. Vous allez être redirigé vers la page de connexion.
+          Votre mot de passe a été modifié avec succès. Vous allez être redirigé vers la page de
+          connexion.
         </p>
         <Link href="/login">
-          <Button className="w-full">
-            Se connecter
-          </Button>
+          <Button className="w-full">Se connecter</Button>
         </Link>
       </div>
     );
@@ -122,9 +117,7 @@ function ResetPasswordForm() {
           Ce lien de réinitialisation n&apos;est plus valide. Veuillez demander un nouveau lien.
         </p>
         <Link href="/forgot-password">
-          <Button className="w-full">
-            Demander un nouveau lien
-          </Button>
+          <Button className="w-full">Demander un nouveau lien</Button>
         </Link>
       </div>
     );
@@ -135,9 +128,7 @@ function ResetPasswordForm() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Nouveau mot de passe</h1>
-        <p className="text-muted-foreground mt-1">
-          Choisissez un nouveau mot de passe sécurisé
-        </p>
+        <p className="text-muted-foreground mt-1">Choisissez un nouveau mot de passe sécurisé</p>
       </div>
 
       <form action={handleSubmit} className="space-y-6">
@@ -153,9 +144,7 @@ function ResetPasswordForm() {
             minLength={8}
             className="h-11"
           />
-          <p className="text-xs text-muted-foreground">
-            Minimum 8 caractères
-          </p>
+          <p className="text-xs text-muted-foreground">Minimum 8 caractères</p>
         </div>
 
         {/* Confirm Password */}
@@ -208,11 +197,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   );

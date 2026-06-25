@@ -72,11 +72,11 @@ export function RexList() {
 
       {/* Initial Loading */}
       {isLoading && rexList.length === 0 ? (
-        <div className={cn(
-          view === 'grid'
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-            : 'space-y-3'
-        )}>
+        <div
+          className={cn(
+            view === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'
+          )}
+        >
           {Array.from({ length: 6 }).map((_, i) => (
             <RexCardSkeleton key={i} />
           ))}
@@ -86,9 +86,7 @@ export function RexList() {
           {/* Rex Grid/List */}
           <div
             className={cn(
-              view === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                : 'space-y-3'
+              view === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'
             )}
           >
             {rexList.map((rex) => (
@@ -114,10 +112,7 @@ export function RexList() {
 
           {/* Load more trigger */}
           {hasMore && (
-            <div
-              ref={loadMoreRef}
-              className="flex items-center justify-center py-8"
-            >
+            <div ref={loadMoreRef} className="flex items-center justify-center py-8">
               {isLoadingMore && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -130,9 +125,7 @@ export function RexList() {
           {/* End of list */}
           {!hasMore && rexList.length > 0 && (
             <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
-                Tous les REX ont été chargés
-              </p>
+              <p className="text-sm text-muted-foreground">Tous les REX ont été chargés</p>
             </div>
           )}
         </>

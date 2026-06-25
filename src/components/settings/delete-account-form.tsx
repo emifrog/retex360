@@ -104,9 +104,7 @@ export function DeleteAccountForm() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setConfirmation('')}>
-                Annuler
-              </AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setConfirmation('')}>Annuler</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={confirmation !== CONFIRMATION_TEXT || isDeleting}

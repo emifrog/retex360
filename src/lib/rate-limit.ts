@@ -29,7 +29,12 @@ function createInMemoryRateLimiter(requests: number, windowMs: number) {
       }
 
       record.count++;
-      return { success: true, limit: requests, remaining: requests - record.count, reset: record.resetTime };
+      return {
+        success: true,
+        limit: requests,
+        remaining: requests - record.count,
+        reset: record.resetTime,
+      };
     },
   };
 }
@@ -66,7 +71,8 @@ function createRateLimiter(
   const windowStr = String(window);
   const match = windowStr.match(/^(\d+)\s*(s|m|h|d)$/);
   const windowMs = match
-    ? parseInt(match[1]) * { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2] as 's'|'m'|'h'|'d']!
+    ? parseInt(match[1]) *
+      { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2] as 's' | 'm' | 'h' | 'd']!
     : 60000; // Default 1 minute
 
   // Use Upstash Redis when configured (required in production, see boot guard).
@@ -128,22 +134,22 @@ export const rateLimiters = {
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
-  
+
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
-  
+
   if (realIp) {
     return realIp;
   }
-  
+
   return 'unknown';
 }
 
 // Helper to create rate limit response
 export function rateLimitResponse(reset: number) {
   const retryAfter = Math.ceil((reset - Date.now()) / 1000);
-  
+
   return new Response(
     JSON.stringify({
       error: 'Trop de requêtes. Veuillez réessayer plus tard.',

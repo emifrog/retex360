@@ -14,8 +14,10 @@ export function useUser() {
   return useQuery({
     queryKey: ['user'],
     queryFn: async (): Promise<UserWithSdis | null> => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return null;
 
       const { data: profile } = await supabase

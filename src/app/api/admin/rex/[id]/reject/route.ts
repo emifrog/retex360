@@ -4,49 +4,48 @@ import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
 
   try {
     const { id: rexId } = await params;
-    const { reason } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const reason = typeof body?.reason === 'string' ? body.reason.slice(0, 1000) : null;
     const supabase = await createClient();
 
     // Check auth and role
     const auth = await requireRole(supabase, ['validator', 'admin', 'super_admin']);
     if ('response' in auth) return auth.response;
 
-    // Update REX status back to draft and store rejection reason
-    const { error } = await supabase
+    // Update REX status back to draft + récupère la ligne pour confirmer le rejet réel
+    // (no-op silencieux sinon : REX inexistant, déjà traité, ou RLS inter-SDIS).
+    const { data: rex, error } = await supabase
       .from('rex')
       .update({
         status: 'draft',
-        rejection_reason: reason || null,
+        rejection_reason: reason,
       })
       .eq('id', rexId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select('author_id, title')
+      .maybeSingle();
 
     if (error) {
       logger.error('Reject error:', error);
       return NextResponse.json({ error: 'Erreur lors du rejet' }, { status: 500 });
     }
 
-    // Get REX author for notification
-    const { data: rex } = await supabase
-      .from('rex')
-      .select('author_id, title')
-      .eq('id', rexId)
-      .single();
+    if (!rex) {
+      return NextResponse.json({ error: 'REX introuvable ou déjà traité' }, { status: 409 });
+    }
 
-    if (rex) {
-      // Notification destinée à l'auteur : via le client admin (la RLS interdit
-      // au client utilisateur d'écrire une notification pour autrui).
-      await createAdminClient().from('notifications').insert({
+    // Notification destinée à l'auteur : via le client admin (la RLS interdit
+    // au client utilisateur d'écrire une notification pour autrui).
+    await createAdminClient()
+      .from('notifications')
+      .insert({
         user_id: rex.author_id,
         type: 'rejection',
         title: 'RETEX rejeté',
@@ -55,7 +54,6 @@ export async function POST(
           : `Votre REX "${rex.title}" a été rejeté. Veuillez le modifier et le soumettre à nouveau.`,
         link: `/rex/${rexId}`,
       });
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

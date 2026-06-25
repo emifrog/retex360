@@ -5,15 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Sparkles, 
-  FileText, 
-  Lightbulb, 
-  TrendingUp, 
-  Tag,
-  Loader2,
-  RefreshCw
-} from 'lucide-react';
+import { Sparkles, FileText, Lightbulb, TrendingUp, Tag, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -34,7 +26,7 @@ const analysisConfig = [
     type: 'suggestions' as AnalysisType,
     label: 'Suggestions',
     icon: Lightbulb,
-    description: 'Recommandations d\'amélioration',
+    description: "Recommandations d'amélioration",
   },
   {
     type: 'patterns' as AnalysisType,
@@ -65,7 +57,7 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
   });
 
   const runAnalysis = async (type: AnalysisType) => {
-    setAnalyses(prev => ({
+    setAnalyses((prev) => ({
       ...prev,
       [type]: { ...prev[type], loading: true },
     }));
@@ -78,18 +70,18 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'analyse');
+        throw new Error("Erreur lors de l'analyse");
       }
 
       const data = await response.json();
-      setAnalyses(prev => ({
+      setAnalyses((prev) => ({
         ...prev,
         [type]: { type, content: data.analysis, loading: false },
       }));
     } catch (error) {
       logger.error('Analysis error:', error);
-      toast.error('Erreur lors de l\'analyse IA');
-      setAnalyses(prev => ({
+      toast.error("Erreur lors de l'analyse IA");
+      setAnalyses((prev) => ({
         ...prev,
         [type]: { ...prev[type], loading: false },
       }));
@@ -102,7 +94,10 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
         <CardTitle className="text-lg flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
           Analyse IA
-          <Badge variant="outline" className="ml-2 text-xs bg-primary/10 text-primary border-primary/30">
+          <Badge
+            variant="outline"
+            className="ml-2 text-xs bg-primary/10 text-primary border-primary/30"
+          >
             OpenRouter
           </Badge>
         </CardTitle>
@@ -121,7 +116,7 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
           {analysisConfig.map(({ type, description }) => (
             <TabsContent key={type} value={type} className="space-y-3">
               <p className="text-xs text-muted-foreground">{description}</p>
-              
+
               {analyses[type].content ? (
                 <div className="space-y-3">
                   <div className="p-3 bg-muted/30 rounded-lg">

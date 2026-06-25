@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   // Rate limiting (strict for AI - expensive operations)
   const ip = getClientIp(request);
   const rateLimitResult = await rateLimiters.ai.limit(ip);
-  
+
   if (!rateLimitResult.success) {
     return rateLimitResponse(rateLimitResult.reset);
   }
@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -27,20 +29,13 @@ export async function POST(request: NextRequest) {
     // Validation Zod
     const validated = aiAnalysisSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     const { rexId, type } = validated.data;
 
     // Fetch the REX
-    const { data: rex, error } = await supabase
-      .from('rex')
-      .select('*')
-      .eq('id', rexId)
-      .single();
+    const { data: rex, error } = await supabase.from('rex').select('*').eq('id', rexId).single();
 
     if (error || !rex) {
       return NextResponse.json({ error: 'REX non trouvé' }, { status: 404 });
@@ -112,7 +107,7 @@ ${rexContext}`;
         break;
 
       default:
-        return NextResponse.json({ error: 'Type d\'analyse invalide' }, { status: 400 });
+        return NextResponse.json({ error: "Type d'analyse invalide" }, { status: 400 });
     }
 
     const response = await chatCompletion(
@@ -134,9 +129,6 @@ ${rexContext}`;
     });
   } catch (error) {
     logger.error('AI analysis error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de l\'analyse IA' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur lors de l'analyse IA" }, { status: 500 });
   }
 }

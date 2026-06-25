@@ -17,10 +17,7 @@ export async function PUT(request: NextRequest) {
     // Validation Zod
     const validated = roleUpdateSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     const { userId, role } = validated.data;
@@ -50,12 +47,18 @@ export async function PUT(request: NextRequest) {
 
     // Only super_admin can create super_admin
     if (role === 'super_admin' && !isSuperAdmin) {
-      return NextResponse.json({ error: 'Seul un super admin peut créer un super admin' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Seul un super admin peut créer un super admin' },
+        { status: 403 }
+      );
     }
 
     // Cannot demote yourself
     if (userId === user.id) {
-      return NextResponse.json({ error: 'Vous ne pouvez pas modifier votre propre rôle' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Vous ne pouvez pas modifier votre propre rôle' },
+        { status: 400 }
+      );
     }
 
     // Update role via admin client: the RLS policy on `profiles` only allows

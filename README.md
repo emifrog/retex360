@@ -187,7 +187,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 70 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
+- **Jest** + 73 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
 - **GitHub Actions** (lint + typecheck + tests + build)
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
@@ -198,7 +198,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - `pg_trgm` pour recherche textuelle
 - **Row Level Security (RLS)** cloisonnée par SDIS (validateurs/admins limités à leur SDIS, super_admin transverse)
 - **Triggers** automatiques (fonctions `SECURITY DEFINER` avec `search_path` fixé)
-- **13 migrations** ordonnées (idempotentes)
+- **19 migrations** ordonnées (idempotentes)
 - **Index composites** optimisés (status+validated_at, favorites, comments, attachments)
 - **Storage privé** : bucket `rex-attachments` non public + RLS storage (accès via URLs signées)
 
@@ -394,7 +394,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest (70 tests)
+npm test             # Jest (73 tests)
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests avec couverture
 npm run format       # Prettier (formatage)
@@ -565,7 +565,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (70 tests) + CI GitHub Actions
+- [x] Tests Jest (73 tests) + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur

@@ -10,7 +10,9 @@ export const focusThematiqueSchema = z.object({
   theme: z.string().min(1, 'Le thème est requis'),
   problematique: z.string().min(10, 'La problématique doit contenir au moins 10 caractères'),
   actions_menees: z.string().min(10, 'Les actions menées doivent contenir au moins 10 caractères'),
-  axes_amelioration: z.string().min(10, 'Les axes d\'amélioration doivent contenir au moins 10 caractères'),
+  axes_amelioration: z
+    .string()
+    .min(10, "Les axes d'amélioration doivent contenir au moins 10 caractères"),
 });
 
 export type FocusThematiqueInput = z.infer<typeof focusThematiqueSchema>;
@@ -42,9 +44,7 @@ const rexBaseSchema = z.object({
 
 export const rexSignalementSchema = rexBaseSchema.extend({
   type_production: z.literal('signalement'),
-  description: z
-    .string()
-    .min(20, 'La description doit contenir au moins 20 caractères'),
+  description: z.string().min(20, 'La description doit contenir au moins 20 caractères'),
   // Champs optionnels pour signalement
   context: z.string().optional().nullable(),
   means_deployed: z.string().optional().nullable(),
@@ -64,18 +64,10 @@ export const rexSignalementSchema = rexBaseSchema.extend({
 
 export const rexPexSchema = rexBaseSchema.extend({
   type_production: z.literal('pex'),
-  description: z
-    .string()
-    .min(50, 'La description doit contenir au moins 50 caractères'),
-  context: z
-    .string()
-    .min(20, 'Le contexte opérationnel doit contenir au moins 20 caractères'),
-  means_deployed: z
-    .string()
-    .min(20, 'Les moyens engagés doivent contenir au moins 20 caractères'),
-  lessons_learned: z
-    .string()
-    .min(20, 'Les enseignements doivent contenir au moins 20 caractères'),
+  description: z.string().min(50, 'La description doit contenir au moins 50 caractères'),
+  context: z.string().min(20, 'Le contexte opérationnel doit contenir au moins 20 caractères'),
+  means_deployed: z.string().min(20, 'Les moyens engagés doivent contenir au moins 20 caractères'),
+  lessons_learned: z.string().min(20, 'Les enseignements doivent contenir au moins 20 caractères'),
   // Champs optionnels pour PEX
   difficulties: z.string().optional().nullable(),
   elements_favorables: z.string().optional().nullable(),
@@ -92,18 +84,10 @@ export const rexPexSchema = rexBaseSchema.extend({
 
 export const rexRetexSchema = rexBaseSchema.extend({
   type_production: z.literal('retex'),
-  description: z
-    .string()
-    .min(50, 'La description doit contenir au moins 50 caractères'),
-  context: z
-    .string()
-    .min(20, 'Le contexte opérationnel doit contenir au moins 20 caractères'),
-  means_deployed: z
-    .string()
-    .min(20, 'Les moyens engagés doivent contenir au moins 20 caractères'),
-  lessons_learned: z
-    .string()
-    .min(20, 'Les enseignements doivent contenir au moins 20 caractères'),
+  description: z.string().min(50, 'La description doit contenir au moins 50 caractères'),
+  context: z.string().min(20, 'Le contexte opérationnel doit contenir au moins 20 caractères'),
+  means_deployed: z.string().min(20, 'Les moyens engagés doivent contenir au moins 20 caractères'),
+  lessons_learned: z.string().min(20, 'Les enseignements doivent contenir au moins 20 caractères'),
   focus_thematiques: z
     .array(focusThematiqueSchema)
     .min(1, 'Au moins un focus thématique est requis pour un RETEX'),
@@ -181,14 +165,33 @@ export function validateRexByType(data: unknown, isDraft: boolean = false) {
 }
 
 // Helper pour obtenir les champs requis selon le type
-export function getRequiredFieldsForType(type: typeof PRODUCTION_TYPES[number]) {
+export function getRequiredFieldsForType(type: (typeof PRODUCTION_TYPES)[number]) {
   switch (type) {
     case 'signalement':
       return ['title', 'intervention_date', 'type', 'severity', 'description'];
     case 'pex':
-      return ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned'];
+      return [
+        'title',
+        'intervention_date',
+        'type',
+        'severity',
+        'description',
+        'context',
+        'means_deployed',
+        'lessons_learned',
+      ];
     case 'retex':
-      return ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned', 'focus_thematiques'];
+      return [
+        'title',
+        'intervention_date',
+        'type',
+        'severity',
+        'description',
+        'context',
+        'means_deployed',
+        'lessons_learned',
+        'focus_thematiques',
+      ];
     default:
       return ['title', 'intervention_date', 'type', 'severity', 'description'];
   }

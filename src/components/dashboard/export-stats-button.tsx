@@ -25,7 +25,7 @@ export function ExportStatsButton() {
       URL.revokeObjectURL(url);
       toast.success('Export téléchargé');
     } catch {
-      toast.error('Erreur lors de l\'export');
+      toast.error("Erreur lors de l'export");
     } finally {
       setIsExporting(false);
     }

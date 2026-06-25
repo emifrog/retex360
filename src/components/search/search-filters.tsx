@@ -34,7 +34,6 @@ interface SearchFiltersProps {
   };
 }
 
-
 export function SearchFilters({ sdisList, allTags, currentParams }: SearchFiltersProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -52,7 +51,16 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
   );
   const [showAllTags, setShowAllTags] = useState(false);
 
-  const hasActiveFilters = query || type || sdis || severity || status || interSdis || dateFrom || dateTo || selectedTags.length > 0;
+  const hasActiveFilters =
+    query ||
+    type ||
+    sdis ||
+    severity ||
+    status ||
+    interSdis ||
+    dateFrom ||
+    dateTo ||
+    selectedTags.length > 0;
 
   const buildSearchUrl = () => {
     const params = new URLSearchParams();
@@ -146,9 +154,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* SDIS */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              SDIS
-            </label>
+            <label className="text-sm font-medium text-muted-foreground">SDIS</label>
             <Select value={sdis || 'all'} onValueChange={(v) => setSdis(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous les SDIS" />
@@ -166,10 +172,11 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* Severity */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Sévérité
-            </label>
-            <Select value={severity || 'all'} onValueChange={(v) => setSeverity(v === 'all' ? '' : v)}>
+            <label className="text-sm font-medium text-muted-foreground">Sévérité</label>
+            <Select
+              value={severity || 'all'}
+              onValueChange={(v) => setSeverity(v === 'all' ? '' : v)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Toutes" />
               </SelectTrigger>
@@ -186,9 +193,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* Status */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Statut
-            </label>
+            <label className="text-sm font-medium text-muted-foreground">Statut</label>
             <Select value={status || 'all'} onValueChange={(v) => setStatus(v === 'all' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous" />
@@ -221,24 +226,12 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         {/* Date range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Date de début
-            </label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
+            <label className="text-sm font-medium text-muted-foreground">Date de début</label>
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Date de fin
-            </label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
+            <label className="text-sm font-medium text-muted-foreground">Date de fin</label>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
         </div>
 
@@ -246,9 +239,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         {allTags.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-muted-foreground">
-                Tags
-              </label>
+              <label className="text-sm font-medium text-muted-foreground">Tags</label>
               {selectedTags.length > 0 && (
                 <Button
                   variant="ghost"
@@ -267,9 +258,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
                   variant={selectedTags.includes(tag) ? 'default' : 'outline'}
                   className={cn(
                     'cursor-pointer transition-colors',
-                    selectedTags.includes(tag)
-                      ? 'bg-primary hover:bg-primary/90'
-                      : 'hover:bg-muted'
+                    selectedTags.includes(tag) ? 'bg-primary hover:bg-primary/90' : 'hover:bg-muted'
                   )}
                   onClick={() => toggleTag(tag)}
                 >

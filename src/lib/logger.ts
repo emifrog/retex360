@@ -22,10 +22,7 @@ export function createCorrelationId(): string {
 }
 
 function formatLog(entry: LogEntry): string {
-  const parts = [
-    `[${entry.level.toUpperCase()}]`,
-    entry.timestamp,
-  ];
+  const parts = [`[${entry.level.toUpperCase()}]`, entry.timestamp];
   if (entry.correlationId) {
     parts.push(`[${entry.correlationId}]`);
   }
@@ -56,7 +53,7 @@ function log(level: LogLevel, message: string, data?: unknown, correlationId?: s
           category: 'app',
           message,
           level: 'warning',
-          data: correlationId ? { correlationId, ...(data as object || {}) } : undefined,
+          data: correlationId ? { correlationId, ...((data as object) || {}) } : undefined,
         });
       }
       break;

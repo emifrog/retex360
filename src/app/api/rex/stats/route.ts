@@ -6,7 +6,9 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }

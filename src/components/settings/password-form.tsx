@@ -121,9 +121,7 @@ export function PasswordForm() {
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Minimum 8 caractères
-            </p>
+            <p className="text-xs text-muted-foreground">Minimum 8 caractères</p>
           </div>
 
           {/* Confirm Password */}

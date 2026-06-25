@@ -5,11 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Users,
   Clock,
@@ -63,31 +59,31 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
   const removeSdis = (sdis: string) => {
     const current = value.sdis_impliques || [];
-    updateField('sdis_impliques', current.filter(s => s !== sdis));
+    updateField(
+      'sdis_impliques',
+      current.filter((s) => s !== sdis)
+    );
   };
 
-  const hasData = value && (
-    value.nb_sp_engages ||
-    value.duree_intervention ||
-    value.nb_vehicules ||
-    value.bilan_humain?.victimes_decedees ||
-    value.bilan_humain?.victimes_urgence_absolue ||
-    value.bilan_humain?.victimes_urgence_relative ||
-    value.bilan_humain?.impliques ||
-    value.sdis_impliques?.length ||
-    value.surface_sinistree ||
-    value.nb_personnes_evacuees ||
-    value.nb_lances ||
-    value.debit_eau
-  );
+  const hasData =
+    value &&
+    (value.nb_sp_engages ||
+      value.duree_intervention ||
+      value.nb_vehicules ||
+      value.bilan_humain?.victimes_decedees ||
+      value.bilan_humain?.victimes_urgence_absolue ||
+      value.bilan_humain?.victimes_urgence_relative ||
+      value.bilan_humain?.impliques ||
+      value.sdis_impliques?.length ||
+      value.surface_sinistree ||
+      value.nb_personnes_evacuees ||
+      value.nb_lances ||
+      value.debit_eau);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
       <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full justify-between p-4 h-auto hover:bg-muted/50"
-        >
+        <Button variant="ghost" className="w-full justify-between p-4 h-auto hover:bg-muted/50">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Flame className="w-5 h-5 text-primary" />
@@ -105,10 +101,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 Renseigné
               </Badge>
             )}
-            <ChevronDown className={cn(
-              'w-5 h-5 text-muted-foreground transition-transform',
-              isOpen && 'rotate-180'
-            )} />
+            <ChevronDown
+              className={cn(
+                'w-5 h-5 text-muted-foreground transition-transform',
+                isOpen && 'rotate-180'
+              )}
+            />
           </div>
         </Button>
       </CollapsibleTrigger>
@@ -128,7 +126,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 min={0}
                 placeholder="Ex: 45"
                 value={value.nb_sp_engages || ''}
-                onChange={(e) => updateField('nb_sp_engages', e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  updateField(
+                    'nb_sp_engages',
+                    e.target.value ? parseInt(e.target.value) : undefined
+                  )
+                }
               />
             </div>
 
@@ -157,7 +160,9 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 min={0}
                 placeholder="Ex: 12"
                 value={value.nb_vehicules || ''}
-                onChange={(e) => updateField('nb_vehicules', e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  updateField('nb_vehicules', e.target.value ? parseInt(e.target.value) : undefined)
+                }
               />
             </div>
           </div>
@@ -176,7 +181,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.bilan_humain?.victimes_decedees || ''}
-                  onChange={(e) => updateBilan('victimes_decedees', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateBilan(
+                      'victimes_decedees',
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="h-9"
                 />
               </div>
@@ -187,7 +197,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.bilan_humain?.victimes_urgence_absolue || ''}
-                  onChange={(e) => updateBilan('victimes_urgence_absolue', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateBilan(
+                      'victimes_urgence_absolue',
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="h-9"
                 />
               </div>
@@ -198,7 +213,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.bilan_humain?.victimes_urgence_relative || ''}
-                  onChange={(e) => updateBilan('victimes_urgence_relative', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateBilan(
+                      'victimes_urgence_relative',
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="h-9"
                 />
               </div>
@@ -209,7 +229,9 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.bilan_humain?.impliques || ''}
-                  onChange={(e) => updateBilan('impliques', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateBilan('impliques', e.target.value ? parseInt(e.target.value) : undefined)
+                  }
                   className="h-9"
                 />
               </div>
@@ -231,7 +253,13 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSdis())}
                 className="flex-1"
               />
-              <Button type="button" variant="outline" size="icon" onClick={addSdis} aria-label="Ajouter un SDIS">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={addSdis}
+                aria-label="Ajouter un SDIS"
+              >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -282,7 +310,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.nb_personnes_evacuees || ''}
-                  onChange={(e) => updateField('nb_personnes_evacuees', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateField(
+                      'nb_personnes_evacuees',
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="h-9"
                 />
               </div>
@@ -296,7 +329,9 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   min={0}
                   placeholder="0"
                   value={value.nb_lances || ''}
-                  onChange={(e) => updateField('nb_lances', e.target.value ? parseInt(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    updateField('nb_lances', e.target.value ? parseInt(e.target.value) : undefined)
+                  }
                   className="h-9"
                 />
               </div>

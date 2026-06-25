@@ -6,7 +6,10 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -15,12 +18,16 @@ export async function GET() {
     const [profileResult, rexResult, commentsResult, favoritesResult] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, email, full_name, grade, role, avatar_url, created_at, updated_at, sdis:sdis_id(code, name)')
+        .select(
+          'id, email, full_name, grade, role, avatar_url, created_at, updated_at, sdis:sdis_id(code, name)'
+        )
         .eq('id', user.id)
         .single(),
       supabase
         .from('rex')
-        .select('id, title, type, severity, status, description, context, factual_elements, lessons_learned, production_type, intervention_date, visibility, created_at, updated_at')
+        .select(
+          'id, title, type, severity, status, description, context, factual_elements, lessons_learned, production_type, intervention_date, visibility, created_at, updated_at'
+        )
         .eq('author_id', user.id)
         .order('created_at', { ascending: false }),
       supabase

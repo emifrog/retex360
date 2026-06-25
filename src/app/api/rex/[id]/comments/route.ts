@@ -6,10 +6,7 @@ import { commentSchema } from '@/lib/validators/api';
 import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // GET - Fetch comments for a REX
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
@@ -17,26 +14,31 @@ export async function GET(
     // Fetch all comments for this REX with author info
     const { data: comments, error } = await supabase
       .from('comments')
-      .select(`
+      .select(
+        `
         *,
         author:profiles!author_id(id, full_name, grade, avatar_url, role)
-      `)
+      `
+      )
       .eq('rex_id', rexId)
       .order('created_at', { ascending: false });
 
     if (error) {
       logger.error('Comments fetch error:', error);
-      return NextResponse.json({ error: 'Erreur lors du chargement des commentaires' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors du chargement des commentaires' },
+        { status: 500 }
+      );
     }
 
     // Organize comments into threads (parent comments with replies)
-    const parentComments = comments?.filter(c => !c.parent_id) || [];
-    const replies = comments?.filter(c => c.parent_id) || [];
+    const parentComments = comments?.filter((c) => !c.parent_id) || [];
+    const replies = comments?.filter((c) => c.parent_id) || [];
 
-    const threaded = parentComments.map(parent => ({
+    const threaded = parentComments.map((parent) => ({
       ...parent,
       replies: replies
-        .filter(r => r.parent_id === parent.id)
+        .filter((r) => r.parent_id === parent.id)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
     }));
 
@@ -48,10 +50,7 @@ export async function GET(
 }
 
 // POST - Create a new comment
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -60,7 +59,9 @@ export async function POST(
     const { id: rexId } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -70,10 +71,7 @@ export async function POST(
     // Validate input (content length, parent_id/mentions as UUIDs, mentions cap)
     const validated = commentSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     // Strip any HTML (comments are plain text) and dedupe mentions, excluding self.
@@ -94,15 +92,20 @@ export async function POST(
         content,
         mentions,
       })
-      .select(`
+      .select(
+        `
         *,
         author:profiles!author_id(id, full_name, grade, avatar_url, role)
-      `)
+      `
+      )
       .single();
 
     if (error) {
       logger.error('Comment create error:', error);
-      return NextResponse.json({ error: 'Erreur lors de la création du commentaire' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors de la création du commentaire' },
+        { status: 500 }
+      );
     }
 
     // Get REX info and commenter info for notifications

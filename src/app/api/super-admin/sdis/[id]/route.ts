@@ -10,10 +10,7 @@ const iso = (d?: Date | null) => (d ? d.toISOString() : null);
 
 // Met à jour l'abonnement d'un SDIS : changement de plan, suspension/réactivation,
 // dates de période, limites. `id` = identifiant du SDIS. Super_admin uniquement.
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -63,7 +60,10 @@ export async function PATCH(
     const { error } = await admin.from('subscriptions').update(patch).eq('sdis_id', id);
     if (error) {
       logger.error('Subscription update error:', error);
-      return NextResponse.json({ error: "Erreur lors de la mise à jour de l'abonnement" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Erreur lors de la mise à jour de l'abonnement" },
+        { status: 500 }
+      );
     }
 
     // Action d'audit la plus parlante selon le changement principal.
@@ -72,9 +72,10 @@ export async function PATCH(
     else if (input.status && sub.status === 'suspended') action = 'sdis.reactivate';
     else if (input.plan && input.plan !== sub.plan) action = 'sdis.plan_change';
 
-    const sdisRel = (Array.isArray(sub.sdis) ? sub.sdis[0] : sub.sdis) as
-      | { code: string; name: string }
-      | null;
+    const sdisRel = (Array.isArray(sub.sdis) ? sub.sdis[0] : sub.sdis) as {
+      code: string;
+      name: string;
+    } | null;
     await logAdminAction({
       actorId: user.id,
       actorEmail: user.email ?? null,

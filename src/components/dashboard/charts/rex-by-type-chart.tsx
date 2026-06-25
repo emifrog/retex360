@@ -63,9 +63,7 @@ export function RexByTypeChart({ data = DEFAULT_DATA }: RexByTypeChartProps) {
                 layout="vertical"
                 align="right"
                 verticalAlign="middle"
-                formatter={(value) => (
-                  <span className="text-xs text-foreground">{value}</span>
-                )}
+                formatter={(value) => <span className="text-xs text-foreground">{value}</span>}
               />
             </PieChart>
           </ResponsiveContainer>

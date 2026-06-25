@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   // Rate limiting (strict for auth)
   const ip = getClientIp(request);
   const rateLimitResult = await rateLimiters.auth.limit(ip);
-  
+
   if (!rateLimitResult.success) {
     return rateLimitResponse(rateLimitResult.reset);
   }
@@ -23,10 +23,7 @@ export async function POST(request: NextRequest) {
     // Validation Zod
     const validated = forgotPasswordSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     const { email } = validated.data;

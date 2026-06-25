@@ -30,7 +30,14 @@ interface FigureCardProps {
   bgColor?: string;
 }
 
-function FigureCard({ icon: Icon, label, value, subValue, iconColor = 'text-primary', bgColor = 'bg-primary/10' }: FigureCardProps) {
+function FigureCard({
+  icon: Icon,
+  label,
+  value,
+  subValue,
+  iconColor = 'text-primary',
+  bgColor = 'bg-primary/10',
+}: FigureCardProps) {
   if (value === undefined || value === null || value === '') return null;
 
   return (
@@ -41,9 +48,7 @@ function FigureCard({ icon: Icon, label, value, subValue, iconColor = 'text-prim
       <div className="flex-1 min-w-0">
         <p className="text-xs text-muted-foreground truncate">{label}</p>
         <p className="text-lg font-semibold text-foreground">{value}</p>
-        {subValue && (
-          <p className="text-xs text-muted-foreground">{subValue}</p>
-        )}
+        {subValue && <p className="text-xs text-muted-foreground">{subValue}</p>}
       </div>
     </div>
   );
@@ -51,9 +56,9 @@ function FigureCard({ icon: Icon, label, value, subValue, iconColor = 'text-prim
 
 function formatBilanHumain(bilan: BilanHumain | undefined): string | undefined {
   if (!bilan) return undefined;
-  
+
   const parts: string[] = [];
-  
+
   if (bilan.victimes_decedees && bilan.victimes_decedees > 0) {
     parts.push(`${bilan.victimes_decedees} DCD`);
   }
@@ -66,30 +71,32 @@ function formatBilanHumain(bilan: BilanHumain | undefined): string | undefined {
   if (bilan.impliques && bilan.impliques > 0) {
     parts.push(`${bilan.impliques} impl.`);
   }
-  
+
   return parts.length > 0 ? parts.join(' / ') : undefined;
 }
 
 function getBilanTotal(bilan: BilanHumain | undefined): number {
   if (!bilan) return 0;
-  return (bilan.victimes_decedees || 0) + 
-         (bilan.victimes_urgence_absolue || 0) + 
-         (bilan.victimes_urgence_relative || 0) + 
-         (bilan.impliques || 0);
+  return (
+    (bilan.victimes_decedees || 0) +
+    (bilan.victimes_urgence_absolue || 0) +
+    (bilan.victimes_urgence_relative || 0) +
+    (bilan.impliques || 0)
+  );
 }
 
 export function KeyFigures({ data, variant = 'compact', className }: KeyFiguresProps) {
-  const hasData = data && (
-    data.nb_sp_engages ||
-    data.duree_intervention ||
-    data.nb_vehicules ||
-    data.bilan_humain ||
-    data.sdis_impliques?.length ||
-    data.surface_sinistree ||
-    data.nb_personnes_evacuees ||
-    data.nb_lances ||
-    data.debit_eau
-  );
+  const hasData =
+    data &&
+    (data.nb_sp_engages ||
+      data.duree_intervention ||
+      data.nb_vehicules ||
+      data.bilan_humain ||
+      data.sdis_impliques?.length ||
+      data.surface_sinistree ||
+      data.nb_personnes_evacuees ||
+      data.nb_lances ||
+      data.debit_eau);
 
   if (!hasData) return null;
 
@@ -146,7 +153,7 @@ export function KeyFigures({ data, variant = 'compact', className }: KeyFiguresP
         <Flame className="w-4 h-4 text-primary" />
         Chiffres clés de l&apos;intervention
       </h3>
-      
+
       {/* Chiffres principaux */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
         <FigureCard
@@ -189,7 +196,10 @@ export function KeyFigures({ data, variant = 'compact', className }: KeyFiguresP
       </div>
 
       {/* Chiffres secondaires */}
-      {(data.surface_sinistree || data.nb_personnes_evacuees || data.nb_lances || data.debit_eau) && (
+      {(data.surface_sinistree ||
+        data.nb_personnes_evacuees ||
+        data.nb_lances ||
+        data.debit_eau) && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-border/50">
           <FigureCard
             icon={Move}

@@ -16,14 +16,14 @@ export async function PUT(request: NextRequest) {
     // Validation Zod
     const validated = profileUpdateSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -34,7 +34,6 @@ export async function PUT(request: NextRequest) {
       .update({
         full_name: validated.data.full_name.trim(),
         grade: validated.data.grade || null,
-        sdis_id: validated.data.sdis_id || null,
       })
       .eq('id', user.id);
 

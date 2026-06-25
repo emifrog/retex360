@@ -4,7 +4,18 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
-import { REX_TYPES, SEVERITIES, VISIBILITIES, type ProductionType, type FocusThematique, type KeyFigures, type TimelineEvent, type Prescription, type Temoignage, type RessourceComplementaire } from '@/types';
+import {
+  REX_TYPES,
+  SEVERITIES,
+  VISIBILITIES,
+  type ProductionType,
+  type FocusThematique,
+  type KeyFigures,
+  type TimelineEvent,
+  type Prescription,
+  type Temoignage,
+  type RessourceComplementaire,
+} from '@/types';
 import { ImageUpload } from './image-upload';
 import { ProductionTypePicker } from './production-type-picker';
 import { FocusThematiqueEditor } from './focus-thematique-editor';
@@ -25,11 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
@@ -37,17 +44,14 @@ import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, VISIBILITY_LABELS } from '@/lib/constants';
 
 // Lazy-load TiptapEditor (@tiptap ~150KB)
-const TiptapEditor = dynamic(
-  () => import('./tiptap-editor').then((m) => m.TiptapEditor),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="border border-border rounded-lg bg-background/50 min-h-[150px] flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    ),
-  }
-);
+const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.TiptapEditor), {
+  ssr: false,
+  loading: () => (
+    <div className="border border-border rounded-lg bg-background/50 min-h-[150px] flex items-center justify-center">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 interface RexFormData {
   title: string;
@@ -82,7 +86,6 @@ interface RexFormProps {
   mode?: 'create' | 'edit';
 }
 
-
 export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,14 +93,16 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['context', 'analysis'])
   );
-  const [uploadedFiles, setUploadedFiles] = useState<{
-    id: string;
-    file_name: string;
-    file_type: string;
-    file_size: number;
-    storage_path: string;
-    url: string;
-  }[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    {
+      id: string;
+      file_name: string;
+      file_type: string;
+      file_size: number;
+      storage_path: string;
+      url: string;
+    }[]
+  >([]);
 
   const {
     register,
@@ -146,7 +151,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   // Stable references for arrays/objects to avoid child re-renders
   const EMPTY_TAGS: string[] = useMemo(() => [], []);
   const EMPTY_FOCUS: FocusThematique[] = useMemo(() => [], []);
-  const EMPTY_FIGURES: KeyFigures = useMemo(() => ({} as KeyFigures), []);
+  const EMPTY_FIGURES: KeyFigures = useMemo(() => ({}) as KeyFigures, []);
   const EMPTY_TIMELINE: TimelineEvent[] = useMemo(() => [], []);
   const EMPTY_PRESCRIPTIONS: Prescription[] = useMemo(() => [], []);
   const EMPTY_TEMOIGNAGES: Temoignage[] = useMemo(() => [], []);
@@ -180,14 +185,36 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
   };
 
   const removeTag = (tagToRemove: string) => {
-    setValue('tags', tags.filter((tag) => tag !== tagToRemove));
+    setValue(
+      'tags',
+      tags.filter((tag) => tag !== tagToRemove)
+    );
   };
 
   const isFieldRequired = (field: string): boolean => {
     const requiredByType: Record<ProductionType, string[]> = {
       signalement: ['title', 'intervention_date', 'type', 'severity', 'description'],
-      pex: ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned'],
-      retex: ['title', 'intervention_date', 'type', 'severity', 'description', 'context', 'means_deployed', 'lessons_learned', 'focus_thematiques'],
+      pex: [
+        'title',
+        'intervention_date',
+        'type',
+        'severity',
+        'description',
+        'context',
+        'means_deployed',
+        'lessons_learned',
+      ],
+      retex: [
+        'title',
+        'intervention_date',
+        'type',
+        'severity',
+        'description',
+        'context',
+        'means_deployed',
+        'lessons_learned',
+        'focus_thematiques',
+      ],
     };
     return requiredByType[typeProduction]?.includes(field) || false;
   };
@@ -197,14 +224,14 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     try {
       const endpoint = mode === 'edit' ? `/api/rex/${rexId}` : '/api/rex';
       const method = mode === 'edit' ? 'PUT' : 'POST';
-      
+
       const response = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...data, 
+        body: JSON.stringify({
+          ...data,
           status,
-          attachmentIds: uploadedFiles.map(f => f.id),
+          attachmentIds: uploadedFiles.map((f) => f.id),
         }),
       });
 
@@ -214,7 +241,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       }
 
       await response.json();
-      
+
       toast.success(
         mode === 'edit'
           ? 'REX mis à jour'
@@ -247,15 +274,14 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-lg">Informations générales</CardTitle>
-          <CardDescription>
-            Informations de base sur l&apos;intervention
-          </CardDescription>
+          <CardDescription>Informations de base sur l&apos;intervention</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">
-              Intitulé de l&apos;intervention {isFieldRequired('title') && <span className="text-destructive">*</span>}
+              Intitulé de l&apos;intervention{' '}
+              {isFieldRequired('title') && <span className="text-destructive">*</span>}
             </Label>
             <Input
               id="title"
@@ -263,16 +289,17 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               placeholder="Ex: Feu d'habitation R+3 - Centre-ville Nice"
               className="bg-background/50"
             />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title.message}</p>
-            )}
+            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {/* Date */}
             <div className="space-y-2">
               <Label htmlFor="intervention_date">
-                Date d&apos;intervention {isFieldRequired('intervention_date') && <span className="text-destructive">*</span>}
+                Date d&apos;intervention{' '}
+                {isFieldRequired('intervention_date') && (
+                  <span className="text-destructive">*</span>
+                )}
               </Label>
               <Input
                 id="intervention_date"
@@ -285,12 +312,10 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
             {/* Type */}
             <div className="space-y-2">
               <Label>
-                Type d&apos;intervention {isFieldRequired('type') && <span className="text-destructive">*</span>}
+                Type d&apos;intervention{' '}
+                {isFieldRequired('type') && <span className="text-destructive">*</span>}
               </Label>
-              <Select
-                value={watch('type')}
-                onValueChange={(value) => setValue('type', value)}
-              >
+              <Select value={watch('type')} onValueChange={(value) => setValue('type', value)}>
                 <SelectTrigger className="bg-background/50">
                   <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
@@ -307,7 +332,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
             {/* Severity */}
             <div className="space-y-2">
               <Label>
-                Niveau de criticité {isFieldRequired('severity') && <span className="text-destructive">*</span>}
+                Niveau de criticité{' '}
+                {isFieldRequired('severity') && <span className="text-destructive">*</span>}
               </Label>
               <Select
                 value={watch('severity')}
@@ -401,24 +427,20 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
 
       {/* Chiffres clés */}
       <Card className="border-border/50 bg-card/80 overflow-hidden">
-        <KeyFiguresEditor
-          value={keyFigures}
-          onChange={(value) => setValue('key_figures', value)}
-        />
+        <KeyFiguresEditor value={keyFigures} onChange={(value) => setValue('key_figures', value)} />
       </Card>
 
       {/* Synthèse */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-lg">Synthèse</CardTitle>
-          <CardDescription>
-            Description générale de l&apos;intervention
-          </CardDescription>
+          <CardDescription>Description générale de l&apos;intervention</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>
-              Description {isFieldRequired('description') && <span className="text-destructive">*</span>}
+              Description{' '}
+              {isFieldRequired('description') && <span className="text-destructive">*</span>}
             </Label>
             <TiptapEditor
               content={watch('description') || ''}
@@ -460,7 +482,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       Message d&apos;ambiance
-                      <Badge variant="outline" className="text-xs font-normal">Recommandé</Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        Recommandé
+                      </Badge>
                     </Label>
                     <TiptapEditor
                       content={watch('message_ambiance') || ''}
@@ -479,7 +503,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       SITAC (Situation Tactique)
-                      <Badge variant="outline" className="text-xs font-normal">Recommandé</Badge>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        Recommandé
+                      </Badge>
                     </Label>
                     <TiptapEditor
                       content={watch('sitac') || ''}
@@ -494,7 +520,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                 {/* Contexte */}
                 <div className="space-y-2">
                   <Label>
-                    Contexte opérationnel {isFieldRequired('context') && <span className="text-destructive">*</span>}
+                    Contexte opérationnel{' '}
+                    {isFieldRequired('context') && <span className="text-destructive">*</span>}
                   </Label>
                   <TiptapEditor
                     content={watch('context') || ''}
@@ -506,7 +533,10 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                 {/* Moyens engagés */}
                 <div className="space-y-2">
                   <Label>
-                    Moyens engagés {isFieldRequired('means_deployed') && <span className="text-destructive">*</span>}
+                    Moyens engagés{' '}
+                    {isFieldRequired('means_deployed') && (
+                      <span className="text-destructive">*</span>
+                    )}
                   </Label>
                   <TiptapEditor
                     content={watch('means_deployed') || ''}
@@ -550,7 +580,10 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     Éléments favorables
-                    <Badge variant="outline" className="text-xs font-normal bg-green-500/10 text-green-600 border-green-500/30">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal bg-green-500/10 text-green-600 border-green-500/30"
+                    >
                       Facilitateurs
                     </Badge>
                   </Label>
@@ -565,7 +598,10 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     Éléments défavorables
-                    <Badge variant="outline" className="text-xs font-normal bg-red-500/10 text-red-600 border-red-500/30">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal bg-red-500/10 text-red-600 border-red-500/30"
+                    >
                       Perturbateurs
                     </Badge>
                   </Label>
@@ -591,7 +627,10 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                 {/* Enseignements */}
                 <div className="space-y-2">
                   <Label>
-                    Enseignements {isFieldRequired('lessons_learned') && <span className="text-destructive">*</span>}
+                    Enseignements{' '}
+                    {isFieldRequired('lessons_learned') && (
+                      <span className="text-destructive">*</span>
+                    )}
                   </Label>
                   <TiptapEditor
                     content={watch('lessons_learned') || ''}
@@ -620,9 +659,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         <Card className="border-border/50 bg-card/80">
           <CardHeader>
             <CardTitle className="text-lg">Focus thématiques</CardTitle>
-            <CardDescription>
-              Analyse détaillée par thème selon le mémento DGSCGC
-            </CardDescription>
+            <CardDescription>Analyse détaillée par thème selon le mémento DGSCGC</CardDescription>
           </CardHeader>
           <CardContent>
             <FocusThematiqueEditor
@@ -661,7 +698,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
           <CardHeader>
             <CardTitle className="text-lg">Description de l&apos;ouvrage / site</CardTitle>
             <CardDescription>
-              Tunnels, bâtiments ERP, sites industriels, ETARE... Dimensions, équipements de sécurité, plans.
+              Tunnels, bâtiments ERP, sites industriels, ETARE... Dimensions, équipements de
+              sécurité, plans.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -679,9 +717,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         <Card className="border-border/50 bg-card/80">
           <CardHeader>
             <CardTitle className="text-lg">Documentation opérationnelle</CardTitle>
-            <CardDescription>
-              Références bibliographiques (GNR, GDO, GTO, RO...)
-            </CardDescription>
+            <CardDescription>Références bibliographiques (GNR, GDO, GTO, RO...)</CardDescription>
           </CardHeader>
           <CardContent>
             <TiptapEditor
@@ -707,9 +743,7 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-lg">Pièces jointes</CardTitle>
-          <CardDescription>
-            Photos, schémas, documents complémentaires
-          </CardDescription>
+          <CardDescription>Photos, schémas, documents complémentaires</CardDescription>
         </CardHeader>
         <CardContent>
           <ImageUpload

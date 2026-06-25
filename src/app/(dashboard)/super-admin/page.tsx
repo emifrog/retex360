@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Building2, CheckCircle, Clock, Users, FileText, Euro, Crown, ArrowRight } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle,
+  Clock,
+  Users,
+  FileText,
+  Euro,
+  Crown,
+  ArrowRight,
+} from 'lucide-react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { SuperAdminMetrics, type Metric } from '@/components/super-admin/super-admin-metrics';
@@ -48,12 +57,32 @@ export default async function SuperAdminPage() {
     .reduce((sum, s) => sum + (PLAN_CONFIG[s.plan]?.monthlyPrice ?? 0), 0);
 
   const metrics: Metric[] = [
-    { label: 'SDIS clients', value: clients.toLocaleString('fr-FR'), icon: Building2, color: '#3b82f6' },
+    {
+      label: 'SDIS clients',
+      value: clients.toLocaleString('fr-FR'),
+      icon: Building2,
+      color: '#3b82f6',
+    },
     { label: 'Actifs', value: active.toLocaleString('fr-FR'), icon: CheckCircle, color: '#22c55e' },
     { label: 'En essai', value: trial.toLocaleString('fr-FR'), icon: Clock, color: '#f97316' },
-    { label: 'Utilisateurs', value: (usersRes.count ?? 0).toLocaleString('fr-FR'), icon: Users, color: '#a855f7' },
-    { label: 'REX totaux', value: (rexRes.count ?? 0).toLocaleString('fr-FR'), icon: FileText, color: '#06b6d4' },
-    { label: 'MRR estimé', value: `${mrr.toLocaleString('fr-FR')} €`, icon: Euro, color: '#16a34a' },
+    {
+      label: 'Utilisateurs',
+      value: (usersRes.count ?? 0).toLocaleString('fr-FR'),
+      icon: Users,
+      color: '#a855f7',
+    },
+    {
+      label: 'REX totaux',
+      value: (rexRes.count ?? 0).toLocaleString('fr-FR'),
+      icon: FileText,
+      color: '#06b6d4',
+    },
+    {
+      label: 'MRR estimé',
+      value: `${mrr.toLocaleString('fr-FR')} €`,
+      icon: Euro,
+      color: '#16a34a',
+    },
   ];
 
   const auditRows = (auditRaw || []) as AuditRow[];

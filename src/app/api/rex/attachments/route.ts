@@ -3,7 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { optimizeImage, generateThumbnail } from '@/lib/image-optimizer';
 import { logger } from '@/lib/logger';
-import { signAttachmentUrl, putAttachmentObject, removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
+import {
+  signAttachmentUrl,
+  putAttachmentObject,
+  removeAttachmentObjects,
+  thumbnailPathFor,
+} from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -18,7 +23,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -29,6 +37,10 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
+    }
+
+    if (rexId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rexId)) {
+      return NextResponse.json({ error: 'Identifiant REX invalide' }, { status: 400 });
     }
 
     // Validate file type
@@ -53,12 +65,24 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(7);
     const isImage = file.type.startsWith('image/') && file.type !== 'image/gif';
-    const ext = optimized.contentType === 'image/webp' ? 'webp' : file.name.split('.').pop();
+    // Extension dérivée du type réel (jamais du nom de fichier client).
+    const MIME_EXT: Record<string, string> = {
+      'application/pdf': 'pdf',
+      'image/gif': 'gif',
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const ext = optimized.contentType === 'image/webp' ? 'webp' : (MIME_EXT[file.type] ?? 'bin');
     const baseName = `${user.id}/${timestamp}-${randomSuffix}`;
     const storagePath = `rex-attachments/${baseName}.${ext}`;
 
     // Upload optimized image to object storage (Scaleway S3 or Supabase)
-    const uploaded = await putAttachmentObject(storagePath, optimized.buffer, optimized.contentType);
+    const uploaded = await putAttachmentObject(
+      storagePath,
+      optimized.buffer,
+      optimized.contentType
+    );
     if (!uploaded) {
       logger.error('Upload error', { storagePath });
       return NextResponse.json({ error: "Erreur lors de l'upload" }, { status: 500 });

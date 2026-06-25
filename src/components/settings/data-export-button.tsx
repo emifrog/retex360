@@ -17,7 +17,7 @@ export function DataExportButton() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de l\'export');
+        throw new Error(data.error || "Erreur lors de l'export");
       }
 
       const blob = await response.blob();
@@ -32,7 +32,7 @@ export function DataExportButton() {
 
       toast.success('Vos données ont été exportées');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+      toast.error(error instanceof Error ? error.message : "Erreur lors de l'export");
     } finally {
       setIsExporting(false);
     }

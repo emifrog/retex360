@@ -59,9 +59,7 @@ export function SidebarAiInsight({ collapsed }: SidebarAiInsightProps) {
             <p className="text-xs text-muted-foreground">Chargement...</p>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {insight}
-          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
         )}
       </div>
     </div>

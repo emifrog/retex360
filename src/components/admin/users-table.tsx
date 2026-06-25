@@ -4,14 +4,14 @@ import { useState, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { 
-  Shield, 
-  ShieldCheck, 
-  ShieldAlert, 
+import {
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
   User,
   MoreHorizontal,
   Search,
-  Filter
+  Filter,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -72,36 +72,36 @@ interface UsersTableProps {
 }
 
 const roleConfig = {
-  user: { 
-    label: 'Utilisateur', 
-    icon: User, 
-    color: 'bg-gray-500/10 text-gray-500 border-gray-500/30' 
+  user: {
+    label: 'Utilisateur',
+    icon: User,
+    color: 'bg-gray-500/10 text-gray-500 border-gray-500/30',
   },
-  validator: { 
-    label: 'Validateur', 
-    icon: ShieldCheck, 
-    color: 'bg-blue-500/10 text-blue-500 border-blue-500/30' 
+  validator: {
+    label: 'Validateur',
+    icon: ShieldCheck,
+    color: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
   },
-  admin: { 
-    label: 'Admin', 
-    icon: Shield, 
-    color: 'bg-orange-500/10 text-orange-500 border-orange-500/30' 
+  admin: {
+    label: 'Admin',
+    icon: Shield,
+    color: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
   },
-  super_admin: { 
-    label: 'Super Admin', 
-    icon: ShieldAlert, 
-    color: 'bg-red-500/10 text-red-500 border-red-500/30' 
+  super_admin: {
+    label: 'Super Admin',
+    icon: ShieldAlert,
+    color: 'bg-red-500/10 text-red-500 border-red-500/30',
   },
 };
 
 export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: UsersTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [sdisFilter, setSdisFilter] = useState<string>('all');
-  
+
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [newRole, setNewRole] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -123,12 +123,15 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
   }, [users, searchQuery, roleFilter, sdisFilter]);
 
   // Stats (memoized — only recalculates when users array changes)
-  const stats = useMemo(() => ({
-    total: users.length,
-    users: users.filter(u => u.role === 'user').length,
-    validators: users.filter(u => u.role === 'validator').length,
-    admins: users.filter(u => u.role === 'admin' || u.role === 'super_admin').length,
-  }), [users]);
+  const stats = useMemo(
+    () => ({
+      total: users.length,
+      users: users.filter((u) => u.role === 'user').length,
+      validators: users.filter((u) => u.role === 'validator').length,
+      admins: users.filter((u) => u.role === 'admin' || u.role === 'super_admin').length,
+    }),
+    [users]
+  );
 
   const handleRoleChange = async () => {
     if (!selectedUser || !newRole) return;
@@ -222,7 +225,7 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
               ))}
             </SelectContent>
           </Select>
-          
+
           {isSuperAdmin && sdisList.length > 0 && (
             <Select value={sdisFilter} onValueChange={setSdisFilter}>
               <SelectTrigger className="w-full sm:w-44">
@@ -264,12 +267,13 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
               filteredUsers.map((user) => {
                 const role = roleConfig[user.role as keyof typeof roleConfig] || roleConfig.user;
                 const RoleIcon = role.icon;
-                const initials = user.full_name
-                  ?.split(' ')
-                  .map((n) => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2) || user.email[0].toUpperCase();
+                const initials =
+                  user.full_name
+                    ?.split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2) || user.email[0].toUpperCase();
 
                 return (
                   <TableRow key={user.id}>
@@ -281,7 +285,9 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
                         </Avatar>
                         <div>
                           <p className="font-medium">
-                            {user.grade && <span className="text-muted-foreground">{user.grade} </span>}
+                            {user.grade && (
+                              <span className="text-muted-foreground">{user.grade} </span>
+                            )}
                             {user.full_name || 'Sans nom'}
                           </p>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -343,14 +349,14 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
               Changer le rôle de {selectedUser?.full_name || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             <Select value={newRole} onValueChange={setNewRole}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un rôle" />
               </SelectTrigger>
               <SelectContent>
-                {ROLES.filter(role => isSuperAdmin || role !== 'super_admin').map((role) => {
+                {ROLES.filter((role) => isSuperAdmin || role !== 'super_admin').map((role) => {
                   const config = roleConfig[role];
                   const Icon = config.icon;
                   return (
@@ -364,15 +370,23 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
                 })}
               </SelectContent>
             </Select>
-            
+
             <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
               <p className="font-medium mb-2">Permissions par rôle :</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li><strong>Utilisateur</strong> : Créer/éditer ses REX, commenter</li>
-                <li><strong>Validateur</strong> : + Valider/rejeter les REX</li>
-                <li><strong>Admin</strong> : + Gérer les utilisateurs du SDIS</li>
+                <li>
+                  <strong>Utilisateur</strong> : Créer/éditer ses REX, commenter
+                </li>
+                <li>
+                  <strong>Validateur</strong> : + Valider/rejeter les REX
+                </li>
+                <li>
+                  <strong>Admin</strong> : + Gérer les utilisateurs du SDIS
+                </li>
                 {isSuperAdmin && (
-                  <li><strong>Super Admin</strong> : Accès total, tous les SDIS</li>
+                  <li>
+                    <strong>Super Admin</strong> : Accès total, tous les SDIS
+                  </li>
                 )}
               </ul>
             </div>
@@ -382,8 +396,8 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Annuler
             </Button>
-            <Button 
-              onClick={handleRoleChange} 
+            <Button
+              onClick={handleRoleChange}
               disabled={isPending || newRole === selectedUser?.role}
             >
               {isPending ? 'Modification...' : 'Confirmer'}

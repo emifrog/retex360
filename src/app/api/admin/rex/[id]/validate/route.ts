@@ -4,10 +4,7 @@ import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.api.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -21,8 +18,9 @@ export async function POST(
     if ('response' in auth) return auth.response;
     const { user } = auth;
 
-    // Update REX status
-    const { error } = await supabase
+    // Update REX status — récupère la ligne modifiée pour distinguer un succès réel
+    // d'un no-op (REX inexistant, déjà validé, ou bloqué par la RLS inter-SDIS).
+    const { data: rex, error } = await supabase
       .from('rex')
       .update({
         status: 'validated',
@@ -30,31 +28,30 @@ export async function POST(
         validated_at: new Date().toISOString(),
       })
       .eq('id', rexId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select('author_id, title')
+      .maybeSingle();
 
     if (error) {
       logger.error('Validation error:', error);
       return NextResponse.json({ error: 'Erreur lors de la validation' }, { status: 500 });
     }
 
-    // Get REX author for notification
-    const { data: rex } = await supabase
-      .from('rex')
-      .select('author_id, title')
-      .eq('id', rexId)
-      .single();
+    if (!rex) {
+      return NextResponse.json({ error: 'REX introuvable ou déjà traité' }, { status: 409 });
+    }
 
-    if (rex) {
-      // Notification destinée à l'auteur : via le client admin (la RLS interdit
-      // au client utilisateur d'écrire une notification pour autrui).
-      await createAdminClient().from('notifications').insert({
+    // Notification destinée à l'auteur : via le client admin (la RLS interdit
+    // au client utilisateur d'écrire une notification pour autrui).
+    await createAdminClient()
+      .from('notifications')
+      .insert({
         user_id: rex.author_id,
         type: 'validation',
         title: 'REX validé',
         content: `Votre REX "${rex.title}" a été validé`,
         link: `/rex/${rexId}`,
       });
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

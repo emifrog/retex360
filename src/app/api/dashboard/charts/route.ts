@@ -2,19 +2,32 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
-const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+const monthNames = [
+  'Jan',
+  'Fév',
+  'Mar',
+  'Avr',
+  'Mai',
+  'Juin',
+  'Juil',
+  'Août',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Déc',
+];
 
 const typeColors: Record<string, string> = {
   'Incendie urbain': '#ef4444',
   'Incendie industriel': '#f97316',
-  'FDF': '#eab308',
-  'SAV': '#3b82f6',
-  'NRBC': '#a855f7',
-  'AVP': '#22c55e',
+  FDF: '#eab308',
+  SAV: '#3b82f6',
+  NRBC: '#a855f7',
+  AVP: '#22c55e',
   'Sauvetage déblaiement': '#06b6d4',
   'Secours en montagne': '#8b5cf6',
   'Secours nautique': '#14b8a6',
-  'Autre': '#6b7280',
+  Autre: '#6b7280',
 };
 
 const severityColors: Record<string, string> = {
@@ -27,7 +40,9 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -40,10 +55,7 @@ export async function GET() {
     // Parallel queries: only fetch what's needed, filtered by date range
     const [createdResult, validatedResult, typeResult, severityResult] = await Promise.all([
       // Timeline: created per month (only last 12 months)
-      supabase
-        .from('rex')
-        .select('created_at')
-        .gte('created_at', startDate),
+      supabase.from('rex').select('created_at').gte('created_at', startDate),
       // Timeline: validated per month (only last 12 months)
       supabase
         .from('rex')
@@ -51,17 +63,16 @@ export async function GET() {
         .not('validated_at', 'is', null)
         .gte('validated_at', startDate),
       // Type distribution (all time, lightweight: only type column)
-      supabase
-        .from('rex')
-        .select('type'),
+      supabase.from('rex').select('type'),
       // Severity distribution (all time, lightweight: only severity column)
-      supabase
-        .from('rex')
-        .select('severity'),
+      supabase.from('rex').select('severity'),
     ]);
 
     if (createdResult.error || typeResult.error || severityResult.error) {
-      logger.error('Charts data error:', createdResult.error || typeResult.error || severityResult.error);
+      logger.error(
+        'Charts data error:',
+        createdResult.error || typeResult.error || severityResult.error
+      );
       return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 
@@ -112,22 +123,24 @@ export async function GET() {
       severityCounts.set(r.severity, (severityCounts.get(r.severity) || 0) + 1);
     }
 
-    const bySeverity = Array.from(severityCounts.entries())
-      .map(([key, value]) => ({
-        name: key.charAt(0).toUpperCase() + key.slice(1),
-        value,
-        color: severityColors[key] || '#6b7280',
-      }));
+    const bySeverity = Array.from(severityCounts.entries()).map(([key, value]) => ({
+      name: key.charAt(0).toUpperCase() + key.slice(1),
+      value,
+      color: severityColors[key] || '#6b7280',
+    }));
 
-    return NextResponse.json({
-      timeline,
-      byType,
-      bySeverity,
-    }, {
-      headers: {
-        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
+    return NextResponse.json(
+      {
+        timeline,
+        byType,
+        bySeverity,
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     logger.error('Charts error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

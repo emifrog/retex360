@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { RexDetail } from '@/components/rex/rex-detail';
 import { logger } from '@/lib/logger';
 import { signAttachmentUrls, thumbnailPathFor } from '@/lib/storage';
+import { getSubscriptionState } from '@/lib/subscription';
 
 interface RexPageProps {
   params: Promise<{ id: string }>;
@@ -50,11 +51,7 @@ export default async function RexPage({ params }: RexPageProps) {
   const supabase = await createClient();
 
   // 1. Fetch REX (required for everything else)
-  const { data: rex, error } = await supabase
-    .from('rex')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data: rex, error } = await supabase.from('rex').select('*').eq('id', id).single();
 
   if (error || !rex) {
     logger.error('REX fetch error:', error);
@@ -67,24 +64,18 @@ export default async function RexPage({ params }: RexPageProps) {
     { data: sdis },
     validatorResult,
     { data: attachments },
-    { data: { user } },
+    {
+      data: { user },
+    },
   ] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, full_name, grade, email, avatar_url')
       .eq('id', rex.author_id)
       .single(),
-    supabase
-      .from('sdis')
-      .select('id, code, name, region')
-      .eq('id', rex.sdis_id)
-      .single(),
+    supabase.from('sdis').select('id, code, name, region').eq('id', rex.sdis_id).single(),
     rex.validated_by
-      ? supabase
-          .from('profiles')
-          .select('id, full_name, grade')
-          .eq('id', rex.validated_by)
-          .single()
+      ? supabase.from('profiles').select('id, full_name, grade').eq('id', rex.validated_by).single()
       : Promise.resolve({ data: null }),
     supabase
       .from('rex_attachments')
@@ -98,22 +89,19 @@ export default async function RexPage({ params }: RexPageProps) {
   // 3. Parallel fetch: user-dependent queries + fire-and-forget view count
   const [favoriteResult, profileResult] = user
     ? await Promise.all([
-        supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('rex_id', id)
-          .single(),
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single(),
+        supabase.from('favorites').select('id').eq('user_id', user.id).eq('rex_id', id).single(),
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
       ])
     : [{ data: null }, { data: null }];
 
   const isFavorited = !!favoriteResult.data;
   const currentUserProfile = profileResult.data;
+
+  // Mode lecture seule (abonnement suspendu/expiré) : désactive les actions d'écriture.
+  const canWrite =
+    currentUserProfile?.role === 'super_admin'
+      ? true
+      : (await getSubscriptionState(currentUserProfile?.sdis_id)).canWrite;
 
   // Fire-and-forget: increment view count (no await needed)
   supabase
@@ -152,7 +140,7 @@ export default async function RexPage({ params }: RexPageProps) {
       ...att,
       file_url: signedUrls.get(att.storage_path) ?? null,
       thumbnail_url: hasThumbnail(att.file_type)
-        ? signedUrls.get(thumbnailPathFor(att.storage_path)) ?? null
+        ? (signedUrls.get(thumbnailPathFor(att.storage_path)) ?? null)
         : null,
     })),
   };
@@ -162,6 +150,7 @@ export default async function RexPage({ params }: RexPageProps) {
       rex={rexWithAttachments}
       isFavorited={isFavorited}
       currentUser={currentUserProfile}
+      canWrite={canWrite}
     />
   );
 }

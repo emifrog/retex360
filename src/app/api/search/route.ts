@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   // Rate limiting
   const ip = getClientIp(request);
   const rateLimitResult = await rateLimiters.search.limit(ip);
-  
+
   if (!rateLimitResult.success) {
     return rateLimitResponse(rateLimitResult.reset);
   }
@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -27,10 +29,7 @@ export async function POST(request: NextRequest) {
     // Validation Zod
     const validated = searchSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { message: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: validated.error.issues[0].message }, { status: 400 });
     }
 
     const { query, limit } = validated.data;

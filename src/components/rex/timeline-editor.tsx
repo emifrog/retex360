@@ -6,11 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -69,11 +65,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
   };
 
   const updateEvent = (id: string, field: keyof TimelineEvent, fieldValue: string) => {
-    onChange(
-      value.map((event) =>
-        event.id === id ? { ...event, [field]: fieldValue } : event
-      )
-    );
+    onChange(value.map((event) => (event.id === id ? { ...event, [field]: fieldValue } : event)));
   };
 
   const removeEvent = (id: string) => {
@@ -83,7 +75,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
   const moveEvent = (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= value.length) return;
-    
+
     const newEvents = [...value];
     [newEvents[index], newEvents[newIndex]] = [newEvents[newIndex], newEvents[index]];
     onChange(newEvents);
@@ -92,10 +84,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
       <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full justify-between p-4 h-auto hover:bg-muted/50"
-        >
+        <Button variant="ghost" className="w-full justify-between p-4 h-auto hover:bg-muted/50">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Clock className="w-5 h-5 text-primary" />
@@ -113,10 +102,12 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                 {value.length} événement{value.length > 1 ? 's' : ''}
               </Badge>
             )}
-            <ChevronDown className={cn(
-              'w-5 h-5 text-muted-foreground transition-transform',
-              isOpen && 'rotate-180'
-            )} />
+            <ChevronDown
+              className={cn(
+                'w-5 h-5 text-muted-foreground transition-transform',
+                isOpen && 'rotate-180'
+              )}
+            />
           </div>
         </Button>
       </CollapsibleTrigger>
@@ -127,7 +118,9 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p className="text-sm">Aucun événement dans la chronologie</p>
-              <p className="text-xs mt-1">Ajoutez des événements pour retracer le déroulement de l&apos;intervention</p>
+              <p className="text-xs mt-1">
+                Ajoutez des événements pour retracer le déroulement de l&apos;intervention
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -146,10 +139,12 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                         <div className="cursor-move text-muted-foreground hover:text-foreground">
                           <GripVertical className="w-4 h-4" />
                         </div>
-                        <div className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center',
-                          config.bgColor
-                        )}>
+                        <div
+                          className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center',
+                            config.bgColor
+                          )}
+                        >
                           <Icon className="w-4 h-4 text-white" />
                         </div>
                       </div>
@@ -181,7 +176,8 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                               <SelectContent>
                                 {TIMELINE_EVENT_TYPES.map((type) => {
                                   const typeConfig = TIMELINE_EVENT_CONFIG[type];
-                                  const TypeIcon = iconMap[typeConfig.icon as keyof typeof iconMap] || Circle;
+                                  const TypeIcon =
+                                    iconMap[typeConfig.icon as keyof typeof iconMap] || Circle;
                                   return (
                                     <SelectItem key={type} value={type}>
                                       <div className="flex items-center gap-2">
@@ -209,7 +205,9 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
 
                         {/* Description */}
                         <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Description (optionnel)</Label>
+                          <Label className="text-xs text-muted-foreground">
+                            Description (optionnel)
+                          </Label>
                           <Textarea
                             value={event.description || ''}
                             onChange={(e) => updateEvent(event.id, 'description', e.target.value)}
@@ -259,12 +257,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
             </div>
           )}
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={addEvent}
-          >
+          <Button type="button" variant="outline" className="w-full" onClick={addEvent}>
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un événement
           </Button>

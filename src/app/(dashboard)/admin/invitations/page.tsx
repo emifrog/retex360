@@ -32,7 +32,9 @@ export default async function AdminInvitationsPage() {
   const admin = createAdminClient();
   let query = admin
     .from('invitations')
-    .select('id, email, role, sdis_id, expires_at, accepted_at, created_at, sdis:sdis_id(code, name)')
+    .select(
+      'id, email, role, sdis_id, expires_at, accepted_at, created_at, sdis:sdis_id(code, name)'
+    )
     .order('created_at', { ascending: false })
     .limit(200);
   if (!isSuperAdmin) {

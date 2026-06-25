@@ -28,7 +28,13 @@ interface HeaderProps {
   pendingCount?: number;
 }
 
-export function Header({ user, isAdmin = false, isSuperAdmin = false, canWrite = true, pendingCount = 0 }: HeaderProps) {
+export function Header({
+  user,
+  isAdmin = false,
+  isSuperAdmin = false,
+  canWrite = true,
+  pendingCount = 0,
+}: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
@@ -38,23 +44,40 @@ export function Header({ user, isAdmin = false, isSuperAdmin = false, canWrite =
     }
   };
 
-  const initials = user?.full_name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U';
+  const initials =
+    user?.full_name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
 
   return (
-    <header role="banner" aria-label="En-tête du site" className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
+    <header
+      role="banner"
+      aria-label="En-tête du site"
+      className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6"
+    >
       {/* Mobile Menu */}
       <div className="flex items-center gap-3">
-        <MobileSidebar isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} canWrite={canWrite} pendingCount={pendingCount} />
-        
+        <MobileSidebar
+          isAdmin={isAdmin}
+          isSuperAdmin={isSuperAdmin}
+          canWrite={canWrite}
+          pendingCount={pendingCount}
+        />
+
         {/* Logo mobile */}
         <div className="md:hidden flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-red-900 rounded-lg flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+            >
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
@@ -85,9 +108,7 @@ export function Header({ user, isAdmin = false, isSuperAdmin = false, canWrite =
         {user?.sdis && (
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-md">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-green-500 font-medium">
-              {user.sdis.code} Connecté
-            </span>
+            <span className="text-xs text-green-500 font-medium">{user.sdis.code} Connecté</span>
           </div>
         )}
 
@@ -114,9 +135,7 @@ export function Header({ user, isAdmin = false, isSuperAdmin = false, canWrite =
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{user?.full_name || 'Utilisateur'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
-                {user?.grade && (
-                  <p className="text-xs text-muted-foreground">{user.grade}</p>
-                )}
+                {user?.grade && <p className="text-xs text-muted-foreground">{user.grade}</p>}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

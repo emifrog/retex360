@@ -1,13 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Clock,
-  Users,
-  MessageSquare,
-  Star,
-  Loader2
-} from 'lucide-react';
+import { Clock, Users, MessageSquare, Star, Loader2 } from 'lucide-react';
 import { useDashboardStats } from '@/lib/hooks/use-dashboard-data';
 
 export function KpiCards() {
@@ -57,13 +51,13 @@ export function KpiCards() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {kpis.map((kpi) => (
-        <Card key={kpi.label} className="border-border/50 bg-card/80 hover:border-primary/30 transition-colors">
+        <Card
+          key={kpi.label}
+          className="border-border/50 bg-card/80 hover:border-primary/30 transition-colors"
+        >
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-2">
-              <div
-                className="p-1.5 rounded-md"
-                style={{ backgroundColor: `${kpi.color}20` }}
-              >
+              <div className="p-1.5 rounded-md" style={{ backgroundColor: `${kpi.color}20` }}>
                 <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} />
               </div>
             </div>

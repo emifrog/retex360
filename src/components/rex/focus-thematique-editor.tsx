@@ -13,11 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,12 +72,12 @@ export function FocusThematiqueEditor({
     });
   };
 
-  const handleUpdate = (id: string, field: keyof Omit<FocusThematique, 'id'>, fieldValue: string) => {
-    onChange(
-      value.map((f) =>
-        f.id === id ? { ...f, [field]: fieldValue } : f
-      )
-    );
+  const handleUpdate = (
+    id: string,
+    field: keyof Omit<FocusThematique, 'id'>,
+    fieldValue: string
+  ) => {
+    onChange(value.map((f) => (f.id === id ? { ...f, [field]: fieldValue } : f)));
   };
 
   const toggleExpanded = (id: string) => {
@@ -114,7 +110,8 @@ export function FocusThematiqueEditor({
             {required && <span className="text-destructive ml-1">*</span>}
           </Label>
           <p className="text-sm text-muted-foreground mt-1">
-            Analysez les différents aspects de l&apos;intervention selon les thèmes du mémento DGSCGC
+            Analysez les différents aspects de l&apos;intervention selon les thèmes du mémento
+            DGSCGC
           </p>
         </div>
         <Button
@@ -136,9 +133,7 @@ export function FocusThematiqueEditor({
             <div className="rounded-full bg-muted p-3 mb-3">
               <Plus className="w-6 h-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground mb-3">
-              Aucun focus thématique ajouté
-            </p>
+            <p className="text-sm text-muted-foreground mb-3">Aucun focus thématique ajouté</p>
             <Button
               type="button"
               variant="secondary"
@@ -226,8 +221,8 @@ export function FocusThematiqueEditor({
                             <AlertDialogHeader>
                               <AlertDialogTitle>Supprimer ce focus ?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Cette action est irréversible. Le focus thématique
-                                &quot;{focus.theme || 'Sans titre'}&quot; sera définitivement supprimé.
+                                Cette action est irréversible. Le focus thématique &quot;
+                                {focus.theme || 'Sans titre'}&quot; sera définitivement supprimé.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -316,7 +311,9 @@ export function FocusThematiqueEditor({
                         <Textarea
                           id={`axes-${focus.id}`}
                           value={focus.axes_amelioration}
-                          onChange={(e) => handleUpdate(focus.id, 'axes_amelioration', e.target.value)}
+                          onChange={(e) =>
+                            handleUpdate(focus.id, 'axes_amelioration', e.target.value)
+                          }
                           placeholder="Proposez des axes d'amélioration..."
                           rows={3}
                           disabled={disabled}

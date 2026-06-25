@@ -26,7 +26,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
     try {
       const url = `/api/rex/${rexId}/pdf${anonymize ? '?anonymize=true' : ''}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error('Failed to generate PDF');
       }
@@ -41,7 +41,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-      
+
       toast.success(anonymize ? 'PDF anonymisé téléchargé' : 'PDF téléchargé');
     } catch (error) {
       logger.error('Export error:', error);
@@ -54,11 +54,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isLoading}
-        >
+        <Button variant="outline" size="sm" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
@@ -77,9 +73,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
         <DropdownMenuItem onClick={() => handleExport(true)}>
           <UserX className="w-4 h-4 mr-2" />
           Export anonymisé
-          <span className="ml-2 text-xs text-muted-foreground">
-            (noms → grades)
-          </span>
+          <span className="ml-2 text-xs text-muted-foreground">(noms → grades)</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

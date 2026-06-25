@@ -2,12 +2,7 @@
 
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CheckCircle2, Circle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProductionType, FocusThematique } from '@/types';
@@ -60,8 +55,18 @@ const FIELD_CONFIG: Record<ProductionType, FieldConfig[]> = {
     { key: 'means_deployed', label: 'Moyens', required: true, recommended: false },
     { key: 'lessons_learned', label: 'Enseignements', required: true, recommended: false },
     { key: 'difficulties', label: 'Difficultés', required: false, recommended: true },
-    { key: 'elements_favorables', label: 'Éléments favorables', required: false, recommended: true },
-    { key: 'elements_defavorables', label: 'Éléments défavorables', required: false, recommended: true },
+    {
+      key: 'elements_favorables',
+      label: 'Éléments favorables',
+      required: false,
+      recommended: true,
+    },
+    {
+      key: 'elements_defavorables',
+      label: 'Éléments défavorables',
+      required: false,
+      recommended: true,
+    },
   ],
   retex: [
     { key: 'title', label: 'Titre', required: true, recommended: false },
@@ -76,9 +81,24 @@ const FIELD_CONFIG: Record<ProductionType, FieldConfig[]> = {
     { key: 'message_ambiance', label: 'Message ambiance', required: false, recommended: true },
     { key: 'sitac', label: 'SITAC', required: false, recommended: true },
     { key: 'difficulties', label: 'Difficultés', required: false, recommended: true },
-    { key: 'elements_favorables', label: 'Éléments favorables', required: false, recommended: true },
-    { key: 'elements_defavorables', label: 'Éléments défavorables', required: false, recommended: true },
-    { key: 'documentation_operationnelle', label: 'Documentation', required: false, recommended: true },
+    {
+      key: 'elements_favorables',
+      label: 'Éléments favorables',
+      required: false,
+      recommended: true,
+    },
+    {
+      key: 'elements_defavorables',
+      label: 'Éléments défavorables',
+      required: false,
+      recommended: true,
+    },
+    {
+      key: 'documentation_operationnelle',
+      label: 'Documentation',
+      required: false,
+      recommended: true,
+    },
   ],
 };
 
@@ -97,22 +117,21 @@ export function CompletionIndicator({
   className,
 }: CompletionIndicatorProps) {
   const fields = FIELD_CONFIG[typeProduction];
-  
-  const requiredFields = fields.filter(f => f.required);
-  const recommendedFields = fields.filter(f => f.recommended);
-  
-  const completedRequired = requiredFields.filter(f => isFieldCompleted(data, f.key)).length;
-  const completedRecommended = recommendedFields.filter(f => isFieldCompleted(data, f.key)).length;
-  
-  const requiredPercent = requiredFields.length > 0 
-    ? Math.round((completedRequired / requiredFields.length) * 100) 
-    : 100;
-  
+
+  const requiredFields = fields.filter((f) => f.required);
+  const recommendedFields = fields.filter((f) => f.recommended);
+
+  const completedRequired = requiredFields.filter((f) => isFieldCompleted(data, f.key)).length;
+  const completedRecommended = recommendedFields.filter((f) =>
+    isFieldCompleted(data, f.key)
+  ).length;
+
+  const requiredPercent =
+    requiredFields.length > 0 ? Math.round((completedRequired / requiredFields.length) * 100) : 100;
+
   const totalFields = requiredFields.length + recommendedFields.length;
   const totalCompleted = completedRequired + completedRecommended;
-  const totalPercent = totalFields > 0 
-    ? Math.round((totalCompleted / totalFields) * 100) 
-    : 100;
+  const totalPercent = totalFields > 0 ? Math.round((totalCompleted / totalFields) * 100) : 100;
 
   if (variant === 'compact') {
     return (
@@ -121,22 +140,20 @@ export function CompletionIndicator({
           <TooltipTrigger asChild>
             <div className={cn('flex items-center gap-2', className)}>
               <Progress value={requiredPercent} className="h-2 w-24" />
-              <span className={cn(
-                'text-xs font-medium',
-                requiredPercent === 100 ? 'text-green-500' : 'text-muted-foreground'
-              )}>
+              <span
+                className={cn(
+                  'text-xs font-medium',
+                  requiredPercent === 100 ? 'text-green-500' : 'text-muted-foreground'
+                )}
+              >
                 {requiredPercent}%
               </span>
-              {requiredPercent === 100 && (
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-              )}
+              {requiredPercent === 100 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
             <div className="space-y-2 text-xs">
-              <p className="font-medium">
-                Complétion {typeProduction.toUpperCase()}
-              </p>
+              <p className="font-medium">Complétion {typeProduction.toUpperCase()}</p>
               <p>
                 Requis: {completedRequired}/{requiredFields.length} champs
               </p>
@@ -158,15 +175,13 @@ export function CompletionIndicator({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            Complétion {typeProduction.toUpperCase()}
-          </span>
+          <span className="text-sm font-medium">Complétion {typeProduction.toUpperCase()}</span>
         </div>
-        <Badge 
-          variant="outline" 
+        <Badge
+          variant="outline"
           className={cn(
-            requiredPercent === 100 
-              ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+            requiredPercent === 100
+              ? 'bg-green-500/10 text-green-500 border-green-500/30'
               : 'bg-orange-500/10 text-orange-500 border-orange-500/30'
           )}
         >
@@ -179,10 +194,12 @@ export function CompletionIndicator({
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Champs requis</span>
-            <span className={cn(
-              'font-medium',
-              requiredPercent === 100 ? 'text-green-500' : 'text-foreground'
-            )}>
+            <span
+              className={cn(
+                'font-medium',
+                requiredPercent === 100 ? 'text-green-500' : 'text-foreground'
+              )}
+            >
               {completedRequired}/{requiredFields.length}
             </span>
           </div>
@@ -197,9 +214,13 @@ export function CompletionIndicator({
                 {completedRecommended}/{recommendedFields.length}
               </span>
             </div>
-            <Progress 
-              value={recommendedFields.length > 0 ? (completedRecommended / recommendedFields.length) * 100 : 0} 
-              className="h-2 [&>div]:bg-blue-500" 
+            <Progress
+              value={
+                recommendedFields.length > 0
+                  ? (completedRecommended / recommendedFields.length) * 100
+                  : 0
+              }
+              className="h-2 [&>div]:bg-blue-500"
             />
           </div>
         )}
@@ -223,9 +244,7 @@ export function CompletionIndicator({
                 <Circle className="w-3 h-3 shrink-0" />
               )}
               <span className="truncate">{field.label}</span>
-              {field.required && !completed && (
-                <span className="text-destructive">*</span>
-              )}
+              {field.required && !completed && <span className="text-destructive">*</span>}
             </div>
           );
         })}

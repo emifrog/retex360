@@ -73,9 +73,7 @@ export async function optimizeImage(
     }
 
     // Convert to WebP for best compression
-    const optimizedBuffer = await pipeline
-      .webp({ quality: QUALITY, effort: 4 })
-      .toBuffer();
+    const optimizedBuffer = await pipeline.webp({ quality: QUALITY, effort: 4 }).toBuffer();
 
     const optimizedMeta = await sharp(optimizedBuffer).metadata();
 

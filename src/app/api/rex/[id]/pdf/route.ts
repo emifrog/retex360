@@ -21,10 +21,7 @@ function truncateText(text: string | null | undefined, max: number): string | nu
   return text.slice(0, max) + '… [tronqué]';
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // PDF-specific rate limit (stricter than general API)
   const ip = getClientIp(request);
   const rl = await pdfRateLimiter.limit(`pdf:${ip}`);
@@ -40,7 +37,10 @@ export async function GET(
     const supabase = await createClient();
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -49,7 +49,8 @@ export async function GET(
     const [rexResult, attachmentsResult] = await Promise.all([
       supabase
         .from('rex')
-        .select(`
+        .select(
+          `
           id, title, slug, description, context, means_deployed, difficulties,
           lessons_learned, type, severity, intervention_date, tags,
           type_production, focus_thematiques, key_figures, chronologie,
@@ -57,7 +58,8 @@ export async function GET(
           elements_defavorables, documentation_operationnelle, updated_at,
           author:author_id(id, full_name, grade),
           sdis:sdis_id(id, code, name)
-        `)
+        `
+        )
         .eq('id', id)
         .single(),
       supabase
@@ -99,7 +101,7 @@ export async function GET(
     if (estimatedSize > MAX_TOTAL_SIZE) {
       log.warn('REX too large for PDF', { rexId: id, size: estimatedSize });
       return NextResponse.json(
-        { error: 'REX trop volumineux pour l\'export PDF (> 5 Mo de données)' },
+        { error: "REX trop volumineux pour l'export PDF (> 5 Mo de données)" },
         { status: 413 }
       );
     }
@@ -114,7 +116,10 @@ export async function GET(
     rex.sitac = truncateText(rex.sitac, MAX_TEXT_LENGTH);
     rex.elements_favorables = truncateText(rex.elements_favorables, MAX_TEXT_LENGTH);
     rex.elements_defavorables = truncateText(rex.elements_defavorables, MAX_TEXT_LENGTH);
-    rex.documentation_operationnelle = truncateText(rex.documentation_operationnelle, MAX_TEXT_LENGTH);
+    rex.documentation_operationnelle = truncateText(
+      rex.documentation_operationnelle,
+      MAX_TEXT_LENGTH
+    );
 
     // Truncate arrays
     if (Array.isArray(rex.chronologie) && rex.chronologie.length > MAX_CHRONOLOGIE_ITEMS) {
@@ -164,14 +169,11 @@ export async function GET(
         'Content-Disposition': `attachment; filename="rex-${rex.slug || id}.pdf"`,
         'Content-Length': String(pdfBuffer.length),
         'Cache-Control': 'private, max-age=300',
-        'ETag': etag,
+        ETag: etag,
       },
     });
   } catch (error) {
     log.error('PDF generation error', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur lors de la génération du PDF' }, { status: 500 });
   }
 }

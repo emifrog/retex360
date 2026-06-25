@@ -3,6 +3,7 @@
 import { useSyncExternalStore, useCallback } from 'react';
 import { Cookie, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LEGAL_LINKS } from '@/lib/legal';
 
 const COOKIE_CONSENT_KEY = 'retex360-cookie-consent';
 
@@ -47,11 +48,11 @@ export function CookieConsent() {
           <div className="flex-1 space-y-3">
             <h2 className="font-semibold text-sm">Gestion des cookies</h2>
             <p className="text-sm text-muted-foreground">
-              RETEX360 utilise des cookies essentiels au fonctionnement du site (authentification, préférences).
-              Nous utilisons également Sentry pour le suivi des erreurs afin d&apos;améliorer la qualité du service.
-              {' '}
+              RETEX360 utilise des cookies essentiels au fonctionnement du site (authentification,
+              préférences). Nous utilisons également Sentry pour le suivi des erreurs afin
+              d&apos;améliorer la qualité du service.{' '}
               <a
-                href="https://retex360-platform.netlify.app/pages/confidentialite"
+                href={LEGAL_LINKS.confidentialite}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-foreground transition-colors"

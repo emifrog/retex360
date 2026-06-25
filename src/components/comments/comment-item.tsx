@@ -67,12 +67,13 @@ export function CommentItem({
   const [isEditing, setIsEditing] = useState(false);
 
   const isAuthor = currentUserId === comment.author_id;
-  const authorInitials = comment.author?.full_name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U';
+  const authorInitials =
+    comment.author?.full_name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
 
   const handleReply = async (content: string, mentions: string[] = []) => {
     await onReply(comment.id, content, mentions);
@@ -91,9 +92,7 @@ export function CommentItem({
           {comment.author?.avatar_url && (
             <AvatarImage src={comment.author.avatar_url} alt={comment.author.full_name} />
           )}
-          <AvatarFallback className="bg-muted text-xs">
-            {authorInitials}
-          </AvatarFallback>
+          <AvatarFallback className="bg-muted text-xs">{authorInitials}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
@@ -103,17 +102,21 @@ export function CommentItem({
               {comment.author?.full_name || 'Utilisateur'}
             </span>
             {comment.author?.grade && (
-              <span className="text-xs text-muted-foreground">
-                {comment.author.grade}
-              </span>
+              <span className="text-xs text-muted-foreground">{comment.author.grade}</span>
             )}
             {comment.author?.role === 'admin' || comment.author?.role === 'super_admin' ? (
-              <Badge variant="outline" className="h-5 text-xs bg-primary/10 text-primary border-primary/30">
+              <Badge
+                variant="outline"
+                className="h-5 text-xs bg-primary/10 text-primary border-primary/30"
+              >
                 <Shield className="w-3 h-3 mr-1" />
                 Admin
               </Badge>
             ) : comment.author?.role === 'validator' ? (
-              <Badge variant="outline" className="h-5 text-xs bg-green-500/10 text-green-500 border-green-500/30">
+              <Badge
+                variant="outline"
+                className="h-5 text-xs bg-green-500/10 text-green-500 border-green-500/30"
+              >
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Validateur
               </Badge>
@@ -160,11 +163,7 @@ export function CommentItem({
               {isAuthor && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground"
-                    >
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>

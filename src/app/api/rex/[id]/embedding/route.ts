@@ -1,14 +1,11 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { generateRexEmbedding } from '@/lib/openai';
 import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 // POST - Generate and store embedding for a REX
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ip = getClientIp(request);
   const rl = await rateLimiters.ai.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
@@ -17,7 +14,9 @@ export async function POST(
     const { id } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
@@ -36,12 +35,10 @@ export async function POST(
     // Generate embedding
     const embedding = await generateRexEmbedding(rex);
 
-    // Store embedding using admin client (bypass RLS)
-    const adminClient = createAdminClient();
-    const { error: updateError } = await adminClient
-      .from('rex')
-      .update({ embedding })
-      .eq('id', id);
+    // Store embedding via the RLS-bound client: only a user authorized to update
+    // this REX (author / validateur / admin du même SDIS) peut écrire son embedding.
+    // Évite l'empoisonnement cross-tenant de la recherche sémantique.
+    const { error: updateError } = await supabase.from('rex').update({ embedding }).eq('id', id);
 
     if (updateError) {
       logger.error('Error storing embedding:', updateError);

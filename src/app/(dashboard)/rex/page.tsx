@@ -3,7 +3,7 @@ import { RexList } from '@/components/rex/rex-list';
 
 export const metadata: Metadata = {
   title: 'Liste des RETEX',
-  description: 'Consultez et recherchez les retours d\'expérience partagés par les SDIS.',
+  description: "Consultez et recherchez les retours d'expérience partagés par les SDIS.",
 };
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';

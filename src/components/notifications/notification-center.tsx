@@ -4,13 +4,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Bell, Check, CheckCheck, Trash2, MessageSquare, FileText, CheckCircle, AtSign, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  MessageSquare,
+  FileText,
+  CheckCircle,
+  AtSign,
+  X,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useNotifications, type Notification } from '@/hooks/use-notifications';
@@ -37,14 +43,8 @@ const notificationColors = {
 
 export function NotificationCenter({ userId }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const {
-    notifications,
-    unreadCount,
-    isLoading,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-  } = useNotifications({ userId });
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
+    useNotifications({ userId });
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
@@ -80,12 +80,7 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
             )}
           </div>
           {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={markAllAsRead}
-              className="text-xs h-7"
-            >
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-7">
               <CheckCheck className="w-3 h-3 mr-1" />
               Tout marquer lu
             </Button>
@@ -102,15 +97,14 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
               <Bell className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-sm text-muted-foreground">
-                Aucune notification
-              </p>
+              <p className="text-sm text-muted-foreground">Aucune notification</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
               {notifications.map((notification) => {
                 const Icon = notificationIcons[notification.type] || Bell;
-                const colorClass = notificationColors[notification.type] || 'text-muted-foreground bg-muted';
+                const colorClass =
+                  notificationColors[notification.type] || 'text-muted-foreground bg-muted';
 
                 const content = (
                   <div
@@ -122,17 +116,24 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
                   >
                     <div className="flex gap-3">
                       {/* Icon */}
-                      <div className={cn('w-9 h-9 rounded-full flex items-center justify-center shrink-0', colorClass)}>
+                      <div
+                        className={cn(
+                          'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
+                          colorClass
+                        )}
+                      >
                         <Icon className="w-4 h-4" />
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={cn(
-                            'text-sm line-clamp-2',
-                            !notification.is_read && 'font-medium'
-                          )}>
+                          <p
+                            className={cn(
+                              'text-sm line-clamp-2',
+                              !notification.is_read && 'font-medium'
+                            )}
+                          >
                             {notification.title}
                           </p>
                           {!notification.is_read && (

@@ -33,6 +33,16 @@ export async function POST(request: NextRequest) {
     const input = validated.data;
     const admin = createAdminClient();
 
+    // Rollback : si une étape échoue APRÈS la création d'un nouveau SDIS, on nettoie
+    // pour ne pas laisser de SDIS orphelin (onboarding non transactionnel).
+    let createdSdisId: string | null = null;
+    const rollbackNewSdis = async () => {
+      if (!createdSdisId) return;
+      await admin.from('allowed_domains').delete().eq('sdis_id', createdSdisId);
+      await admin.from('subscriptions').delete().eq('sdis_id', createdSdisId);
+      await admin.from('sdis').delete().eq('id', createdSdisId);
+    };
+
     // 1) Résoudre le SDIS cible (existant) ou le créer.
     let sdis: { id: string; code: string; name: string };
     if (input.sdisId) {
@@ -68,7 +78,9 @@ export async function POST(request: NextRequest) {
       if (createError || !created) {
         if (createError?.code === '23505') {
           return NextResponse.json(
-            { error: `Le code SDIS « ${input.code} » existe déjà — sélectionnez-le dans la liste.` },
+            {
+              error: `Le code SDIS « ${input.code} » existe déjà — sélectionnez-le dans la liste.`,
+            },
             { status: 409 }
           );
         }
@@ -76,6 +88,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Erreur lors de la création du SDIS' }, { status: 500 });
       }
       sdis = created;
+      createdSdisId = created.id;
     }
 
     // 2) Refuser si le SDIS est déjà client (abonnement existant).
@@ -98,6 +111,7 @@ export async function POST(request: NextRequest) {
       .eq('email', input.adminEmail)
       .maybeSingle();
     if (existingProfile) {
+      await rollbackNewSdis();
       return NextResponse.json(
         { error: 'Un compte existe déjà pour cette adresse administrateur.' },
         { status: 409 }
@@ -108,7 +122,7 @@ export async function POST(request: NextRequest) {
     const defaults = PLAN_CONFIG[input.plan];
     const trialEndsAt =
       input.status === 'trial'
-        ? iso(input.trialEndsAt) ?? new Date(Date.now() + THIRTY_DAYS_MS).toISOString()
+        ? (iso(input.trialEndsAt) ?? new Date(Date.now() + THIRTY_DAYS_MS).toISOString())
         : iso(input.trialEndsAt);
 
     const { error: subError } = await admin.from('subscriptions').insert({
@@ -124,7 +138,11 @@ export async function POST(request: NextRequest) {
     });
     if (subError) {
       logger.error('Subscription insert error:', subError);
-      return NextResponse.json({ error: "Erreur lors de la création de l'abonnement" }, { status: 500 });
+      await rollbackNewSdis();
+      return NextResponse.json(
+        { error: "Erreur lors de la création de l'abonnement" },
+        { status: 500 }
+      );
     }
 
     // 5) Domaines autorisés (ignorer les doublons globaux).
@@ -150,8 +168,9 @@ export async function POST(request: NextRequest) {
     });
     if (invError) {
       logger.error('Admin invitation insert error:', invError);
+      await rollbackNewSdis();
       return NextResponse.json(
-        { error: "SDIS créé mais l'invitation admin a échoué — réessayez l'invitation." },
+        { error: "Échec de la création de l'invitation admin — onboarding annulé, réessayez." },
         { status: 500 }
       );
     }

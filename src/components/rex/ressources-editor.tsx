@@ -5,11 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -42,7 +38,11 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
     setIsOpen(true);
   };
 
-  const updateRessource = (index: number, field: keyof RessourceComplementaire, fieldValue: string) => {
+  const updateRessource = (
+    index: number,
+    field: keyof RessourceComplementaire,
+    fieldValue: string
+  ) => {
     const updated = [...value];
     updated[index] = { ...updated[index], [field]: fieldValue };
     onChange(updated);
@@ -65,9 +65,7 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
           <div className="flex items-center gap-3">
             <BookOpen className="w-5 h-5 text-primary" />
             <span className="font-medium">Pour aller plus loin</span>
-            {value.length > 0 && (
-              <Badge variant="secondary">{value.length}</Badge>
-            )}
+            {value.length > 0 && <Badge variant="secondary">{value.length}</Badge>}
           </div>
           <ChevronDown
             className={cn(
@@ -104,9 +102,7 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
-                  Type de document
-                </Label>
+                <Label className="text-xs text-muted-foreground">Type de document</Label>
                 <Select
                   value={ressource.type}
                   onValueChange={(v) => updateRessource(index, 'type', v)}
@@ -138,9 +134,7 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                URL ou référence
-              </Label>
+              <Label className="text-xs text-muted-foreground">URL ou référence</Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="https://... ou référence documentaire"

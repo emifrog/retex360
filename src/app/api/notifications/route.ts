@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -31,7 +33,10 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       logger.error('Notifications fetch error:', error);
-      return NextResponse.json({ error: 'Erreur lors du chargement des notifications' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erreur lors du chargement des notifications' },
+        { status: 500 }
+      );
     }
 
     // Get unread count
@@ -56,7 +61,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }

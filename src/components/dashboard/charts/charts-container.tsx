@@ -21,15 +21,15 @@ const RexTimelineChart = dynamic(
   { loading: () => <ChartSkeleton />, ssr: false }
 );
 
-const SeverityChart = dynamic(
-  () => import('./severity-chart').then((m) => m.SeverityChart),
-  { loading: () => <ChartSkeleton />, ssr: false }
-);
+const SeverityChart = dynamic(() => import('./severity-chart').then((m) => m.SeverityChart), {
+  loading: () => <ChartSkeleton />,
+  ssr: false,
+});
 
-const RexByTypeChart = dynamic(
-  () => import('./rex-by-type-chart').then((m) => m.RexByTypeChart),
-  { loading: () => <ChartSkeleton />, ssr: false }
-);
+const RexByTypeChart = dynamic(() => import('./rex-by-type-chart').then((m) => m.RexByTypeChart), {
+  loading: () => <ChartSkeleton />,
+  ssr: false,
+});
 
 export function ChartsContainer() {
   const { data, isLoading } = useDashboardCharts();
@@ -37,8 +37,12 @@ export function ChartsContainer() {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2"><ChartSkeleton /></div>
-        <div><ChartSkeleton /></div>
+        <div className="lg:col-span-2">
+          <ChartSkeleton />
+        </div>
+        <div>
+          <ChartSkeleton />
+        </div>
       </div>
     );
   }

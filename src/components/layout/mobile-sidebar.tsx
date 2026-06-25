@@ -22,6 +22,7 @@ import {
 import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { LEGAL_LINKS } from '@/lib/legal';
 
 const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
@@ -55,7 +56,12 @@ interface MobileSidebarProps {
   canWrite?: boolean;
 }
 
-export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false, canWrite = true }: MobileSidebarProps) {
+export function MobileSidebar({
+  pendingCount = 0,
+  isAdmin = false,
+  isSuperAdmin = false,
+  canWrite = true,
+}: MobileSidebarProps) {
   const pathname = usePathname();
   const visibleNavigation = canWrite ? navigation : navigation.filter((i) => i.href !== '/rex/new');
   const [isOpen, setIsOpen] = useState(false);
@@ -75,18 +81,13 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          aria-label="Ouvrir le menu"
-        >
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Ouvrir le menu">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[85vw] max-w-72 p-0 bg-sidebar border-sidebar-border">
         <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
-        
+
         {/* Logo */}
         <div className="p-5 border-b border-sidebar-border">
           <Link href="/" className="flex items-center gap-3" onClick={() => setIsOpen(false)}>
@@ -106,9 +107,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
               <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent tracking-wider">
                 RETEX360
               </h1>
-              <p className="text-xs text-muted-foreground tracking-widest uppercase">
-                Plateforme
-              </p>
+              <p className="text-xs text-muted-foreground tracking-widest uppercase">Plateforme</p>
             </div>
           </Link>
         </div>
@@ -116,9 +115,9 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {visibleNavigation.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== '/' && pathname.startsWith(item.href));
-            
+            const isActive =
+              pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+
             return (
               <Link
                 key={item.name}
@@ -147,7 +146,7 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
               </div>
               {adminNavigation.map((item) => {
                 const isActive = pathname === item.href;
-                
+
                 return (
                   <Link
                     key={item.name}
@@ -235,11 +234,32 @@ export function MobileSidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin 
           {/* Legal links */}
           <div className="pt-2 px-3 space-y-0.5">
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground/60">
-              <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+              <a
+                href={LEGAL_LINKS.mentionsLegales}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                Mentions légales
+              </a>
               <span>·</span>
-              <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+              <a
+                href={LEGAL_LINKS.cgu}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                CGU
+              </a>
               <span>·</span>
-              <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+              <a
+                href={LEGAL_LINKS.confidentialite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                Confidentialité
+              </a>
             </div>
           </div>
         </div>

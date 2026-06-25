@@ -12,7 +12,10 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createClient();
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -20,19 +23,13 @@ export async function DELETE(request: NextRequest) {
     // Validate confirmation from body
     const body = await request.json();
     if (body.confirmation !== 'SUPPRIMER MON COMPTE') {
-      return NextResponse.json(
-        { error: 'Confirmation invalide' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Confirmation invalide' }, { status: 400 });
     }
 
     const adminClient = createAdminClient();
 
     // Delete user profile data (cascade will handle rex, comments, favorites, notifications)
-    const { error: profileError } = await adminClient
-      .from('profiles')
-      .delete()
-      .eq('id', user.id);
+    const { error: profileError } = await adminClient.from('profiles').delete().eq('id', user.id);
 
     if (profileError) {
       logger.error('Profile deletion error:', profileError);

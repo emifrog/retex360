@@ -54,7 +54,12 @@ describe('Image optimizer', () => {
 
     it('passes through GIF files as-is', async () => {
       const gifBuffer = await sharp({
-        create: { width: 50, height: 50, channels: 4, background: { r: 0, g: 255, b: 0, alpha: 1 } },
+        create: {
+          width: 50,
+          height: 50,
+          channels: 4,
+          background: { r: 0, g: 255, b: 0, alpha: 1 },
+        },
       })
         .gif()
         .toBuffer();
@@ -93,7 +98,12 @@ describe('Image optimizer', () => {
 
     it('returns null for GIF files', async () => {
       const gifBuffer = await sharp({
-        create: { width: 50, height: 50, channels: 4, background: { r: 0, g: 255, b: 0, alpha: 1 } },
+        create: {
+          width: 50,
+          height: 50,
+          channels: 4,
+          background: { r: 0, g: 255, b: 0, alpha: 1 },
+        },
       })
         .gif()
         .toBuffer();

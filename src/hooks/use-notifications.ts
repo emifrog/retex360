@@ -56,9 +56,7 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
 
     if (!error) {
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notificationId ? { ...n, is_read: true } : n
-        )
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     }
@@ -76,9 +74,7 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
       .eq('is_read', false);
 
     if (!error) {
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true }))
-      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
     }
   }, [userId]);
@@ -87,10 +83,7 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
   const deleteNotification = useCallback(async (notificationId: string) => {
     const supabase = createClient();
 
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', notificationId);
+    const { error } = await supabase.from('notifications').delete().eq('id', notificationId);
 
     if (!error) {
       setNotifications((prev) => {
@@ -145,9 +138,7 @@ export function useNotifications({ userId }: UseNotificationsOptions) {
         (payload) => {
           const updatedNotification = payload.new as Notification;
           setNotifications((prev) =>
-            prev.map((n) =>
-              n.id === updatedNotification.id ? updatedNotification : n
-            )
+            prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
           );
         }
       )

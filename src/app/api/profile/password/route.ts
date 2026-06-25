@@ -17,14 +17,14 @@ export async function PUT(request: NextRequest) {
     // Validation Zod
     const validated = passwordChangeSchema.safeParse(body);
     if (!validated.success) {
-      return NextResponse.json(
-        { error: validated.error.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
     // Check auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
@@ -32,7 +32,10 @@ export async function PUT(request: NextRequest) {
     // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
     if (await isPasswordCompromised(validated.data.newPassword)) {
       return NextResponse.json(
-        { error: 'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.' },
+        {
+          error:
+            'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.',
+        },
         { status: 400 }
       );
     }
@@ -44,10 +47,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (signInError) {
-      return NextResponse.json(
-        { error: 'Mot de passe actuel incorrect' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Mot de passe actuel incorrect' }, { status: 400 });
     }
 
     // Update password using Supabase Auth
@@ -57,14 +57,14 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       logger.error('Password update error:', error);
-      
+
       if (error.message.includes('same')) {
         return NextResponse.json(
-          { error: 'Le nouveau mot de passe doit être différent de l\'ancien' },
+          { error: "Le nouveau mot de passe doit être différent de l'ancien" },
           { status: 400 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'Erreur lors du changement de mot de passe' },
         { status: 500 }

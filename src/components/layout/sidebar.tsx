@@ -22,12 +22,8 @@ import {
 } from 'lucide-react';
 import { SidebarAiInsight } from './sidebar-ai-insight';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LEGAL_LINKS } from '@/lib/legal';
 
 const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
@@ -61,7 +57,12 @@ interface SidebarProps {
   canWrite?: boolean;
 }
 
-export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = false, canWrite = true }: SidebarProps) {
+export function Sidebar({
+  pendingCount = 0,
+  isAdmin = false,
+  isSuperAdmin = false,
+  canWrite = true,
+}: SidebarProps) {
   const pathname = usePathname();
   // Masquer la création de REX en mode lecture seule (abonnement suspendu/expiré).
   const visibleNavigation = canWrite ? navigation : navigation.filter((i) => i.href !== '/rex/new');
@@ -77,10 +78,13 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
   }, [collapsed]);
 
   return (
-    <aside aria-label="Navigation principale" className={cn(
-      'bg-sidebar border-r border-sidebar-border flex-col transition-all duration-300 relative hidden md:flex',
-      collapsed ? 'w-[72px]' : 'w-60'
-    )}>
+    <aside
+      aria-label="Navigation principale"
+      className={cn(
+        'bg-sidebar border-r border-sidebar-border flex-col transition-all duration-300 relative hidden md:flex',
+        collapsed ? 'w-[72px]' : 'w-60'
+      )}
+    >
       {/* Toggle Button */}
       <Button
         variant="ghost"
@@ -88,11 +92,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
         onClick={() => setCollapsed(!collapsed)}
         className="absolute -right-3 top-6 z-10 h-6 w-6 rounded-full border border-sidebar-border bg-sidebar shadow-md hover:bg-sidebar-accent"
       >
-        {collapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
+        {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </Button>
       {/* Logo */}
       <div className={cn('border-b border-sidebar-border', collapsed ? 'p-3' : 'p-5')}>
@@ -114,9 +114,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
               <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent tracking-wider">
                 RETEX360
               </h1>
-              <p className="text-xs text-muted-foreground tracking-widest uppercase">
-                Plateforme
-              </p>
+              <p className="text-xs text-muted-foreground tracking-widest uppercase">Plateforme</p>
             </div>
           )}
         </Link>
@@ -126,9 +124,9 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
       <TooltipProvider delayDuration={0}>
         <nav aria-label="Menu principal" className="flex-1 p-3 space-y-1">
           {visibleNavigation.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== '/' && pathname.startsWith(item.href));
-            
+            const isActive =
+              pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+
             const linkContent = (
               <Link
                 key={item.name}
@@ -173,7 +171,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
               {collapsed && <div className="pt-4" />}
               {adminNavigation.map((item) => {
                 const isActive = pathname === item.href;
-                
+
                 const linkContent = (
                   <Link
                     key={item.name}
@@ -299,9 +297,7 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
             if (collapsed) {
               return (
                 <Tooltip key={item.name}>
-                  <TooltipTrigger asChild>
-                    {linkContent}
-                  </TooltipTrigger>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                   <TooltipContent side="right">
                     <p>{item.name}</p>
                   </TooltipContent>
@@ -316,11 +312,32 @@ export function Sidebar({ pendingCount = 0, isAdmin = false, isSuperAdmin = fals
         {!collapsed && (
           <div className="pt-2 px-3 space-y-0.5">
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground/60">
-              <a href="https://retex360-platform.netlify.app/pages/mentions-legales" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Mentions légales</a>
+              <a
+                href={LEGAL_LINKS.mentionsLegales}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                Mentions légales
+              </a>
               <span>·</span>
-              <a href="https://retex360-platform.netlify.app/pages/cgu" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">CGU</a>
+              <a
+                href={LEGAL_LINKS.cgu}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                CGU
+              </a>
               <span>·</span>
-              <a href="https://retex360-platform.netlify.app/pages/confidentialite" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Confidentialité</a>
+              <a
+                href={LEGAL_LINKS.confidentialite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-muted-foreground transition-colors"
+              >
+                Confidentialité
+              </a>
             </div>
           </div>
         )}
