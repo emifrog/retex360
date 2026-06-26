@@ -263,6 +263,8 @@
 120. ✅ Rollback d'inscription enveloppé dans try/catch (couvre le cas réseau qui *jette* au lieu de renvoyer `{ error }` ; suppression best-effort du compte auth).
 121. ✅ Vue `rex_counts_by_sdis` en `security_invoker = on` (PG15+) : plus de fuite d'agrégats cross-SDIS si un client admin la requête (le panel super_admin passe par le rôle service).
 122. ✅ Policy `profiles` : auto-lecture garantie (`id = auth.uid()`), robuste même si `sdis_id` était NULL.
+123. ✅ Middleware : `manifest.webmanifest` / `robots.txt` / `sitemap.xml` exclus du matcher (étaient redirigés vers `/login` → erreur « manifest syntax error » dans la console). Désormais servis publiquement.
+124. ✅ `dashboard/insights` : calcul LLM mis en cache (`unstable_cache`, 30 min) + bascule du limiteur `ai` → `api` + `Cache-Control` 10 min → fin des **429** et du coût d'un appel LLM par affichage du dashboard.
 
 > ⚠️ Déploiement : appliquer les migrations **018** puis **019** avec ce code.
 > ℹ️ Restant (hors lots, recommandé, non bloquant) : suppression admin de commentaires/PJ en no-op

@@ -1,44 +1,26 @@
-import { createClient } from '@/lib/supabase/server';
+import { unstable_cache } from 'next/cache';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { chatCompletion, OPENROUTER_MODELS } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
-export async function GET(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rateLimitResult = await rateLimiters.ai.limit(ip);
-
-  if (!rateLimitResult.success) {
-    return rateLimitResponse(rateLimitResult.reset);
-  }
-
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    // Fetch recent REX for analysis (last 50)
-    const { data: recentRex, error } = await supabase
+// Les insights sont des tendances plateforme (identiques pour tous) : le calcul
+// LLM est MIS EN CACHE (revalidation 30 min) pour borner le coût et éviter un appel
+// LLM à chaque affichage du dashboard. La requête HTTP est donc bon marché → on la
+// passe sous le limiteur `api` (60/min) plutôt que `ai` (10/min, fail-closed), ce qui
+// supprime les 429 en navigation normale.
+const getCachedInsights = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data: recentRex } = await admin
       .from('rex')
       .select('title, type, severity, intervention_date, tags, difficulties, lessons_learned')
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (error) {
-      logger.error('Insights query error:', error);
-      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
-    }
+    if (!recentRex || recentRex.length === 0) return [];
 
-    if (!recentRex || recentRex.length === 0) {
-      return NextResponse.json({ insights: [] });
-    }
-
-    // Build context from recent REX
     const rexSummary = recentRex
       .map(
         (r, i) =>
@@ -84,15 +66,36 @@ Règles :
       }
     );
 
-    let insights = [];
     try {
-      insights = JSON.parse(response || '[]');
+      return JSON.parse(response || '[]');
     } catch {
       logger.error('Failed to parse AI insights response:', response);
-      insights = [];
+      return [];
+    }
+  },
+  ['dashboard-insights'],
+  { revalidate: 1800, tags: ['dashboard-insights'] }
+);
+
+export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    return NextResponse.json({ insights });
+    const insights = await getCachedInsights();
+    return NextResponse.json(
+      { insights },
+      { headers: { 'Cache-Control': 'private, max-age=600' } }
+    );
   } catch (error) {
     logger.error('Dashboard insights error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
