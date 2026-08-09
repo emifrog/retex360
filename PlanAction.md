@@ -269,7 +269,7 @@
 > ⚠️ Déploiement : appliquer les migrations **018** puis **019** avec ce code.
 > ℹ️ Restant (hors lots, recommandé, non bloquant) : re-auth du changement de mot de passe sur client
 > dédié, scoping SDIS des widgets dashboard (contributeurs/stats), clé de rate-limit anti-spoof XFF,
-> `promote` (message d'erreur générique), magic bytes uploads, quotas IA, tests RBAC/RLS.
+> magic bytes uploads, quotas IA, CSP à nonce, tests RBAC/RLS de bout en bout.
 
 
 ## Phase 10 — Audit (août 2026), lot 1-4 : ✅ TERMINÉE
@@ -314,12 +314,54 @@
 > = une seule condition, et une tentative de fermeture de guillemet ressort en `\"`.
 
 
+## Phase 10 bis — Items 5 & 6 : ✅ TERMINÉE
+
+### Item 5 — Dépendances : `npm audit` = 0 vulnérabilité
+101. ✅ `npm audit fix` (non-breaking) : `next` 16.2.9 → **16.3.0** (DoS Image Optimization
+     via SVG + divulgation des endpoints Server Functions), `postcss` → **8.5.23** (4 CVE,
+     dont path traversal via `sourceMappingURL`).
+102. ✅ `sharp` 0.34.5 → **0.35.3** (breaking annoncé) — 4 CVE libvips héritées.
+     Les API utilisées (`metadata`, `rotate`, `resize`, `webp`, `toBuffer`) sont inchangées ;
+     la suite `image-optimizer` encode/décode de vraies images (pas de mock) et passe.
+     Runtime vérifié : sharp 0.35.3 / libvips 8.18.3. Node 20 en CI couvre le minimum requis.
+     → `npm audit` **et** `npm audit --omit=dev` : 0 vulnérabilité.
+
+### Item 6 — Cloisonnement SDIS des contrôles admin
+> Le contrôle applicatif était `role === 'admin' || role === 'super_admin'`, sans jamais
+> comparer les SDIS. La RLS, elle, cloisonne. L'écart ne créait pas d'accès illégitime
+> (la base refusait), mais il produisait des refus SILENCIEUX — la cause racine du lot 2.
+> La règle : **le contrôle applicatif doit être aussi étroit que la policy**.
+
+103. ✅ Helper `isSdisAdmin(profile, sdisId)` dans `lib/api-auth.ts` — `super_admin`
+     transverse, `admin` limité à son SDIS, deux `sdis_id` NULL ne s'égalent jamais.
+104. ✅ Appliqué à 6 points de contrôle : `PUT`/`DELETE /api/rex/[id]`,
+     `POST /api/rex/[id]/promote`, `DELETE /api/comments/[id]`,
+     `DELETE /api/rex/attachments/[id]`, garde de page `/rex/[id]/edit`.
+105. ✅ **Migration 021** — `comments` : la policy DELETE était `author_id = auth.uid()`,
+     donc la suppression admin d'un commentaire tiers était un no-op silencieux
+     (`{ success: true }` sans rien supprimer). Nouvelle policy : auteur **ou** admin du
+     SDIS du REX parent, via le helper `SECURITY DEFINER` `comment_sdis_id()`.
+     L'UPDATE reste réservé à l'auteur (un admin modère en supprimant, il ne réécrit pas).
+106. ✅ Détection du 0 ligne étendue à `DELETE /api/comments/[id]` et
+     `POST /api/rex/[id]/promote` (`maybeSingle` au lieu de `single` : un refus RLS est
+     un 403, pas un 500).
+107. ✅ `promote` : `updateError.message` ne fuit plus vers le client (message générique).
+108. ✅ Helper `toOne()` (`lib/supabase/relations.ts`) : PostgREST renvoie un objet pour
+     une relation to-one, supabase-js la type en tableau faute de types générés. Un cast
+     aurait parié sur une forme ; se tromper ici rend un contrôle d'autorisation inopérant.
+109. ✅ 12 tests sur `isSdisAdmin` + `toOne` (`__tests__/api-auth.test.ts`, env node —
+     `next/server` exige les globales fetch). **99/99 tests.**
+
+> Vérifié : `tsc --noEmit`, `eslint`, `format:check`, 99/99 tests, `next build` — tous verts.
+> ⚠️ Migration 021 à appliquer sur les environnements.
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
 Validation des entrées	A	Zod sur les API (REX, commentaires, mentions) + sanitization XSS serveur (stockage) ET client (rendu)
 RGPD/GDPR	A	Export données, suppression compte, cookie consent, mentions légales
-Base de données	A	20 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
+Base de données	A	21 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
 Stockage fichiers	A	Bucket rex-attachments privé + URLs signées (accès lié à la visibilité du REX)
 Responsive mobile	A	Tailwind breakpoints, mobile-first, popovers/table/timeline/charts adaptifs (Phase 6)
 Optimisation images	A	Sharp + WebP + thumbnails
@@ -330,7 +372,7 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	B	87 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST) ; routes API / RBAC / RLS encore non couvertes
+Tests	B	99 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation) ; routes API / RLS de bout en bout encore non couvertes
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod

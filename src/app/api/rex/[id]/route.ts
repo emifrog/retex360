@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isSdisAdmin } from '@/lib/api-auth';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
@@ -55,7 +56,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Get existing REX
     const { data: existingRex } = await supabase
       .from('rex')
-      .select('author_id, status')
+      .select('author_id, status, sdis_id')
       .eq('id', id)
       .single();
 
@@ -66,12 +67,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Check permissions
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, sdis_id')
       .eq('id', user.id)
       .single();
 
     const isAuthor = existingRex.author_id === user.id;
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+    const isAdmin = isSdisAdmin(profile, existingRex.sdis_id);
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
@@ -163,7 +164,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     // Get existing REX
     const { data: existingRex } = await supabase
       .from('rex')
-      .select('author_id')
+      .select('author_id, sdis_id')
       .eq('id', id)
       .single();
 
@@ -174,12 +175,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     // Check permissions
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, sdis_id')
       .eq('id', user.id)
       .single();
 
     const isAuthor = existingRex.author_id === user.id;
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+    const isAdmin = isSdisAdmin(profile, existingRex.sdis_id);
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });

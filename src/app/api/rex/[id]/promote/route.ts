@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isSdisAdmin } from '@/lib/api-auth';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
@@ -33,12 +34,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // Check permissions
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, sdis_id')
       .eq('id', user.id)
       .single();
 
     const isAuthor = rex.author_id === user.id;
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+    const isAdmin = isSdisAdmin(profile, rex.sdis_id);
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
@@ -96,11 +97,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       })
       .eq('id', id)
       .select()
-      .single();
+      // `maybeSingle` et non `single` : une écriture bloquée par la RLS renvoie
+      // 0 ligne, que `single` transformerait en erreur générique 500 alors que
+      // c'est un refus d'autorisation.
+      .maybeSingle();
 
     if (updateError) {
+      // Message générique : `updateError.message` expose la structure de la base.
       logger.error('Error promoting REX:', updateError);
-      return NextResponse.json({ message: updateError.message }, { status: 500 });
+      return NextResponse.json({ message: 'Erreur lors de la promotion du REX' }, { status: 500 });
+    }
+
+    if (!updatedRex) {
+      logger.warn('REX promotion blocked by RLS', { rexId: id, userId: user.id });
+      return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
     }
 
     return NextResponse.json({

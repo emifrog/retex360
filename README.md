@@ -164,7 +164,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 ## 🛠️ Stack Technique
 
 ### Frontend
-- **Next.js 16** (App Router, React 19, React Compiler)
+- **Next.js 16.3** (App Router, React 19, React Compiler)
 - **TypeScript** (mode strict)
 - **Tailwind CSS 4** + shadcn/ui
 - **Tiptap** (éditeur riche, lazy-loaded via next/dynamic)
@@ -187,7 +187,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 87 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST)
+- **Jest** + 99 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
 - **GitHub Actions** (lint + typecheck + tests + build)
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
@@ -198,7 +198,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - `pg_trgm` pour recherche textuelle
 - **Row Level Security (RLS)** cloisonnée par SDIS (validateurs/admins limités à leur SDIS, super_admin transverse)
 - **Triggers** automatiques (fonctions `SECURITY DEFINER` avec `search_path` fixé)
-- **20 migrations** ordonnées (idempotentes)
+- **21 migrations** ordonnées (idempotentes)
 - **Index composites** optimisés (status+validated_at, favorites, comments, attachments)
 - **Storage privé** : bucket `rex-attachments` non public + RLS storage (accès via URLs signées)
 
@@ -222,7 +222,8 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - Global : 120 req/min par IP (Redis Upstash, persistant entre invocations serverless)
   - Auth : 5/min, Upload : 10/min, API : 60/min, AI : 10/min, PDF : 10/min
   - **Fail-closed** sur auth & IA si Redis est injoignable ; **Upstash obligatoire en production** (échec au boot sinon)
-- **Permissions** vérifiées côté serveur (helper réutilisable `requireUser`/`requireRole`)
+- **Permissions** vérifiées côté serveur (helpers réutilisables `requireUser`/`requireRole`/`isSdisAdmin`)
+- **Admin cloisonné par SDIS** : `isSdisAdmin` impose qu'un admin n'agisse que sur les ressources de son SDIS (`super_admin` transverse), en miroir exact des policies RLS — sinon la couche applicative laisse passer une action que la base refusera ensuite en silence
 - **Pièces jointes privées** : bucket non public, servies par **URLs signées** courtes (accès lié à la visibilité du REX)
 - **Pas de fuite d'erreurs internes** : messages génériques au client, détails loggués en interne
 - **Anonymisation PDF** côté serveur (email non fetché, full_name masqué)
@@ -304,7 +305,7 @@ src/
 │   └── openai.ts         # Client OpenRouter/OpenAI (lazy init)
 ├── types/                # Types TypeScript
 └── supabase/
-    └── migrations/       # 20 scripts SQL (idempotents)
+    └── migrations/       # 21 scripts SQL (idempotents)
 ```
 
 ---
@@ -377,6 +378,7 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 18. supabase/migrations/018_subscription_enforcement.sql      -- lecture seule si abonnement inactif (RESTRICTIVE)
 -- 19. supabase/migrations/019_tenant_isolation_hardening.sql    -- durcissement isolation multi-tenant
 -- 20. supabase/migrations/020_attachments_rls_fix.sql           -- policies UPDATE/DELETE manquantes sur rex_attachments
+-- 21. supabase/migrations/021_comments_admin_moderation.sql     -- modération admin des commentaires (DELETE cloisonné SDIS)
 ```
 
 > ⚠️ **Migration 020 — obligatoire** : `rex_attachments` n'avait aucune policy
@@ -410,7 +412,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest (87 tests)
+npm test             # Jest (99 tests)
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests avec couverture
 npm run format       # Prettier (formatage)
@@ -581,7 +583,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (87 tests) + CI GitHub Actions
+- [x] Tests Jest (99 tests) + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur

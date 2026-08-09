@@ -32,6 +32,25 @@ export async function requireUser(
   return { user };
 }
 
+/**
+ * Un admin de SDIS n'administre QUE son SDIS ; `super_admin` est transverse.
+ *
+ * Miroir applicatif des policies RLS (013 pour `rex`, 020 pour `rex_attachments`,
+ * 021 pour `comments`). Sans ce test, la couche applicative laisse passer une
+ * action que la base refusera ensuite — et PostgREST ne signale PAS par une
+ * erreur une écriture réduite à 0 ligne par la RLS : le refus passe pour un
+ * succès. Le contrôle applicatif doit donc être aussi étroit que la policy.
+ */
+export function isSdisAdmin(
+  profile: { role: string; sdis_id?: string | null } | null | undefined,
+  sdisId: string | null | undefined
+): boolean {
+  if (!profile) return false;
+  if (profile.role === 'super_admin') return true;
+  if (profile.role !== 'admin') return false;
+  return Boolean(sdisId) && profile.sdis_id === sdisId;
+}
+
 export async function requireRole(
   supabase: SupabaseClient,
   roles: Role[]

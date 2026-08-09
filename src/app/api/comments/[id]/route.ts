@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { isSdisAdmin } from '@/lib/api-auth';
+import { toOne } from '@/lib/supabase/relations';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { commentSchema } from '@/lib/validators/api';
@@ -99,13 +101,15 @@ export async function DELETE(
     // Check if user is the author or admin
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, sdis_id')
       .eq('id', user.id)
       .single();
 
+    // The parent REX's SDIS scopes the admin check (mirrors the RLS DELETE
+    // policy added in migration 021).
     const { data: existingComment } = await supabase
       .from('comments')
-      .select('author_id')
+      .select('author_id, rex:rex_id(sdis_id)')
       .eq('id', commentId)
       .single();
 
@@ -113,15 +117,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Commentaire non trouvé' }, { status: 404 });
     }
 
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+    const parentRex = toOne<{ sdis_id: string | null }>(existingComment.rex);
+    const isAdmin = isSdisAdmin(profile, parentRex?.sdis_id);
     const isAuthor = existingComment.author_id === user.id;
 
     if (!isAdmin && !isAuthor) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // Delete the comment (and its replies via cascade)
-    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+    // Delete the comment (and its replies via cascade).
+    // `.select()`: an RLS-blocked delete returns 0 rows and NO error — without
+    // this the route would answer "supprimé" while nothing happened.
+    const { data: deleted, error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId)
+      .select('id');
 
     if (error) {
       logger.error('Comment delete error:', error);
@@ -129,6 +140,11 @@ export async function DELETE(
         { error: 'Erreur lors de la suppression du commentaire' },
         { status: 500 }
       );
+    }
+
+    if (!deleted || deleted.length === 0) {
+      logger.warn('Comment delete blocked by RLS', { commentId, userId: user.id });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
     return NextResponse.json({ success: true });

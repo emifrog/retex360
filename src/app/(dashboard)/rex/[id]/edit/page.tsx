@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { isSdisAdmin } from '@/lib/api-auth';
 import { notFound, redirect } from 'next/navigation';
 import { RexForm } from '@/components/rex/rex-form';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
@@ -35,7 +36,7 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
     .single();
 
   const isAuthor = rex.author_id === user.id;
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  const isAdmin = isSdisAdmin(profile, rex.sdis_id);
 
   if (!isAuthor && !isAdmin) {
     redirect(`/rex/${id}`);
