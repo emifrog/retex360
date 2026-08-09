@@ -409,6 +409,28 @@
 > unitaires + 62 tests RLS**, seuil de couverture respecté — tous verts.
 > Aucune infrastructure de test livrée sans avoir été exécutée.
 
+### Réparation des données antérieures à la 020
+117. ✅ `supabase/maintenance/reconcile_attachments.sql` — rapproche
+     `rex_attachments` de `storage.objects` (backend Supabase Storage) et rapporte :
+     synthèse, **lignes fantômes** (fichier détruit avant la 020, ligne survivante),
+     objets orphelins, vignettes manquantes. Lecture seule ; le nettoyage est en
+     section 5, à décommenter, et archive dans `rex_attachments_phantom_backup`
+     avant suppression — un script écrit après un incident de destruction ne doit
+     pas pouvoir détruire à son tour par inadvertance.
+     - Piège traité : les vignettes (`<base>_thumb.webp`) existent dans le storage
+       mais ne sont **jamais** enregistrées en base ; un rapprochement naïf les
+       compterait toutes comme orphelines.
+     - Les objets orphelins ne doivent PAS être supprimés par SQL sur
+       `storage.objects` (le blob S3 resterait) : passer par l'API Storage.
+     - Vérifié par `reconcile.rls.test.ts` (5 tests) sur Postgres réel, avec
+       fantômes et orphelins fabriqués. Non-vacuité contrôlée par mutation :
+       retirer l'exclusion des vignettes fait bien échouer le test.
+     ⚠️ Si `SCALEWAY_S3_*` est défini en production, les objets ne sont pas dans
+     `storage.objects` et ce script ne s'applique pas — vérifier l'environnement
+     Vercel avant de l'exécuter.
+
+> **67 tests RLS** au total après ajout.
+
 
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
@@ -426,7 +448,7 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	A	99 tests unitaires + 62 tests RLS sur Postgres réel (PGlite) appliquant les vraies migrations ; seuil de couverture en CI. Restent non couvertes : les routes API elles-mêmes (handlers HTTP)
+Tests	A	99 tests unitaires + 67 tests RLS sur Postgres réel (PGlite) appliquant les vraies migrations ; seuil de couverture en CI. Restent non couvertes : les routes API elles-mêmes (handlers HTTP)
 CI/CD	A	GitHub Actions (lint + typecheck + tests + couverture + RLS + build + audit)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod

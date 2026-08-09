@@ -188,7 +188,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 
 ### Qualité & CI/CD
 - **Jest** + 99 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
-- **62 tests RLS sur Postgres réel** (`npm run test:rls`) : le harnais applique les **vraies migrations** du dépôt à une base neuve (PGlite, PostgreSQL en WASM — ni Docker ni service container) et vérifie les policies rôle par rôle et SDIS par SDIS. Voir [Tests RLS](#-tests-rls).
+- **67 tests RLS sur Postgres réel** (`npm run test:rls`) : le harnais applique les **vraies migrations** du dépôt à une base neuve (PGlite, PostgreSQL en WASM — ni Docker ni service container) et vérifie les policies rôle par rôle et SDIS par SDIS. Voir [Tests RLS](#-tests-rls).
 - **Seuil de couverture en CI** sur `src/lib`, en cliquet (toute baisse échoue), avec 100 % exigé sur les modules gardant une autorisation ou un échappement
 - **GitHub Actions** (lint + typecheck + tests + couverture + RLS + build + audit)
 - **Prettier** + eslint-config-prettier (formatage)
@@ -417,7 +417,7 @@ npm run lint         # ESLint
 npm test             # Jest — 99 tests unitaires
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests + couverture (seuils appliqués)
-npm run test:rls     # 62 tests RLS sur Postgres réel (PGlite)
+npm run test:rls     # 67 tests RLS sur Postgres réel (PGlite)
 npm run format       # Prettier (formatage)
 npm run format:check # Vérification formatage
 npm run analyze      # Bundle analyzer
@@ -444,6 +444,7 @@ supabase/test/grants.sql      Modèle Supabase : DML complet à `authenticated`,
 supabase/test/seed.sql        Deux SDIS, tous les rôles, REX couvrant chaque
                               couple statut × visibilité
 src/__tests__/rls/            Les suites (rex, rex_attachments, comments, profiles)
+                              + la vérification du script de réconciliation
 ```
 
 **Ce que ces tests attrapent et que rien d'autre n'attrapait.** PostgREST ne
@@ -458,6 +459,35 @@ modération admin sans effet). Chaque suite rejoue ces scénarios.
 triggers, SECURITY DEFINER) sont stables entre ces versions. Et la migration 002
 n'est pas appliquée, pgvector n'étant pas disponible : elle ne contient aucune
 policy, et le harnais **échoue** si cela venait à changer.
+
+---
+
+## 🔧 Maintenance
+
+### Réconciliation des pièces jointes
+
+[`supabase/maintenance/reconcile_attachments.sql`](supabase/maintenance/reconcile_attachments.sql)
+— à lancer **une fois** dans le SQL Editor sur les bases antérieures à la
+migration 020.
+
+Avant cette migration, la suppression d'une pièce jointe purgeait le fichier du
+storage puis échouait silencieusement en base (aucune policy DELETE). Les lignes
+correspondantes ont survécu à leur fichier : elles se manifestent par des
+vignettes cassées et des URL signées en 404, et rien ne les nettoiera tout seul.
+
+Le script rapproche `rex_attachments` de `storage.objects` et rapporte quatre
+choses : la synthèse, les lignes fantômes (avec le REX et l'auteur, pour prévenir
+avant d'effacer), les objets orphelins, et les vignettes manquantes. Les sections
+1 à 4 sont en lecture seule ; le nettoyage est en section 5, à décommenter, et
+archive dans `rex_attachments_phantom_backup` avant de supprimer.
+
+Sa logique est vérifiée par `reconcile.rls.test.ts` sur un Postgres réel : les
+vignettes existent dans le storage sans ligne en base, donc un rapprochement
+naïf les compterait toutes comme orphelines.
+
+> Ce script suppose **Supabase Storage**. Si `SCALEWAY_S3_*` est configuré en
+> production, les objets sont chez Scaleway et `storage.objects` ne les connaît
+> pas : le rapprochement doit alors se faire via l'API S3.
 
 ---
 
@@ -622,7 +652,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (99 unitaires + 62 RLS sur Postgres réel) + seuil de couverture + CI GitHub Actions
+- [x] Tests Jest (99 unitaires + 67 RLS sur Postgres réel) + seuil de couverture + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur
