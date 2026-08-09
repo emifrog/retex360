@@ -187,8 +187,10 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 99 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
-- **GitHub Actions** (lint + typecheck + tests + build)
+- **Jest** + 99 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
+- **62 tests RLS sur Postgres réel** (`npm run test:rls`) : le harnais applique les **vraies migrations** du dépôt à une base neuve (PGlite, PostgreSQL en WASM — ni Docker ni service container) et vérifie les policies rôle par rôle et SDIS par SDIS. Voir [Tests RLS](#-tests-rls).
+- **Seuil de couverture en CI** sur `src/lib`, en cliquet (toute baisse échoue), avec 100 % exigé sur les modules gardant une autorisation ou un échappement
+- **GitHub Actions** (lint + typecheck + tests + couverture + RLS + build + audit)
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
 
@@ -412,13 +414,50 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest (99 tests)
+npm test             # Jest — 99 tests unitaires
 npm run test:watch   # Tests en mode watch
-npm run test:coverage # Tests avec couverture
+npm run test:coverage # Tests + couverture (seuils appliqués)
+npm run test:rls     # 62 tests RLS sur Postgres réel (PGlite)
 npm run format       # Prettier (formatage)
 npm run format:check # Vérification formatage
 npm run analyze      # Bundle analyzer
 ```
+
+---
+
+## 🛡️ Tests RLS
+
+`npm run test:rls` applique **les vraies migrations du dépôt** à une base Postgres
+neuve, puis vérifie les policies en se faisant passer pour chaque rôle de chaque
+SDIS. Ce ne sont pas des règles recopiées : ce sont celles qui partiront en
+production.
+
+Le moteur est **PGlite** — PostgreSQL compilé en WebAssembly. Ni Docker, ni
+service container : la suite tourne à l'identique en local et en CI.
+
+```
+supabase/test/bootstrap.sql   Surface Supabase absente d'un Postgres nu :
+                              rôles anon/authenticated/service_role, schéma auth
+                              (uid, jwt, users), schéma storage, domaine vector
+supabase/test/grants.sql      Modèle Supabase : DML complet à `authenticated`,
+                              la RLS seule tranche
+supabase/test/seed.sql        Deux SDIS, tous les rôles, REX couvrant chaque
+                              couple statut × visibilité
+src/__tests__/rls/            Les suites (rex, rex_attachments, comments, profiles)
+```
+
+**Ce que ces tests attrapent et que rien d'autre n'attrapait.** PostgREST ne
+signale pas par une erreur une écriture que la RLS réduit à 0 ligne : il renvoie
+un succès vide. Un contrôle applicatif plus large que la policy produit donc un
+refus *silencieux* — c'est l'origine commune des correctifs des lots 1, 2 et 6
+(pièce jointe détruite mais ligne conservée, « REX supprimé » sans suppression,
+modération admin sans effet). Chaque suite rejoue ces scénarios.
+
+**Deux limites, assumées.** PGlite est en PostgreSQL 18 quand Supabase est en
+15/17 — les mécanismes utilisés (RLS, policies RESTRICTIVE, `security_invoker`,
+triggers, SECURITY DEFINER) sont stables entre ces versions. Et la migration 002
+n'est pas appliquée, pgvector n'étant pas disponible : elle ne contient aucune
+policy, et le harnais **échoue** si cela venait à changer.
 
 ---
 
@@ -583,7 +622,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (99 tests) + CI GitHub Actions
+- [x] Tests Jest (99 unitaires + 62 RLS sur Postgres réel) + seuil de couverture + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur

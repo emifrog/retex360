@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "jest.config.js",
+    // Même nature que jest.config.js : config CommonJS chargée par Jest.
+    "jest.config.rls.js",
+    // Rapport de couverture généré (déjà gitignoré).
+    "coverage/**",
   ]),
 ]);
 

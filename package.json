@@ -10,6 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:rls": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.rls.js",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "analyze": "ANALYZE=true next build"
@@ -64,6 +65,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@jest/globals": "^30.4.0",
     "@next/bundle-analyzer": "^16.1.7",
     "@tailwindcss/postcss": "^4",
@@ -78,6 +80,7 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "baseline-browser-mapping": "^2.9.19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "^16.2.9",
     "eslint-config-prettier": "^10.1.8",

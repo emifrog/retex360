@@ -52,12 +52,32 @@ jobs:
 
       - run: npm ci
 
-      - run: npm test
+      # Avec seuils de couverture : une baisse fait échouer le job.
+      - run: npm run test:coverage
+
+  rls:
+    name: Tests RLS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Applique les vraies migrations à un Postgres réel (PGlite, en WASM :
+      # pas de service container ni de Docker) et vérifie les policies.
+      # Job séparé : ces tests sont lents et échouent pour des raisons qui
+      # n'ont rien à voir avec les tests unitaires.
+      - run: npm run test:rls
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, rls]
     steps:
       - uses: actions/checkout@v4
 

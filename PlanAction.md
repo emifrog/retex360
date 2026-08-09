@@ -356,6 +356,60 @@
 > ⚠️ Migration 021 à appliquer sur les environnements.
 
 
+## Phase 10 ter — Item 7 : tests RBAC / isolation multi-SDIS : ✅ TERMINÉE
+> Les lots 1, 2 et 6 ont tous découvert la MÊME classe de défaut : un écart entre
+> ce que l'application croit autoriser et ce que la RLS permet, invisible parce que
+> PostgREST ne signale pas par une erreur une écriture réduite à 0 ligne. Rien dans
+> la CI ne pouvait l'attraper : aucun test ne touchait une base.
+
+110. ✅ **Harnais RLS sur Postgres réel** (`src/__tests__/rls/harness.ts`).
+     Applique `supabase/test/bootstrap.sql` puis **les vraies migrations du dépôt** à
+     une base neuve. Les policies testées sont celles qui partent en production.
+     Moteur : **PGlite** (PostgreSQL 18 compilé en WASM) — tourne à l'identique en
+     local et en CI, sans Docker ni service container. Choix motivé : une infra de
+     test non exécutable localement serait invérifiable, donc exactement le genre de
+     faux filet de sécurité que cet audit corrige.
+111. ✅ `supabase/test/bootstrap.sql` : reconstitue la surface Supabase absente d'un
+     Postgres nu — rôles `anon`/`authenticated`/`service_role`, schéma `auth`
+     (`uid()`, `jwt()`, table `users`), schéma `storage` (`buckets`, `objects`,
+     `foldername()`), domaine `vector`. `grants.sql` reproduit le modèle Supabase
+     (DML complet à `authenticated`, la RLS seule tranche) — sans quoi les tests
+     échoueraient en « permission denied » avant toute évaluation de policy.
+112. ✅ Garde-fou : la migration 002 est ignorée (pgvector indisponible sous PGlite,
+     et elle ne contient aucune policy). Le harnais **échoue** si une migration
+     ignorée se met à contenir un `CREATE POLICY` — pas d'angle mort silencieux.
+113. ✅ **62 tests RLS** sur 5 suites, ciblant les régressions déjà rencontrées :
+     - `rex` : matrice statut × visibilité × rôle × SDIS, SDIS imposé à l'INSERT (019),
+       auto-validation bloquée (019), **DELETE inter-SDIS = 0 ligne sans erreur** (lot 2) ;
+     - `rex_attachments` : dépôt non rattaché accepté, rattachement, suppression par
+       déposant / auteur du REX / admin du bon SDIS, **refus silencieux pour l'admin
+       d'un autre SDIS** (lots 1 et 6), et le parcours de création complet de bout en bout ;
+     - `comments` : modération admin cloisonnée (021), cascade des réponses ;
+     - `profiles` : annuaire cloisonné, `role`/`sdis_id` verrouillés (019), compte démo ;
+     - harnais : RLS active sur toutes les tables, cohérence seed ↔ fixtures.
+114. ✅ Suite séparée (`npm run test:rls`, `jest.config.rls.js`, env node) : elle
+     applique 21 migrations par fichier, trop lent pour la boucle de développement.
+     Job CI dédié, `build` en dépend.
+115. ✅ **Seuil de couverture en CI** (`npm run test:coverage`). Mesuré sur `src/lib`
+     seulement — inclure les composants diluerait le seuil jusqu'à l'insignifiance.
+     Calé en **cliquet** sur le niveau actuel (toute baisse échoue), avec **100 %
+     exigé** sur les modules purs qui gardent une décision d'autorisation ou
+     d'échappement (`supabase/filters`, `supabase/relations`, `sanitize`,
+     `sanitize-config`).
+
+### Ce que le harnais a révélé
+116. ℹ️ **Le `super_admin` n'est PAS transverse en lecture sur `rex`.** La policy SELECT
+     (013) ne lui accorde le cross-SDIS que pour le statut `pending` : un REX validé en
+     visibilité `sdis` d'un autre SDIS, ou un brouillon d'autrui, lui reste masqué. Le
+     panel super_admin affiche pourtant des agrégats complets — parce qu'il passe par le
+     rôle service, pas parce que la policy l'autorise. Comportement défendable, mais la
+     documentation le présentait comme un accès transverse simple. Encodé en test.
+
+> Vérifié : `tsc --noEmit`, `eslint`, `format:check`, `next build`, **99 tests
+> unitaires + 62 tests RLS**, seuil de couverture respecté — tous verts.
+> Aucune infrastructure de test livrée sans avoir été exécutée.
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
@@ -372,8 +426,8 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	B	99 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation) ; routes API / RLS de bout en bout encore non couvertes
-CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
+Tests	A	99 tests unitaires + 62 tests RLS sur Postgres réel (PGlite) appliquant les vraies migrations ; seuil de couverture en CI. Restent non couvertes : les routes API elles-mêmes (handlers HTTP)
+CI/CD	A	GitHub Actions (lint + typecheck + tests + couverture + RLS + build + audit)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod
 SEO / Social	A	Open Graph + Twitter Cards sur toutes les pages clés
