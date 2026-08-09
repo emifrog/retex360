@@ -48,8 +48,10 @@ function formatRow(rex: {
 }
 
 export async function GET(request: Request) {
+  // Limiteur `export` (5/min) : un CSV streame jusqu'à 10 000 REX, c'est le
+  // levier naturel d'une exfiltration en masse par un compte légitime.
   const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
+  const rl = await rateLimiters.export.limit(ip);
   if (!rl.success) return rateLimitResponse(rl.reset);
 
   try {

@@ -1,9 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { isUuid } from '@/lib/supabase/filters';
+import { paginationSchema } from '@/lib/validators/api';
 import { logger } from '@/lib/logger';
 
 // GET - Fetch user notifications
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 
@@ -16,7 +23,17 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get('unread') === 'true';
-    const limit = parseInt(searchParams.get('limit') || '20');
+
+    // `?limit=999999` ou `?limit=abc` (NaN) partaient tels quels vers Postgres.
+    // Le repli est '20' (et non la valeur par défaut du schéma, 10) pour ne pas
+    // changer la taille du centre de notifications ; le plafond à 100 s'applique.
+    const pagination = paginationSchema.safeParse({
+      limit: searchParams.get('limit') ?? '20',
+    });
+    if (!pagination.success) {
+      return NextResponse.json({ error: 'Paramètre `limit` invalide' }, { status: 400 });
+    }
+    const { limit } = pagination.data;
 
     let query = supabase
       .from('notifications')
@@ -58,6 +75,10 @@ export async function GET(request: NextRequest) {
 
 // POST - Mark notifications as read
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 
@@ -69,7 +90,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { notificationIds, markAllRead } = body;
+    const { markAllRead } = body;
+    // Les ids atterrissent dans une liste PostgREST `in.(...)`, qui est parsée :
+    // on ne garde que des UUID (cf. lib/supabase/filters).
+    const notificationIds: string[] = Array.isArray(body.notificationIds)
+      ? body.notificationIds.filter(isUuid)
+      : [];
 
     if (markAllRead) {
       const { error } = await supabase
@@ -82,7 +108,7 @@ export async function POST(request: NextRequest) {
         logger.error('Mark all read error:', error);
         return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
       }
-    } else if (notificationIds && notificationIds.length > 0) {
+    } else if (notificationIds.length > 0) {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })

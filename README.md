@@ -187,7 +187,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 99 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
+- **Jest** + 106 tests unitaires (validators, pagination, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
 - **67 tests RLS sur Postgres réel** (`npm run test:rls`) : le harnais applique les **vraies migrations** du dépôt à une base neuve (PGlite, PostgreSQL en WASM — ni Docker ni service container) et vérifie les policies rôle par rôle et SDIS par SDIS. Voir [Tests RLS](#-tests-rls).
 - **Seuil de couverture en CI** sur `src/lib`, en cliquet (toute baisse échoue), avec 100 % exigé sur les modules gardant une autorisation ou un échappement
 - **GitHub Actions** (lint + typecheck + tests + couverture + RLS + build + audit)
@@ -222,7 +222,8 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Headers de sécurité** : CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - **Rate limiting** :
   - Global : 120 req/min par IP (Redis Upstash, persistant entre invocations serverless)
-  - Auth : 5/min, Upload : 10/min, API : 60/min, AI : 10/min, PDF : 10/min
+  - Auth : 5/min, Upload : 10/min, API : 60/min, Recherche : 30/min, IA : 10/min, PDF : 10/min, **Exports : 5/min**
+  - Couverture vérifiée **handler par handler** (48/48), pas par fichier : un GET non protégé se cachait derrière un POST protégé dans le même fichier
   - **Fail-closed** sur auth & IA si Redis est injoignable ; **Upstash obligatoire en production** (échec au boot sinon)
 - **Permissions** vérifiées côté serveur (helpers réutilisables `requireUser`/`requireRole`/`isSdisAdmin`)
 - **Admin cloisonné par SDIS** : `isSdisAdmin` impose qu'un admin n'agisse que sur les ressources de son SDIS (`super_admin` transverse), en miroir exact des policies RLS — sinon la couche applicative laisse passer une action que la base refusera ensuite en silence
@@ -414,7 +415,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest — 99 tests unitaires
+npm test             # Jest — 106 tests unitaires
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests + couverture (seuils appliqués)
 npm run test:rls     # 67 tests RLS sur Postgres réel (PGlite)
@@ -652,7 +653,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (99 unitaires + 67 RLS sur Postgres réel) + seuil de couverture + CI GitHub Actions
+- [x] Tests Jest (106 unitaires + 67 RLS sur Postgres réel) + seuil de couverture + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur

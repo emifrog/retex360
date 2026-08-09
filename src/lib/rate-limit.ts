@@ -125,6 +125,11 @@ export const rateLimiters = {
   // Search: 30 searches per minute
   search: createRateLimiter(30, '1 m'),
 
+  // Exports: 5 per minute. A data export streams the whole corpus a user is
+  // entitled to (CSV dashboard, RGPD profile dump) — far heavier than a regular
+  // API call, and the natural lever for bulk exfiltration by a legitimate account.
+  export: createRateLimiter(5, '1 m'),
+
   // AI: 10 requests per minute (expensive operations) — fail-closed to bound
   // cost even during a Redis outage.
   ai: createRateLimiter(10, '1 m', { failClosed: true }),

@@ -150,6 +150,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE - Delete REX
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const { id } = await params;
     const supabase = await createClient();

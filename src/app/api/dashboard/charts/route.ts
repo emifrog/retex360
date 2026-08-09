@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 const monthNames = [
@@ -36,7 +37,11 @@ const severityColors: Record<string, string> = {
   significatif: '#eab308',
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 

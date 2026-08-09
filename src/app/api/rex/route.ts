@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/supabase/filters';
+import { paginationSchema } from '@/lib/validators/api';
 import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -158,6 +159,10 @@ export async function POST(request: Request) {
 
 // GET - List REX
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.api.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
@@ -169,8 +174,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
 
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    // `?limit=999999` scannait toute la table ; `?page=abc` donnait NaN, donc un
+    // `range(NaN, NaN)`. Le schéma coerce, borne à 100 et rejette le reste.
+    // `?? undefined` : la coercion Zod transformerait `null` en 0, qui échoue sur
+    // `.positive()` au lieu de retomber sur la valeur par défaut.
+    const pagination = paginationSchema.safeParse({
+      page: searchParams.get('page') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
+    });
+    if (!pagination.success) {
+      return NextResponse.json({ message: 'Paramètres de pagination invalides' }, { status: 400 });
+    }
+    const { page, limit } = pagination.data;
+
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const severity = searchParams.get('severity');

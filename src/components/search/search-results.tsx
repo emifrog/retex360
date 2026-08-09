@@ -29,7 +29,11 @@ const MAX_QUERY_LENGTH = 500;
 
 export async function SearchResults({ searchParams }: SearchResultsProps) {
   const supabase = await createClient();
-  const page = parseInt(searchParams.page || '1', 10);
+  // `?page=abc` donnait NaN, `?page=-5` un offset négatif : dans les deux cas
+  // Postgres rejette la requête et la page part en erreur. Ce paramètre vient de
+  // l'URL, donc de n'importe qui.
+  const parsedPage = Number.parseInt(searchParams.page ?? '', 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const offset = (page - 1) * ITEMS_PER_PAGE;
 
   // Build query

@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
-export async function GET() {
+// Export RGPD : limiteur `export` (5/min) et non `api`, la route déverse
+// l'intégralité des données personnelles de l'appelant.
+export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimiters.export.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
+
   try {
     const supabase = await createClient();
 

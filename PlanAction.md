@@ -432,6 +432,41 @@
 > **67 tests RLS** au total après ajout.
 
 
+## Phase 10 quater — Item 8 : pagination bornée & rate-limit complet : ✅ TERMINÉE
+
+118. ✅ **Rate-limit sur les 12 handlers restants.** L'audit initial était fait par
+     FICHIER, ce qui masquait les handlers non protégés dans un fichier dont un autre
+     handler l'était (`GET /api/rex` à côté d'un `POST` protégé, `DELETE
+     /api/comments/[id]` à côté d'un `PUT`, `GET /api/rex/[id]/comments`). Refait par
+     handler : **48 handlers, 0 sans limiteur**.
+     Routes couvertes : `dashboard/{stats,charts,contributors}`, `rex/stats`,
+     `favorites`, `notifications` (GET + POST), `profile/export`,
+     `rex/attachments/[id]` DELETE, `rex/[id]` DELETE, `rex` GET,
+     `rex/[id]/comments` GET, `comments/[id]` DELETE.
+     Plusieurs handlers ne recevaient pas `request` du tout : paramètre ajouté.
+119. ✅ **Limiteur `export` (5/min)** pour `dashboard/export` et `profile/export`.
+     Un export streame l'intégralité du corpus auquel l'appelant a droit (jusqu'à
+     10 000 REX, ou toutes ses données personnelles) : c'est le levier naturel d'une
+     exfiltration en masse par un compte légitime, pas un appel API ordinaire.
+120. ✅ **`paginationSchema` enfin branché** — il existait depuis longtemps sans être
+     utilisé nulle part. `GET /api/rex` (`page`, `limit`) et `/api/notifications`
+     (`limit`) passaient `parseInt()` directement à Postgres : `?limit=999999`
+     scannait toute la table, `?page=abc` produisait `range(NaN, NaN)`.
+     Subtilité : `searchParams.get()` renvoie `null` pour un paramètre absent, et la
+     coercion Zod transforme `null` en 0, qui échoue sur `.positive()`. Passer `null`
+     tel quel aurait cassé toute requête sans pagination — d'où `?? undefined`
+     (et `?? '20'` pour les notifications, dont la taille par défaut diffère).
+121. ✅ `search-results.tsx` : `page` vient de l'URL sans plafond ni garde. `NaN` et
+     valeurs négatives retombent sur 1 au lieu de faire échouer la page.
+122. ✅ `notifications` POST : `notificationIds` partait non validé dans une liste
+     PostgREST `in.(...)` — même classe que le lot 4, filtré par `isUuid`.
+123. ✅ 7 tests fixant le contrat de `paginationSchema`, dont le comportement sur
+     `null` qui motive le `?? undefined`. **106 tests unitaires.**
+
+> Vérifié : `tsc --noEmit`, `eslint`, `format:check`, `next build`, 106 tests
+> unitaires + 67 tests RLS, seuil de couverture respecté — tous verts.
+
+
 ## CE QUI EST BIEN EN PLACE
 Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
@@ -448,7 +483,7 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	A	99 tests unitaires + 67 tests RLS sur Postgres réel (PGlite) appliquant les vraies migrations ; seuil de couverture en CI. Restent non couvertes : les routes API elles-mêmes (handlers HTTP)
+Tests	A	106 tests unitaires + 67 tests RLS sur Postgres réel (PGlite) appliquant les vraies migrations ; seuil de couverture en CI. Restent non couvertes : les routes API elles-mêmes (handlers HTTP)
 CI/CD	A	GitHub Actions (lint + typecheck + tests + couverture + RLS + build + audit)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod
