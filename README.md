@@ -187,7 +187,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **@react-pdf/renderer** (génération PDF côté serveur)
 
 ### Qualité & CI/CD
-- **Jest** + 73 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer)
+- **Jest** + 87 tests (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST)
 - **GitHub Actions** (lint + typecheck + tests + build)
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
@@ -198,7 +198,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - `pg_trgm` pour recherche textuelle
 - **Row Level Security (RLS)** cloisonnée par SDIS (validateurs/admins limités à leur SDIS, super_admin transverse)
 - **Triggers** automatiques (fonctions `SECURITY DEFINER` avec `search_path` fixé)
-- **19 migrations** ordonnées (idempotentes)
+- **20 migrations** ordonnées (idempotentes)
 - **Index composites** optimisés (status+validated_at, favorites, comments, attachments)
 - **Storage privé** : bucket `rex-attachments` non public + RLS storage (accès via URLs signées)
 
@@ -214,6 +214,9 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Inscription sur invitation uniquement** : pas d'auto-inscription. Token aléatoire (32 octets) dont seul le **hash SHA-256** est stocké, usage unique, expiration ; SDIS + rôle pré-assignés par l'invitation ; restriction secondaire par domaine email (`allowed_domains`). Tables gérées exclusivement via le rôle service (RLS verrouillée). **Email d'invitation** envoyé automatiquement si SMTP configuré (sinon le lien reste copiable côté admin)
 - **Notifications** : insertion restreinte par RLS à son propre `user_id` ; les notifications cross-user (commentaire, mention, validation, rejet) passent par le client admin après contrôle d'autorisation
 - **Sanitization XSS double couche** : DOMPurify côté serveur **au stockage** (`sanitize-server.ts` + jsdom) ET côté client au rendu, config partagée (sans `style`, `rel=noopener` forcé)
+- **Filtres PostgREST échappés** (`lib/supabase/filters.ts`) : l'argument de `.or()` est une *expression* parsée (`,` sépare les conditions, `.` colonne/opérateur/valeur), pas une valeur — les termes de recherche y sont insérés entre guillemets et échappés, et les listes `.in()` sont filtrées sur la forme UUID
+- **Insights IA cloisonnés par SDIS** : le corpus analysé se limite aux REX validés visibles par le SDIS de l'appelant, et la clé de cache inclut le `sdis_id`
+- **Suppressions ordonnées base → storage** : la ligne est supprimée d'abord et le nombre de lignes affectées est vérifié (la RLS reste l'autorité) ; le purge des objets ne suit qu'en cas de confirmation — PostgREST ne signalant pas par une erreur un `DELETE` bloqué par la RLS
 - **Headers de sécurité** : CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - **Rate limiting** :
   - Global : 120 req/min par IP (Redis Upstash, persistant entre invocations serverless)
@@ -284,7 +287,7 @@ src/
 │   ├── admin/            # Gestion utilisateurs
 │   └── search/           # Recherche avancée
 ├── lib/
-│   ├── supabase/         # Clients Supabase (user + admin) + middleware sécurité
+│   ├── supabase/         # Clients Supabase (user + admin) + middleware sécurité + filters.ts
 │   ├── actions/          # Server Actions
 │   ├── validators/       # Schémas Zod
 │   ├── hooks/            # Hooks React (useUser, useRexList, useDashboard...)
@@ -301,7 +304,7 @@ src/
 │   └── openai.ts         # Client OpenRouter/OpenAI (lazy init)
 ├── types/                # Types TypeScript
 └── supabase/
-    └── migrations/       # 13 scripts SQL (idempotents)
+    └── migrations/       # 20 scripts SQL (idempotents)
 ```
 
 ---
@@ -370,7 +373,20 @@ Exécuter les migrations dans Supabase SQL Editor :
 -- 14. supabase/migrations/014_demo_readonly.sql                -- (OPTIONNEL) compte démo en lecture seule
 -- 15. supabase/migrations/015_notifications_insert_lockdown.sql -- INSERT notifications restreint (déployer le code AVANT)
 -- 16. supabase/migrations/016_invitations.sql                   -- inscription sur invitation + domaines autorisés
+-- 17. supabase/migrations/017_subscriptions_super_admin.sql     -- abonnements + panel super_admin
+-- 18. supabase/migrations/018_subscription_enforcement.sql      -- lecture seule si abonnement inactif (RESTRICTIVE)
+-- 19. supabase/migrations/019_tenant_isolation_hardening.sql    -- durcissement isolation multi-tenant
+-- 20. supabase/migrations/020_attachments_rls_fix.sql           -- policies UPDATE/DELETE manquantes sur rex_attachments
 ```
+
+> ⚠️ **Migration 020 — obligatoire** : `rex_attachments` n'avait aucune policy
+> permissive `UPDATE`/`DELETE`, et sa `WITH CHECK` d'INSERT rejetait les dépôts
+> pas encore rattachés à un REX (`rex_id IS NULL`). La RLS refusait donc en
+> silence le dépôt, le rattachement et la suppression des pièces jointes.
+> Si votre base fonctionne aujourd'hui, c'est que des policies ont été ajoutées
+> à la main hors migration : la 020 les remplace par un jeu explicite et
+> versionné. Vérifiez ensuite un cycle complet dépôt → création de REX →
+> suppression de pièce jointe.
 
 > ⚠️ **Migration 015 — ordre de déploiement** : déployez d'abord le code (les
 > routes insèrent désormais les notifications cross-user via le client admin),
@@ -394,7 +410,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000)
 npm run dev          # Serveur de développement
 npm run build        # Build production
 npm run lint         # ESLint
-npm test             # Jest (73 tests)
+npm test             # Jest (87 tests)
 npm run test:watch   # Tests en mode watch
 npm run test:coverage # Tests avec couverture
 npm run format       # Prettier (formatage)
@@ -565,7 +581,7 @@ sous le compte démo :
 - [x] Rate limiting Redis Upstash (global + par route)
 - [x] Validation Zod + DOMPurify XSS
 - [x] Headers de sécurité (CSP, HSTS, X-Frame-Options...)
-- [x] Tests Jest (73 tests) + CI GitHub Actions
+- [x] Tests Jest (87 tests) + CI GitHub Actions
 - [x] Workflow DGSCGC à 3 niveaux (Signalement, PEX, RETEX)
 - [x] Champs enrichis selon mémento DGSCGC
 - [x] Export PDF professionnel avec images, infographies, anonymisation serveur

@@ -45,21 +45,32 @@ export async function DELETE(
       }
     }
 
-    // Delete from storage (original + thumbnail) with the service role so an
-    // admin can remove files uploaded by another user (own-folder storage
-    // policy would otherwise block it). Authorization is enforced above.
-    await removeAttachmentObjects([
-      attachment.storage_path,
-      thumbnailPathFor(attachment.storage_path),
-    ]);
-
-    // Delete from database
-    const { error: deleteError } = await supabase.from('rex_attachments').delete().eq('id', id);
+    // Delete the row FIRST. PostgREST reports an RLS-blocked delete as 0 rows
+    // WITHOUT an error, so purging storage first would destroy the file while
+    // the row survives — an irreversible loss reported to the client as success.
+    const { data: deleted, error: deleteError } = await supabase
+      .from('rex_attachments')
+      .delete()
+      .eq('id', id)
+      .select('id');
 
     if (deleteError) {
       logger.error('Database delete error:', deleteError);
       return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 });
     }
+
+    if (!deleted || deleted.length === 0) {
+      logger.warn('Attachment delete blocked by RLS', { attachmentId: id, userId: user.id });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+
+    // Storage cleanup once the database has confirmed the deletion. Uses the
+    // service role so an admin can remove a file uploaded by another user (the
+    // own-folder storage policy would otherwise block it).
+    await removeAttachmentObjects([
+      attachment.storage_path,
+      thumbnailPathFor(attachment.storage_path),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

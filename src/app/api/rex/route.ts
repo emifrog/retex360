@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { isUuid } from '@/lib/supabase/filters';
 import { NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -121,16 +122,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Erreur lors de la création du REX' }, { status: 500 });
     }
 
-    // Link attachments to the new REX
-    if (body.attachmentIds && body.attachmentIds.length > 0) {
-      const { error: attachError } = await supabase
+    // Link attachments to the new REX. Ids come from the client and land in a
+    // PostgREST `in.(...)` list, so keep UUIDs only.
+    const attachmentIds: string[] = Array.isArray(body.attachmentIds)
+      ? body.attachmentIds.filter(isUuid)
+      : [];
+
+    if (attachmentIds.length > 0) {
+      // `.select()` matters: an RLS-blocked update returns 0 rows and NO error,
+      // which is how attachments used to end up orphaned without a trace.
+      const { data: linked, error: attachError } = await supabase
         .from('rex_attachments')
         .update({ rex_id: rex.id })
-        .in('id', body.attachmentIds)
-        .eq('uploaded_by', user.id);
+        .in('id', attachmentIds)
+        .eq('uploaded_by', user.id)
+        .select('id');
 
       if (attachError) {
         logger.error('Error linking attachments:', attachError);
+      } else if ((linked?.length ?? 0) !== attachmentIds.length) {
+        logger.warn('Some attachments were not linked to the new REX', {
+          rexId: rex.id,
+          requested: attachmentIds.length,
+          linked: linked?.length ?? 0,
+        });
       }
     }
 

@@ -185,20 +185,19 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
     }
 
-    // Clean up attachment files from storage before deleting the REX
+    // Collect the storage keys BEFORE the delete: `rex_attachments.rex_id` is
+    // ON DELETE CASCADE, so the rows disappear with the REX.
     const { data: attachments } = await supabase
       .from('rex_attachments')
       .select('storage_path')
       .eq('rex_id', id);
 
-    if (attachments && attachments.length > 0) {
-      // Service-role removal (uploaders may differ from the deleter) + clean up
-      // thumbnails. Authorization (author or admin) is enforced above.
-      const paths = attachments.flatMap((a) => [a.storage_path, thumbnailPathFor(a.storage_path)]);
-      await removeAttachmentObjects(paths);
-    }
-
-    const { error } = await supabase.from('rex').delete().eq('id', id);
+    // Delete the row FIRST, and only purge storage once the database confirms
+    // it. The RLS DELETE policy is narrower than the check above (it also
+    // requires the admin to belong to the REX's SDIS), and PostgREST reports a
+    // policy-blocked delete as 0 rows WITHOUT an error — purging first would
+    // destroy the files of a REX that then survives the delete.
+    const { data: deleted, error } = await supabase.from('rex').delete().eq('id', id).select('id');
 
     if (error) {
       logger.error('Error deleting REX:', error);
@@ -206,6 +205,19 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         { message: 'Erreur lors de la suppression du REX' },
         { status: 500 }
       );
+    }
+
+    if (!deleted || deleted.length === 0) {
+      logger.warn('REX delete blocked by RLS', { rexId: id, userId: user.id });
+      return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
+    }
+
+    if (attachments && attachments.length > 0) {
+      // Service-role removal (uploaders may differ from the deleter) + clean up
+      // thumbnails. Best-effort: the REX is already gone, a leftover object is
+      // recoverable waste, whereas deleting too early is irreversible.
+      const paths = attachments.flatMap((a) => [a.storage_path, thumbnailPathFor(a.storage_path)]);
+      await removeAttachmentObjects(paths);
     }
 
     return NextResponse.json({ message: 'REX supprimé' });

@@ -267,10 +267,51 @@
 124. ✅ `dashboard/insights` : calcul LLM mis en cache (`unstable_cache`, 30 min) + bascule du limiteur `ai` → `api` + `Cache-Control` 10 min → fin des **429** et du coût d'un appel LLM par affichage du dashboard.
 
 > ⚠️ Déploiement : appliquer les migrations **018** puis **019** avec ce code.
-> ℹ️ Restant (hors lots, recommandé, non bloquant) : suppression admin de commentaires/PJ en no-op
-> silencieux (policy RLS admin), re-auth du changement de mot de passe sur client dédié, scoping SDIS
-> des widgets dashboard (contributeurs/stats), clé de rate-limit anti-spoof XFF, durcissement `search`
-> (filtre PostgREST) et `promote` (message d'erreur générique), magic bytes uploads, quotas IA, tests RBAC/RLS.
+> ℹ️ Restant (hors lots, recommandé, non bloquant) : re-auth du changement de mot de passe sur client
+> dédié, scoping SDIS des widgets dashboard (contributeurs/stats), clé de rate-limit anti-spoof XFF,
+> `promote` (message d'erreur générique), magic bytes uploads, quotas IA, tests RBAC/RLS.
+
+
+## Phase 10 — Audit (août 2026), lot 1-4 : ✅ TERMINÉE
+> Quatre défauts trouvés en relisant la frontière application / RLS. Le fil rouge est
+> le même partout : **PostgREST ne signale PAS par une erreur une écriture réduite à
+> 0 ligne par la RLS** — il renvoie un succès vide. Tout code qui ne teste que
+> `if (error)` prend un refus de la base pour une réussite.
+
+97. ✅ **`rex_attachments` : policies `UPDATE`/`DELETE` inexistantes** (migration 020).
+    Depuis la 001 la table n'avait que `SELECT` et `INSERT` permissives ; les 014 et 018
+    n'ajoutent que du `RESTRICTIVE` (qui restreint, n'accorde jamais). Conséquences en
+    cascade, toutes silencieuses :
+    - dépôt initial impossible — la `WITH CHECK` exigeait un REX parent, or à la création
+      le fichier est envoyé AVANT que le REX existe (`rex_id IS NULL`) ;
+    - rattachement post-création (`update({ rex_id })`) sans effet → PJ orphelines ;
+    - suppression sans effet côté base, alors que le fichier était déjà détruit (cf. 98).
+    La 020 pose un jeu explicite SELECT/INSERT/UPDATE/DELETE (déposant, auteur du REX
+    parent, admin du même SDIS via le helper `rex_sdis_id`), ajoute `uploaded_by =
+    auth.uid()` en garde d'écriture, complète le verrou démo sur l'UPDATE et indexe
+    `uploaded_by`.
+    ⚠️ Si la base de prod fonctionne aujourd'hui, c'est que des policies y ont été
+    ajoutées à la main hors migration : la 020 les remplace par du versionné.
+98. ✅ **Suppressions : storage purgé avant l'autorisation base** (`rex/[id]`, `rex/attachments/[id]`).
+    `removeAttachmentObjects` (service role, bypass RLS) s'exécutait AVANT le `DELETE`
+    sous RLS. Un admin du SDIS A sur un REX validé inter-SDIS du SDIS B : fichiers
+    détruits pour de bon, REX conservé, réponse `200 « REX supprimé »`. Ordre inversé,
+    `.select('id')` sur le delete, `403` + log si 0 ligne — la RLS redevient l'autorité.
+99. ✅ **Insights IA : fuite inter-SDIS** (`dashboard/insights`). Le corpus était lu via le
+    client admin sans filtre SDIS (50 derniers REX, tous statuts, titres + difficultés +
+    enseignements), puis mis en cache sous une clé unique et servi à tous. Désormais
+    filtré explicitement sur les REX **validés** visibles par le SDIS de l'appelant
+    (son SDIS + inter-SDIS/public), avec le `sdis_id` dans la clé et les tags de cache.
+100. ✅ **Injection de filtre PostgREST** (`api/search`, `search-results`). `.or()` reçoit une
+    *expression* parsée, pas une valeur : `q = "x,status.eq.draft"` produisait
+    `or=(title.ilike.%x,status.eq.draft%)`, soit deux conditions. Nouveau module
+    `lib/supabase/filters.ts` (`quoteFilterValue`, `orIlike`, `isUuid`) + 14 tests ;
+    `searchParams.q` (sans plafond côté page serveur) est aussi tronqué à 500 car.
+    `attachmentIds` passé à `.in()` est filtré sur la forme UUID (même classe de faille).
+
+> Vérifié : `tsc --noEmit`, `eslint`, `format:check`, 87/87 tests, `next build` — tous verts.
+> Sérialisation `.or()` contrôlée sur supabase-js : `or=(title.ilike."%x,status.eq.draft%")`
+> = une seule condition, et une tentative de fermeture de guillemet ressort en `\"`.
 
 
 ## CE QUI EST BIEN EN PLACE
@@ -278,7 +319,7 @@ Domaine	Note	Détails
 Auth & RBAC	A	Supabase + middleware + rôles (user/validator/admin/super_admin)
 Validation des entrées	A	Zod sur les API (REX, commentaires, mentions) + sanitization XSS serveur (stockage) ET client (rendu)
 RGPD/GDPR	A	Export données, suppression compte, cookie consent, mentions légales
-Base de données	A	19 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
+Base de données	A	20 migrations ordonnées, RLS cloisonnée par SDIS, search_path fixé, pgvector, indexes
 Stockage fichiers	A	Bucket rex-attachments privé + URLs signées (accès lié à la visibilité du REX)
 Responsive mobile	A	Tailwind breakpoints, mobile-first, popovers/table/timeline/charts adaptifs (Phase 6)
 Optimisation images	A	Sharp + WebP + thumbnails
@@ -289,7 +330,7 @@ React Compiler	A	Activé (memoization automatique partielle)
 Code propre	A+	0 TODO/FIXME/HACK, 0 console.log sauvages
 Sécurité headers	A	CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy (CSP à durcir : nonce)
 Rate limiting	A+	Global Redis Upstash + par route (auth: 5/min, upload: 10/min, API: 60/min, AI: 10/min), fail-closed auth/IA, Upstash requis en prod
-Tests	B	73 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer) ; routes API / RBAC / RLS encore non couvertes
+Tests	B	87 tests unitaires (validators, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST) ; routes API / RBAC / RLS encore non couvertes
 CI/CD	A	GitHub Actions (lint + typecheck + tests + build)
 Formatage	A	Prettier + eslint-config-prettier
 Logging	A	Structuré, correlation IDs, intégration Sentry prod

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { orIlike } from '@/lib/supabase/filters';
 import { generateEmbedding } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
       const { data: textResults } = await supabase
         .from('rex')
         .select('*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)')
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%,lessons_learned.ilike.%${query}%`)
+        .or(orIlike(['title', 'description', 'lessons_learned'], query))
         .eq('status', 'validated')
         .limit(limit);
 

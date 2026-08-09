@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { orIlike } from '@/lib/supabase/filters';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Calendar, Building2, ChevronLeft, ChevronRight, FileText, Users } from 'lucide-react';
@@ -23,6 +24,8 @@ interface SearchResultsProps {
 }
 
 const ITEMS_PER_PAGE = 10;
+// Aligné sur `searchSchema` (validators/api) pour l'API de recherche.
+const MAX_QUERY_LENGTH = 500;
 
 export async function SearchResults({ searchParams }: SearchResultsProps) {
   const supabase = await createClient();
@@ -51,10 +54,11 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
 
   // Apply filters
   if (searchParams.q) {
-    // Full-text search on title, description, context
-    query = query.or(
-      `title.ilike.%${searchParams.q}%,description.ilike.%${searchParams.q}%,context.ilike.%${searchParams.q}%,lessons_learned.ilike.%${searchParams.q}%`
-    );
+    // Full-text search on title, description, context. `q` comes straight from
+    // the URL: cap it, and escape it (the `.or()` argument is a filter
+    // EXPRESSION, not a value — see lib/supabase/filters).
+    const term = searchParams.q.slice(0, MAX_QUERY_LENGTH);
+    query = query.or(orIlike(['title', 'description', 'context', 'lessons_learned'], term));
   }
 
   if (searchParams.type) {
