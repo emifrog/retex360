@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { optimizeImage, generateThumbnail } from '@/lib/image-optimizer';
+import { isAllowedMimeType, verifyFileType, type AllowedMimeType } from '@/lib/file-signature';
 import { logger } from '@/lib/logger';
 import {
   signAttachmentUrl,
@@ -43,9 +44,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Identifiant REX invalide' }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
+    // Pré-filtre sur le type annoncé : évite de charger en mémoire un fichier
+    // dont on sait déjà qu'il sera refusé. Ne vaut PAS validation — voir le
+    // contrôle du contenu ci-dessous.
+    if (!isAllowedMimeType(file.type)) {
       return NextResponse.json({ error: 'Type de fichier non autorisé' }, { status: 400 });
     }
 
@@ -58,22 +60,44 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const originalBuffer = Buffer.from(arrayBuffer);
 
+    // Contrôle du CONTENU avant toute mise en décodeur : `file.type` est
+    // déclaratif, Sharp détecte le format par les octets. Sans ce test, un
+    // HEIF/AVIF annoncé `image/jpeg` passe le filtre ci-dessus et atteint
+    // libheif.
+    const typeCheck = verifyFileType(originalBuffer, file.type);
+    if (!typeCheck.ok) {
+      logger.warn('Upload rejeté : le contenu ne correspond pas au type déclaré', {
+        userId: user.id,
+        declared: file.type,
+        detected: typeCheck.detected,
+        reason: typeCheck.reason,
+      });
+      return NextResponse.json(
+        { error: 'Le contenu du fichier ne correspond pas à son type déclaré' },
+        { status: 400 }
+      );
+    }
+    // À partir d'ici, plus aucune décision ne dépend du type déclaré.
+    const fileType = typeCheck.type;
+
     // Optimize image (compress + resize + convert to WebP)
-    const optimized = await optimizeImage(originalBuffer, file.type);
+    const optimized = await optimizeImage(originalBuffer, fileType);
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(7);
-    const isImage = file.type.startsWith('image/') && file.type !== 'image/gif';
-    // Extension dérivée du type réel (jamais du nom de fichier client).
-    const MIME_EXT: Record<string, string> = {
+    const isImage = fileType.startsWith('image/') && fileType !== 'image/gif';
+    // Extension dérivée du type réel (jamais du nom de fichier client). Le
+    // Record est exhaustif sur `AllowedMimeType` : un format ajouté à la liste
+    // blanche sans extension associée échoue à la compilation.
+    const MIME_EXT: Record<AllowedMimeType, string> = {
       'application/pdf': 'pdf',
       'image/gif': 'gif',
       'image/jpeg': 'jpg',
       'image/png': 'png',
       'image/webp': 'webp',
     };
-    const ext = optimized.contentType === 'image/webp' ? 'webp' : (MIME_EXT[file.type] ?? 'bin');
+    const ext = optimized.contentType === 'image/webp' ? 'webp' : MIME_EXT[fileType];
     const baseName = `${user.id}/${timestamp}-${randomSuffix}`;
     const storagePath = `rex-attachments/${baseName}.${ext}`;
 
@@ -91,7 +115,7 @@ export async function POST(request: NextRequest) {
     // Generate and upload thumbnail for images
     let thumbnailUrl: string | null = null;
     if (isImage) {
-      const thumbnail = await generateThumbnail(originalBuffer, file.type);
+      const thumbnail = await generateThumbnail(originalBuffer, fileType);
       if (thumbnail) {
         const thumbPath = `rex-attachments/${baseName}_thumb.webp`;
         const thumbOk = await putAttachmentObject(thumbPath, thumbnail.buffer, 'image/webp');
