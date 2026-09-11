@@ -601,3 +601,112 @@ Images	A	next/image + sharp + lazy loading + sizes responsive
   tourne ; la part automatisable est verrouillée.
 - **Facturation** (116), **CSP à nonce** (123), **unification des réponses
   d'erreur** (121), **asymétrie de la grâce d'abonnement** (117).
+
+---
+
+## Phase 12 — Garde-fous IA (11 septembre 2026) : ✅ TERMINÉE
+
+> Le constat qui ouvre le lot : le limiteur de débit borne la FRÉQUENCE des
+> appels au modèle, jamais leur COÛT. Les champs REX n'ayant aucune borne haute
+> (`TEXT` en base, uniquement des `.min()` côté Zod), un REX d'un mégaoctet
+> représentait ~250 000 tokens par appel — soit, au quota de 10 appels/minute,
+> jusqu'à 150 millions de tokens par heure et par compte. La route PDF avait
+> ses gardes (100 k caractères/champ, 5 Mo) ; les routes IA n'en avaient aucune.
+
+125. ✅ `src/lib/ai-context.ts` (100 % couvert, 20 tests) : troncature par champ
+     (4 000 caractères — un RETEX complet passe sans être coupé), corpus
+     d'embedding borné à 18 000 caractères pour tenir sous les 8 192 tokens de
+     `text-embedding-3-small` (au-delà, l'API ne tronque pas : elle refuse).
+126. ✅ Anti-injection étendu à `/api/ai/analyze`, qui injectait le REX brut
+     dans le prompt alors que `dashboard/insights` délimitait déjà le sien.
+     Scénario : un rédacteur glisse des instructions dans un champ, un
+     validateur demande l'analyse, et le verdict qui lui est rendu est fabriqué
+     par l'auteur du REX.
+     Deux failles corrigées au passage :
+     - **Sortie du bloc par balise fermante** : ni `analyze` ni `insights` ne
+       neutralisaient les chevrons DANS le contenu. Écrire `</donnees_rex>`
+       suffisait à refermer le bloc et à faire passer la suite pour une consigne.
+       `neutralizeDelimiters` les remplace par des chevrons simples.
+     - **Fuite hors bloc** : le prompt `tags` d'`analyze` interpolait
+       `rex.tags.join(', ')` en dehors du corpus délimité. Retiré — les tags
+       figurent déjà dedans.
+     L'avertissement système est désormais une constante unique
+     (`UNTRUSTED_CONTENT_NOTICE`) partagée par les deux surfaces, appliquée
+     après le `switch` pour qu'aucun cas ne puisse partir sans elle.
+127. ✅ Timeout explicite de 25 s sur le client LLM (`maxDuration: 30` dans
+     `vercel.json` : le défaut du SDK — 10 minutes — laissait la fonction être
+     tuée avant d'avoir pu logger l'échec) + `maxRetries: 1`, chaque tentative
+     étant facturée.
+128. ✅ Journalisation des tokens consommés à chaque appel (`model`,
+     `promptTokens`, `completionTokens`, `totalTokens`, `durationMs`). Sans
+     cette trace, la dépense LLM est invisible : ni alerte de dérive, ni
+     refacturation possible par SDIS.
+
+### Reste à traiter sur l'IA
+- **Modèles datés de 2024** : `anthropic/claude-3.5-sonnet` (défaut de
+  `chatCompletion`) et `anthropic/claude-3-haiku` (usage réel des deux routes).
+  La génération actuelle côté Anthropic est Opus 5 / Sonnet 5 / **Haiku 4.5**,
+  successeur direct du Haiku en place. Les autres entrées de
+  `OPENROUTER_MODELS` (GPT-4 Turbo, Mistral Large, Llama 3.1, Gemini Pro 1.5)
+  sont de la même génération. ⚠️ Les identifiants OpenRouter diffèrent de ceux
+  de l'API Anthropic directe : à vérifier sur leur catalogue avant de modifier
+  la constante.
+- **Fallback embeddings mort** : `src/lib/openai.ts` note lui-même qu'OpenRouter
+  ne supporte pas les embeddings, et tente quand même l'appel. Sans
+  `OPENAI_API_KEY`, chaque recherche sémantique paie un aller-retour voué à
+  l'échec avant de retomber sur la recherche texte.
+- **Quota IA par SDIS** (item 93) : les garde-fous ci-dessus bornent le coût
+  PAR APPEL ; il n'existe toujours pas de plafond mensuel. Le modèle est prêt
+  côté données (`subscriptions.max_rex_per_month` fait déjà ce travail pour les
+  REX) mais demande une migration.
+- **`max_tokens: 500`** sur `analyze` et `insights` : serré pour « 3 à 5
+  recommandations concrètes ».
+
+---
+
+## Phase 13 — Bascule vers Mistral AI (11 septembre 2026) : ✅ TERMINÉE (chat)
+
+> Décision : appeler Mistral **en direct** (`api.mistral.ai`) plutôt que via
+> OpenRouter. Les contenus de REX décrivent des interventions réelles ; les
+> faire transiter par une passerelle hors UE affaiblissait l'argument de
+> souveraineté que portent déjà Scaleway (stockage) et GlitchTip (supervision) —
+> et cet argument est un critère de recevabilité auprès d'un acheteur public.
+
+129. ✅ `src/lib/openai.ts` → `src/lib/llm.ts` (12 tests, 100 % lignes/fonctions).
+     Le nom n'était plus vrai : le module sert désormais deux fournisseurs.
+     - **Génération de texte → Mistral en direct.** L'API est compatible OpenAI
+       au niveau du fil : le SDK `openai` la sert avec une `baseURL` différente.
+     - **Embeddings → OpenAI, inchangés.** Voir 131.
+130. ✅ Modèle par défaut `mistral-small-2603` (Mistral Small 4, $0,15/$0,60 par
+     million de tokens), ajustable par `MISTRAL_MODEL` sans redéploiement.
+     `mistral-medium-2604` est disponible dans `MISTRAL_MODELS` mais coûte ~10×
+     plus en entrée et ~12× en sortie. Remplace `anthropic/claude-3-haiku`
+     (mars 2024) et le défaut `anthropic/claude-3.5-sonnet` (juin 2024).
+131. ⏸️ **Embeddings NON migrés — blocage de schéma.** `mistral-embed` produit
+     des vecteurs de **1024** dimensions, or `rex.embedding` (migration 001) et
+     `search_rex_by_embedding` (migration 002) sont figés à **1536**, plus
+     l'index `ivfflat` construit dessus. Basculer suppose une migration de
+     schéma ET la régénération de tous les embeddings existants : les anciens
+     vecteurs ne deviennent pas imprécis, ils deviennent **incomparables**. La
+     recherche sémantique reste donc sur OpenAI jusqu'à ce lot.
+132. ✅ Repli d'embedding mort supprimé. Le code appelait
+     `openrouter.ai/api/v1/embeddings` alors que son propre commentaire notait
+     qu'OpenRouter ne sert pas les embeddings : chaque recherche sémantique
+     payait un aller-retour voué à l'échec avant de retomber sur le plein texte.
+     Échec explicite désormais — l'appelant a déjà son repli.
+133. ✅ `connect-src` nettoyé de `https://openrouter.ai` : les appels au modèle
+     partent des routes API, côté serveur, où cette directive — qui ne régit que
+     le navigateur — n'a aucune prise. L'entrée n'autorisait rien d'utile.
+134. ✅ Badges « OpenRouter » de l'interface (`ai-insights`, `ai-analysis`)
+     remplacés par « Mistral AI » — c'est visible par l'utilisateur final.
+135. ✅ `.env.example`, README et tableau des variables mis à jour, avec la
+     raison du maintien d'OpenAI pour les seuls embeddings.
+
+### Reste à traiter
+- **Migration des embeddings vers `mistral-embed`** (131) : migration SQL
+  (colonne `VECTOR(1024)`, signature de la fonction, index) + script de
+  régénération. Supprimerait la dernière dépendance non européenne.
+- ⚠️ **Rotation de clé** : la clé Mistral initiale a transité en clair et doit
+  être considérée comme compromise — à régénérer avant tout déploiement.
+- **Quota IA par SDIS** (item 93) : toujours ouvert. Les garde-fous de la
+  phase 12 bornent le coût PAR APPEL, pas le volume mensuel.

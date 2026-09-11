@@ -54,7 +54,11 @@ function buildCsp(): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://*.sentry.io https://*.upstash.io https://openrouter.ai",
+    // Pas d'hôte de fournisseur LLM ici : les appels au modèle partent des
+    // routes API, côté serveur, où `connect-src` — qui ne régit que le
+    // navigateur — n'a aucune prise. L'entrée `openrouter.ai` qui figurait ici
+    // n'autorisait donc rien d'utile.
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://*.sentry.io https://*.upstash.io",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

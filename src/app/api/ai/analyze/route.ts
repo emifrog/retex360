@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { chatCompletion, OPENROUTER_MODELS } from '@/lib/openai';
+import { chatCompletion } from '@/lib/llm';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { aiAnalysisSchema } from '@/lib/validators/api';
+import { buildAnalysisContext, UNTRUSTED_CONTENT_NOTICE } from '@/lib/ai-context';
 import { logger } from '@/lib/logger';
 import { requireUser } from '@/lib/api-auth';
 
@@ -34,30 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'REX non trouvé' }, { status: 404 });
     }
 
-    // Build context for AI
-    const rexContext = `
-Titre: ${rex.title}
-Type: ${rex.type}
-Gravité: ${rex.severity}
-Date d'intervention: ${rex.intervention_date}
-
-Description:
-${rex.description || 'Non renseigné'}
-
-Contexte opérationnel:
-${rex.context || 'Non renseigné'}
-
-Moyens engagés:
-${rex.means_deployed || 'Non renseigné'}
-
-Difficultés rencontrées:
-${rex.difficulties || 'Non renseigné'}
-
-Enseignements:
-${rex.lessons_learned || 'Non renseigné'}
-
-Tags: ${rex.tags?.join(', ') || 'Aucun'}
-    `.trim();
+    // Corpus borné par champ et délimité : le REX est rédigé par un utilisateur
+    // et l'analyse est souvent lue par un autre (validateur). Sans délimitation,
+    // des instructions glissées dans un champ seraient lues comme une consigne
+    // et l'analyse rendue au relecteur serait fabriquée par l'auteur du REX.
+    const rexContext = buildAnalysisContext(rex);
 
     let systemPrompt = '';
     let userPrompt = '';
@@ -94,7 +76,10 @@ ${rexContext}`;
         systemPrompt = `Tu es un expert en classification de retours d'expérience pour les services d'incendie et de secours.
 Tu proposes des tags pertinents pour catégoriser les REX.
 Réponds uniquement avec une liste de tags séparés par des virgules, sans explication.`;
-        userPrompt = `Propose 5 à 8 tags pertinents pour ce REX (en plus des tags existants: ${rex.tags?.join(', ') || 'aucun'}):
+        // Les tags existants figurent déjà DANS le bloc délimité. Les répéter
+        // ici les ferait ressortir du bloc, c'est-à-dire exactement la fuite
+        // que la délimitation sert à empêcher.
+        userPrompt = `Propose 5 à 8 tags pertinents pour ce REX, en plus de ceux déjà présents dans ses données:
 
 ${rexContext}`;
         break;
@@ -103,13 +88,15 @@ ${rexContext}`;
         return NextResponse.json({ error: "Type d'analyse invalide" }, { status: 400 });
     }
 
+    // Appliqué après le switch : aucun cas ne peut partir sans l'avertissement.
+    systemPrompt = `${systemPrompt}\n\n${UNTRUSTED_CONTENT_NOTICE}`;
+
     const response = await chatCompletion(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       {
-        model: OPENROUTER_MODELS.CLAUDE_HAIKU, // Fast and cheap for analysis
         temperature: 0.7,
         maxTokens: 500,
       }

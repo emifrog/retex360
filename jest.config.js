@@ -42,7 +42,7 @@ const config = {
     // c'est un fichier à 100 %, la moyenne du reste baisse. Une baisse de ces
     // valeurs n'est donc pas toujours une régression : vérifier d'abord si un
     // fichier vient d'être extrait du groupe.
-    global: { statements: 21, branches: 17, functions: 15, lines: 21 },
+    global: { statements: 21, branches: 17, functions: 15, lines: 20 },
     'src/lib/supabase/filters.ts': {
       statements: 100,
       branches: 100,
@@ -62,6 +62,9 @@ const config = {
     // Un oubli n'y produit aucun symptôme : la donnée part, et personne ne le
     // voit.
     'src/lib/sentry-scrub.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // Borne ce qui part au modèle (donc le coût) et empêche qu'un contenu
+    // rédigé par un utilisateur soit lu comme une consigne.
+    'src/lib/ai-context.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     // `deriveState` décide qui peut écrire et quand l'accès se coupe : même
     // exigence que les modules d'autorisation ci-dessus.
     'src/lib/subscription.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },

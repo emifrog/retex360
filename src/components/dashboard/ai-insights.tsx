@@ -66,7 +66,7 @@ export function AiInsights() {
           variant="outline"
           className="ml-auto text-[9px] px-1.5 py-0 bg-purple-500/10 text-purple-500 border-purple-500/30"
         >
-          OpenRouter
+          Mistral AI
         </Badge>
       </div>
 

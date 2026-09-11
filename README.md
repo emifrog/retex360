@@ -114,7 +114,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Export CSV** streaming avec pagination par 500
 
 ### 🤖 Intelligence Artificielle
-- **Intégration OpenRouter** (Claude, GPT-4, Mistral, Llama, Gemini)
+- **Mistral AI en direct** (`api.mistral.ai`) — fournisseur européen appelé sans passerelle intermédiaire : les contenus de REX, qui décrivent des interventions réelles, ne quittent pas l'UE. Modèle par défaut `mistral-small-2603` (Mistral Small 4), ajustable par `MISTRAL_MODEL`
 - **Analyse de REX** avec 4 modes :
   - **Synthèse** : Résumé des points clés
   - **Suggestions** : Recommandations d'amélioration
@@ -180,7 +180,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 ### Backend
 - **Supabase** (PostgreSQL, Auth, Storage, Realtime)
 - **API Routes** Next.js
-- **OpenRouter API** (LLM multi-modèles, lazy init)
+- **API Mistral** (génération de texte, lazy init, timeout 25 s)
 - **OpenAI API** (embeddings)
 - **Sentry** (monitoring erreurs + breadcrumbs)
 - **Upstash Redis** (rate limiting global + par route)
@@ -229,6 +229,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - **Fail-closed** sur auth & IA si Redis est injoignable ; **Upstash obligatoire en production** (échec au boot sinon)
 - **Optimiseur d'images épinglé au projet Supabase courant** (hostname dérivé de `NEXT_PUBLIC_SUPABASE_URL`) : un motif `*.supabase.co` autoriserait *tous* les projets Supabase existants, transformant `/_next/image` en proxy d'images ouvert
 - **Uploads validés par leurs octets d'en-tête** (`file-signature.ts`) et non par le Content-Type déclaré, falsifiable : liste blanche de signatures, contrôlée avant toute mise en décodeur, puis c'est le type **vérifié** qui sert en aval
+- **Entrées des modèles bornées et délimitées** (`ai-context.ts`) : les champs REX n'ont pas de borne haute (`TEXT` en base, uniquement des `.min()` côté Zod), et le limiteur de débit plafonne la *fréquence* des appels, jamais leur *coût*. Chaque champ est donc tronqué avant envoi, le corpus d'embedding est borné à la fenêtre du modèle (au-delà, l'API refuse la requête), et le contenu utilisateur est encadré par `<donnees_rex>` **avec neutralisation des chevrons à l'intérieur** — sans quoi il suffirait d'écrire la balise fermante pour sortir du bloc et faire passer la suite pour une consigne. Tokens consommés journalisés à chaque appel
 - **Accessibilité (RGAA 4.1 / WCAG 2.1 AA)** : les 34 règles `jsx-a11y` du preset *recommended* sont en **`error`** — une régression échoue la CI. Obligation légale (décret n°2019-768) et critère d'attribution en marché public, donc traitée comme bloquante. Le linting ne couvre que le statique : contrastes, parcours clavier réels et lecteur d'écran restent à auditer manuellement (voir `/accessibilite`)
 - **Permissions** vérifiées côté serveur (helpers réutilisables `requireUser`/`requireRole`/`isSdisAdmin`)
 - **Admin cloisonné par SDIS** : `isSdisAdmin` impose qu'un admin n'agisse que sur les ressources de son SDIS (`super_admin` transverse), en miroir exact des policies RLS — sinon la couche applicative laisse passer une action que la base refusera ensuite en silence
@@ -310,7 +311,8 @@ src/
 │   ├── logger.ts         # Logging structuré + correlation IDs
 │   ├── rate-limit.ts     # Rate limiters Upstash Redis (fail-closed auth/IA)
 │   ├── notifications.ts  # Service notifications
-│   └── openai.ts         # Client OpenRouter/OpenAI (lazy init)
+│   ├── llm.ts            # Mistral (texte) + OpenAI (embeddings), lazy init
+│   └── ai-context.ts     # Troncature + délimitation anti-injection
 ├── types/                # Types TypeScript
 └── supabase/
     └── migrations/       # 21 scripts SQL (idempotents)
@@ -323,8 +325,8 @@ src/
 ### Prérequis
 - Node.js 18+
 - Compte Supabase
-- Clé API OpenRouter (optionnel)
-- Clé API OpenAI (optionnel, pour embeddings)
+- Clé API Mistral (optionnel — sans elle, les fonctions IA sont indisponibles)
+- Clé API OpenAI (optionnel, pour les embeddings de la recherche sémantique — voir la note sur les dimensions dans `.env.example`)
 - Compte Upstash Redis (**obligatoire en production** pour le rate limiting ; optionnel en dev — fallback mémoire)
 
 ### 1. Cloner le projet
@@ -342,10 +344,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
 SUPABASE_SERVICE_ROLE_KEY=eyJxxx
 
-# OpenRouter (pour l'IA)
-OPENROUTER_API_KEY=sk-or-v1-xxx
+# Mistral AI (génération de texte : analyses de REX, tendances)
+MISTRAL_API_KEY=xxx
+# MISTRAL_MODEL=mistral-small-2603   # défaut ; mistral-medium-2604 si besoin
 
-# OpenAI (optionnel, pour embeddings)
+# OpenAI (optionnel, uniquement pour les embeddings de la recherche sémantique)
 OPENAI_API_KEY=sk-xxx
 
 # Sentry (monitoring)
@@ -551,8 +554,9 @@ Dans les settings du projet Vercel, ajouter :
 | `NEXT_PUBLIC_SUPABASE_URL` | URL de votre projet Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé anonyme Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clé service role Supabase |
-| `OPENROUTER_API_KEY` | Clé API OpenRouter (optionnel) |
-| `OPENAI_API_KEY` | Clé API OpenAI (optionnel) |
+| `MISTRAL_API_KEY` | Clé API Mistral — génération de texte (optionnel) |
+| `MISTRAL_MODEL` | Modèle de génération (défaut `mistral-small-2603`) |
+| `OPENAI_API_KEY` | Clé API OpenAI — embeddings de la recherche sémantique (optionnel) |
 | `NEXT_PUBLIC_SENTRY_DSN` | DSN Sentry pour le monitoring |
 | `SENTRY_ORG` | Organisation Sentry |
 | `SENTRY_PROJECT` | Projet Sentry |

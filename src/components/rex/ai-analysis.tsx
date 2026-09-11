@@ -98,7 +98,7 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
             variant="outline"
             className="ml-2 text-xs bg-primary/10 text-primary border-primary/30"
           >
-            OpenRouter
+            Mistral AI
           </Badge>
         </CardTitle>
       </CardHeader>

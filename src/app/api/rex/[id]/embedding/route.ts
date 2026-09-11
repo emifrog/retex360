@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { generateRexEmbedding } from '@/lib/openai';
+import { generateRexEmbedding } from '@/lib/llm';
 import { NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';

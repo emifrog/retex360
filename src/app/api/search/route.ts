@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { orIlike } from '@/lib/supabase/filters';
-import { generateEmbedding } from '@/lib/openai';
+import { generateEmbedding } from '@/lib/llm';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { searchSchema } from '@/lib/validators/api';
