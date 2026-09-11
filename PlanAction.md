@@ -14,11 +14,13 @@
 7. ✅ Prettier + eslint-config-prettier pour le formatage du code
 8. ✅ Logging structuré avec correlation IDs + intégration Sentry
 9. ✅ Open Graph / Twitter meta tags sur toutes les pages clés
-10. PWA manifest si pertinent
-11. Ajouter robots.txt + sitemap.ts
+10. ✅ PWA manifest (`src/app/manifest.ts` → `/manifest.webmanifest`)
+11. ✅ `robots.txt` + `sitemap.xml` (`src/app/robots.ts`, `src/app/sitemap.ts`)
 
 ## Phase 4 — Bugs critiques & UX (avant commercialisation) :
-12. Whitelist de domaines email pour l'inscription (bloquer les inscriptions non-SDIS)
+12. ✅ Whitelist de domaines email — table `allowed_domains` par SDIS, appliquée à
+    l'émission d'invitation (`/api/admin/invitations`) et administrable via
+    `/api/admin/domains`
 13. ✅ Rate limiter global middleware → Redis Upstash (persistant entre les invocations serverless)
 14. ✅ Migration SDIS : ON CONFLICT (code) DO NOTHING (préserve les modifications admin)
 15. ✅ Police de lecture Inter pour le texte de corps (JetBrains Mono réservé au code via font-mono)
@@ -491,3 +493,111 @@ SEO / Social	A	Open Graph + Twitter Cards sur toutes les pages clés
 Typographie	A	Inter (texte de corps) + JetBrains Mono (code/données)
 Fonts	A	next/font optimisé (subset latin, CSS variables)
 Images	A	next/image + sharp + lazy loading + sizes responsive
+
+---
+
+## Phase 11 — Audit externe (11 septembre 2026), lots P0 à P3 : ✅ TERMINÉE
+
+> Point de départ : le code du 9 août était propre le 9 août. Un mois plus tard,
+> l'arbre de production portait 1 CVE critique et 5 élevées **sans qu'une ligne
+> ait changé**. La leçon du lot est là : sur un projet qui connaîtra des périodes
+> sans développement actif, la veille automatisée des dépendances n'est pas du
+> confort, c'est le seul dispositif qui tienne quand plus personne ne regarde.
+
+### P0 — Bloquants (corrigés)
+111. ✅ `npm audit fix` : **7 → 0** vulnérabilité en production. `next` 16.3.0 →
+     **16.3.4** (2 RCE non authentifiées : API d'optimisation d'images sur AVIF
+     `GHSA-2xp9-vwfh-vxw4`, et serveur hébergé sous Windows `GHSA-p293-qw3h-jr36`),
+     `sharp` 0.35.3 → **0.35.4** (libheif), `nodemailer` 9.0.1 → **9.1.1**
+     (contournement de validation du domaine destinataire — or l'invitation
+     tokenisée est le mécanisme d'entrée dans un tenant), `@tiptap/core` → **3.31.3**.
+     `package.json` inchangé : les plages `^` couvraient déjà les correctifs.
+112. ✅ Validation des **magic bytes** avant Sharp (`src/lib/file-signature.ts`,
+     100 % couvert). Le contrôle portait sur `file.type` — déclaratif, falsifiable —
+     tandis que Sharp détecte le format par le contenu : un HEIF/AVIF annoncé
+     `image/jpeg` traversait et atteignait libheif. Liste blanche de signatures,
+     puis c'est le type **vérifié** qui sert en aval (extension, aiguillage,
+     colonne `file_type`). Le même trou existait dans `/api/profile/avatar`
+     (bucket **public**) : corrigé aussi, et le contrôle y précède désormais la
+     suppression de l'ancien avatar.
+
+### P1 — Élevés (corrigés)
+113. ✅ `images.remotePatterns` épinglé au projet Supabase courant, dérivé de
+     `NEXT_PUBLIC_SUPABASE_URL`. `*.supabase.co` autorisait **tous** les projets
+     Supabase existants : proxy d'images ouvert à nos frais, et moyen de placer
+     un fichier choisi devant le décodeur.
+114. ✅ Rate limiting **par utilisateur** (`limitByUser`) et non plus par IP, sur
+     47 des 48 handlers ; les 5 routes anonymes restent en IP (`limitByIp`), ce
+     qui est l'effet recherché contre le bourrage d'identifiants. Un SDIS est une
+     collectivité derrière une IP unique : le quota « par IP » y était un quota
+     « par SDIS », produisant des 429 en usage normal sans jamais plafonner un
+     compte. Le limiteur global du middleware devient un garde-fou anti-flood
+     (1000/min par IP, `GLOBAL_RATE_LIMIT_PER_MINUTE`).
+115. ✅ `GET /api/rex/[id]` et `GET /api/rex/[id]/comments` ne contrôlaient pas
+     l'authentification (ils s'en remettaient à la RLS). Contrôle explicite :
+     un anonyme reçoit désormais **401** au lieu de 404.
+116. ⏸️ Facturation : reportée sur décision. L'absence de prélèvement en ligne
+     est un choix déjà acté en **7B** (marché public = bon de commande + mandat),
+     et il tient. Ce qui manque n'est donc pas Stripe mais le suivi qui rend ce
+     modèle tenable à l'échelle : `subscriptions` est saisie à la main par le
+     super_admin, sans échéancier, sans facture émise, sans relance. Supportable
+     à 2 clients, coûteux à 10.
+
+### P2 — Moyens (corrigés)
+117. ✅ `subscription.ts` **0 % → 100 %** (22 tests). `deriveState()` décide qui
+     peut écrire et quand l'accès se coupe — logique de facturation jusque-là
+     non testée. Le **fail-open** (une panne de lecture laisse tout le monde
+     écrire) est désormais documenté par un test, pour qu'un basculement en
+     fail-closed soit une décision et non un effet de bord.
+     ⚠️ **Asymétrie constatée, à trancher** : un essai qui expire seul obtient
+     les 30 jours de grâce ; le même passé manuellement à `expired` est bloqué
+     immédiatement, car l'ancrage ne suit `trial_ends_at` que si le statut est
+     resté `trial`. Test écrit sur le comportement actuel.
+118. ✅ `validators/rex.ts` **0 % → 100 %** branches/fonctions/lignes (32 tests) :
+     la règle de promotion DGSCGC Signalement → PEX → RETEX.
+119. ✅ Accessibilité : les **34 règles `jsx-a11y`** du preset *recommended* en
+     `error` (obligation légale, décret n°2019-768, et critère d'attribution en
+     marché public). **30 → 0** violation. Défauts réels corrigés au passage, que
+     le linter ne voyait pas : filtres par tag en `<span>` cliquables donc
+     inatteignables au clavier ; actions du centre de notifications imbriquées
+     dans une zone cliquable (bouton dans lien) et invisibles au focus clavier.
+     Déclaration `/accessibilite` mise à jour et datée, avec ce qui reste
+     explicitement non couvert.
+
+### P3 — Dette (traitée)
+120. ✅ Filtrage Sentry (`src/lib/sentry-scrub.ts`, 100 % couvert) : corps de
+     requête, paramètres d'URL, cookies et en-têtes hors liste blanche sont
+     retirés avant envoi. Un REX décrit une intervention réelle, et le cookie de
+     session partait avec. `sendDefaultPii: false` explicite sur les trois
+     runtimes. Config Session Replay morte supprimée (taux d'échantillonnage
+     sans `replayIntegration`).
+121. ✅ `requireUser` étendu : **15 → 30** fichiers de routes sur 41. Les 6
+     routes répondant `{ message: 'Non autorisé' }` sont laissées en l'état —
+     migrer changerait la forme de leur réponse, donc le contrat de l'API.
+     ⚠️ **À trancher** : l'API a deux conventions de réponse d'erreur
+     (`{ error }` et `{ message }`). Les unifier est un changement de contrat.
+122. ✅ `script-src 'unsafe-eval'` retiré **en production** (conservé en
+     développement, où React Refresh en a besoin).
+     ⚠️ **À valider en préproduction** avant mise en production.
+123. ❌ CSP à nonce — **tentée, puis retirée**. Next prérend `/login`,
+     `/register`, `/forgot-password`, `/reset-password`, `_not-found` et
+     `_global-error` : leur HTML est figé au build, donc sans nonce, alors que
+     l'en-tête en porte un nouveau à chaque requête. Vérifié sur le HTML
+     prérendu — `.next/server/app/login.html` contient 4 `<script>` inline
+     (bascule de thème, polyfill de soumission de formulaire, deux blocs
+     d'hydratation) et 0 attribut `nonce`. En l'état, la politique aurait cassé
+     toutes les pages d'entrée dans l'application. Y parvenir suppose de rendre
+     ces pages dynamiques — et `_not-found` / `_global-error` ne s'y prêtent pas
+     simplement — puis de vérifier sur un serveur réel que Next appose bien le
+     nonce. Chantier à mener application démarrée, pas une ligne de config.
+124. ✅ Documentation resynchronisée : items 10, 11 et 12 étaient faits sans être
+     cochés (manifest PWA, `robots.txt` / `sitemap.xml`, whitelist de domaines).
+
+### Reste à faire, hors périmètre de ces lots
+- **Dependabot / Renovate + `npm audit --audit-level=high` en CI.** C'est la vraie
+  correction du P0 : rien n'avait prévenu pendant un mois.
+- **RGAA manuel** : contrastes sur les deux thèmes, parcours clavier des cinq
+  écrans principaux, restitution par lecteur d'écran. Demande l'application qui
+  tourne ; la part automatisable est verrouillée.
+- **Facturation** (116), **CSP à nonce** (123), **unification des réponses
+  d'erreur** (121), **asymétrie de la grâce d'abonnement** (117).

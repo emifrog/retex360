@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { isSdisAdmin } from '@/lib/api-auth';
+import { isSdisAdmin, requireUser } from '@/lib/api-auth';
 import { toOne } from '@/lib/supabase/relations';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -13,12 +13,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id: commentId } = await params;
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.api, user.id);
     if (limited) return limited;
@@ -90,12 +87,9 @@ export async function DELETE(
     const { id: commentId } = await params;
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.api, user.id);
     if (limited) return limited;

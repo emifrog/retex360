@@ -9,9 +9,48 @@ const securityHeaders: Record<string, string> = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-  'Content-Security-Policy': [
+};
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+/**
+ * Politique de sécurité de contenu.
+ *
+ * `script-src 'unsafe-eval'` n'est nécessaire qu'en développement, où React
+ * Refresh compile et évalue du code à la volée. Il n'est plus émis en
+ * production.
+ *
+ * `script-src 'unsafe-inline'` en revanche EST CONSERVÉ, à contre-cœur, et il
+ * faut savoir pourquoi avant d'essayer de le retirer :
+ *
+ *   Le remplacer par un nonce par requête est le geste classique, et il a été
+ *   tenté ici. Il casse l'application. Next prérend statiquement les pages qui
+ *   ne lisent aucune donnée de requête — ici `/login`, `/register`,
+ *   `/forgot-password`, `/reset-password`, plus `_not-found` et
+ *   `_global-error`. Leur HTML est figé au build, donc SANS nonce, alors que
+ *   l'en-tête en porte un nouveau à chaque requête. Les quatre scripts inline
+ *   que Next y place — bascule de thème, polyfill de soumission de formulaire
+ *   et les deux blocs de données d'hydratation — seraient refusés, et ces
+ *   pages ne s'hydrateraient plus du tout. Constaté sur le HTML prérendu, pas
+ *   supposé : `.next/server/app/login.html` contient bien 4 `<script>` inline
+ *   et 0 attribut `nonce`.
+ *
+ *   Pour y arriver il faudrait d'abord rendre ces pages dynamiques (et
+ *   `_not-found` / `_global-error` ne s'y prêtent pas simplement), puis
+ *   vérifier sur un serveur réel que Next appose bien le nonce. C'est un
+ *   chantier à mener avec l'application qui tourne, pas une ligne de config.
+ *
+ * `style-src 'unsafe-inline'` est conservé également : Radix positionne ses
+ * surfaces flottantes par style inline et Tailwind injecte ses variables de
+ * thème de la même manière. Le risque porté par un style injecté est sans
+ * commune mesure avec celui d'un script.
+ */
+function buildCsp(): string {
+  return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.sentry-cdn.com",
+    isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.sentry-cdn.com"
+      : "script-src 'self' 'unsafe-inline' https://*.sentry.io https://*.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in",
     "font-src 'self' data:",
@@ -20,17 +59,20 @@ const securityHeaders: Record<string, string> = {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-  ].join('; '),
-};
+  ].join('; ');
+}
 
-function applySecurityHeaders(response: NextResponse): NextResponse {
+function applySecurityHeaders(response: NextResponse, csp: string): NextResponse {
   for (const [key, value] of Object.entries(securityHeaders)) {
     response.headers.set(key, value);
   }
+  response.headers.set('Content-Security-Policy', csp);
   return response;
 }
 
 export async function updateSession(request: NextRequest) {
+  const csp = buildCsp();
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -79,7 +121,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     const redirectResponse = NextResponse.redirect(url);
-    return applySecurityHeaders(redirectResponse);
+    return applySecurityHeaders(redirectResponse, csp);
   }
 
   // Rediriger vers / si connecté et sur une page auth
@@ -87,8 +129,8 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);
-    return applySecurityHeaders(redirectResponse);
+    return applySecurityHeaders(redirectResponse, csp);
   }
 
-  return applySecurityHeaders(supabaseResponse);
+  return applySecurityHeaders(supabaseResponse, csp);
 }

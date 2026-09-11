@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, userKey, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { signAttachmentUrls } from '@/lib/storage';
+import { requireUser } from '@/lib/api-auth';
 
 // Limiteur PDF dédié, par utilisateur (opération coûteuse).
 const pdfRateLimiter = rateLimiters.ai; // Reuses AI limiter: 10/min — heavy ops
@@ -32,13 +33,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createClient();
 
     // Check auth
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     // Rate limit PDF dédié, par utilisateur : la génération est coûteuse et le
     // préfixe garde un compteur distinct de celui des autres opérations

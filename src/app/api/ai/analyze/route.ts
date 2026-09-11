@@ -4,17 +4,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { aiAnalysisSchema } from '@/lib/validators/api';
 import { logger } from '@/lib/logger';
+import { requireUser } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.ai, user.id);
     if (limited) return limited;

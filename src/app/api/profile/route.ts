@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { profileUpdateSchema } from '@/lib/validators/api';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { requireUser } from '@/lib/api-auth';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -16,13 +17,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check auth
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.api, user.id);
     if (limited) return limited;

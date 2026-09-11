@@ -4,19 +4,16 @@ import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { optimizeImage } from '@/lib/image-optimizer';
 import { verifyFileType } from '@/lib/file-signature';
 import { logger } from '@/lib/logger';
+import { requireUser } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
     // Check auth
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.upload, user.id);
     if (limited) return limited;

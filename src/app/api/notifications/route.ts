@@ -4,18 +4,16 @@ import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { isUuid } from '@/lib/supabase/filters';
 import { paginationSchema } from '@/lib/validators/api';
 import { logger } from '@/lib/logger';
+import { requireUser } from '@/lib/api-auth';
 
 // GET - Fetch user notifications
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.api, user.id);
     if (limited) return limited;
@@ -77,12 +75,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+    const { user } = auth;
 
     const limited = await limitByUser(rateLimiters.api, user.id);
     if (limited) return limited;

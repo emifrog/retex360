@@ -37,7 +37,12 @@ const config = {
     // NB : Jest retire du groupe « global » les fichiers ayant un seuil propre
     // (les quatre à 100 % ci-dessous). Ces chiffres portent donc sur le RESTE
     // de `src/lib`, pas sur l'ensemble affiché par le rapport.
-    global: { statements: 21, branches: 18, functions: 15, lines: 21 },
+    // NB : ces chiffres bougent MÉCANIQUEMENT quand un fichier rejoint la liste
+    // à seuil propre ci-dessous — il sort alors du groupe « global », et comme
+    // c'est un fichier à 100 %, la moyenne du reste baisse. Une baisse de ces
+    // valeurs n'est donc pas toujours une régression : vérifier d'abord si un
+    // fichier vient d'être extrait du groupe.
+    global: { statements: 21, branches: 17, functions: 15, lines: 21 },
     'src/lib/supabase/filters.ts': {
       statements: 100,
       branches: 100,
@@ -53,6 +58,10 @@ const config = {
     'src/lib/sanitize.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     'src/lib/sanitize-config.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     'src/lib/file-signature.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // Décide de ce qui quitte l'infrastructure vers le collecteur d'erreurs.
+    // Un oubli n'y produit aucun symptôme : la donnée part, et personne ne le
+    // voit.
+    'src/lib/sentry-scrub.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     // `deriveState` décide qui peut écrire et quand l'accès se coupe : même
     // exigence que les modules d'autorisation ci-dessus.
     'src/lib/subscription.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },

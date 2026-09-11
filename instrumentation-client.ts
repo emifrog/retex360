@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { scrubEvent } from '@/lib/sentry-scrub';
 
 // Loaded automatically by Next.js on the client. Replaces the legacy
 // sentry.client.config.ts convention (Next 15.3+/Sentry SDK v9+).
@@ -8,12 +9,13 @@ Sentry.init({
   // Performance Monitoring
   tracesSampleRate: 0.2, // 20% of transactions in production
 
-  // Session Replay (sample rates only — no replayIntegration enabled yet)
-  replaysSessionSampleRate: 0.1, // 10% of sessions
-  replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
-
-  // Environment
+  // Pas de Session Replay : `replayIntegration` n'est pas chargée, et les taux
+  // d'échantillonnage qui figuraient ici ne faisaient donc rien. Les activer
+  // filmerait des écrans de REX — contenus d'intervention réels — ce qui
+  // demanderait au minimum le masquage de tout le texte saisi.
   environment: process.env.NODE_ENV,
+
+  sendDefaultPii: false,
 
   // Only enable in production
   enabled: process.env.NODE_ENV === 'production',
@@ -25,13 +27,14 @@ Sentry.init({
     'Non-Error promise rejection captured',
   ],
 
-  // Add user context
   beforeSend(event) {
     // Don't send events in development
     if (process.env.NODE_ENV === 'development') {
       return null;
     }
-    return event;
+    // Même filtrage que côté serveur : une erreur déclenchée pendant la saisie
+    // d'un REX ne doit pas emporter le brouillon ni le cookie de session.
+    return scrubEvent(event);
   },
 });
 
