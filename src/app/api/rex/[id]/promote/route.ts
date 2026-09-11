@@ -1,14 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isSdisAdmin } from '@/lib/api-auth';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -19,6 +15,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Get existing REX
     const { data: rex, error: fetchError } = await supabase

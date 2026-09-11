@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isSdisAdmin } from '@/lib/api-auth';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { toOne } from '@/lib/supabase/relations';
 import { logger } from '@/lib/logger';
 import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
@@ -10,10 +10,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -26,6 +22,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Get attachment + the parent REX's SDIS (needed to scope the admin check).
     const { data: attachment, error: fetchError } = await supabase

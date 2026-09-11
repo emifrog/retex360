@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
@@ -20,6 +16,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Check if already favorited
     const { data: existing } = await supabase
@@ -55,10 +54,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
@@ -71,6 +66,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Remove from favorites
     const { error } = await supabase

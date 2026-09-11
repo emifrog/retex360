@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
@@ -17,6 +13,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const auth = await requireRole(supabase, ['validator', 'admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { user } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     // Update REX status — récupère la ligne modifiée pour distinguer un succès réel
     // d'un no-op (REX inexistant, déjà validé, ou bloqué par la RLS inter-SDIS).

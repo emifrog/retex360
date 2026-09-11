@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 
@@ -47,13 +47,8 @@ function formatRow(rex: {
   ].join(';');
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   // Limiteur `export` (5/min) : un CSV streame jusqu'à 10 000 REX, c'est le
-  // levier naturel d'une exfiltration en masse par un compte légitime.
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.export.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
 
@@ -61,6 +56,9 @@ export async function GET(request: Request) {
     const auth = await requireRole(supabase, ['validator', 'admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { profile } = auth;
+
+    const limited = await limitByUser(rateLimiters.export, auth.user.id);
+    if (limited) return limited;
     const isSuperAdmin = profile.role === 'super_admin';
 
     const encoder = new TextEncoder();

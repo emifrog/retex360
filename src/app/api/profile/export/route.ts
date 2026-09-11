@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 // Export RGPD : limiteur `export` (5/min) et non `api`, la route déverse
 // l'intégralité des données personnelles de l'appelant.
-export async function GET(request: Request) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.export.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -20,6 +16,9 @@ export async function GET(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.export, user.id);
+    if (limited) return limited;
 
     // Fetch all user data
     const [profileResult, rexResult, commentsResult, favoritesResult] = await Promise.all([

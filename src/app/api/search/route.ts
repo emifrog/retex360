@@ -2,19 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { orIlike } from '@/lib/supabase/filters';
 import { generateEmbedding } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { searchSchema } from '@/lib/validators/api';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
-  // Rate limiting
-  const ip = getClientIp(request);
-  const rateLimitResult = await rateLimiters.search.limit(ip);
-
-  if (!rateLimitResult.success) {
-    return rateLimitResponse(rateLimitResult.reset);
-  }
-
   try {
     const supabase = await createClient();
 
@@ -24,6 +16,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.search, user.id);
+    if (limited) return limited;
 
     const body = await request.json();
 

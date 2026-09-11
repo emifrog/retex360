@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { resetAdminSchema } from '@/lib/validators/super-admin';
 import { sendPasswordResetEmail, isEmailConfigured } from '@/lib/email';
@@ -10,16 +10,15 @@ import { logger } from '@/lib/logger';
 // Génère un lien de réinitialisation de mot de passe pour un membre d'un SDIS
 // client (typiquement son admin). `id` = identifiant du SDIS. Super_admin only.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id } = await params;
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['super_admin']);
     if ('response' in auth) return auth.response;
     const { user } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const body = await request.json();
     const validated = resetAdminSchema.safeParse(body);

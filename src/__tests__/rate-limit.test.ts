@@ -1,6 +1,11 @@
 /**
+ * @jest-environment node
+ *
  * Tests for the in-memory rate limiter logic.
  * We mock Upstash modules since they use ESM-only dependencies.
+ *
+ * Environnement `node` (et non jsdom) : `limitByUser`/`limitByIp` construisent
+ * une `Response` web, absente du global sous jsdom. Rien ici ne touche au DOM.
  */
 
 // Mock Upstash to avoid ESM import issues
@@ -19,7 +24,7 @@ jest.mock('@upstash/redis', () => ({
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { rateLimiters, getClientIp } =
+const { rateLimiters, getClientIp, userKey, ipKey, limitByUser, limitByIp } =
   require('@/lib/rate-limit') as typeof import('@/lib/rate-limit');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -102,6 +107,71 @@ describe('Rate limiting', () => {
       }
       const result = await rateLimiters.upload.limit(uniqueIp);
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('clé de limitation : utilisateur plutôt qu’IP', () => {
+    function requestFrom(ip: string): Request {
+      return {
+        headers: { get: (name: string) => (name === 'x-forwarded-for' ? ip : null) },
+      } as unknown as Request;
+    }
+
+    it('préfixe les deux espaces de clés', () => {
+      expect(userKey('abc')).toBe('u:abc');
+      expect(ipKey(requestFrom('192.168.1.1'))).toBe('ip:192.168.1.1');
+    });
+
+    it('donne des compteurs indépendants à deux agents du même SDIS', async () => {
+      // Le cas que la limitation par IP cassait : même sortie NAT, deux comptes.
+      // L'un épuise son quota, l'autre doit rester servi.
+      const a = `user-a-${Date.now()}`;
+      const b = `user-b-${Date.now()}`;
+
+      for (let i = 0; i < 5; i++) {
+        expect(await limitByUser(rateLimiters.auth, a)).toBeNull();
+      }
+      expect(await limitByUser(rateLimiters.auth, a)).not.toBeNull();
+      expect(await limitByUser(rateLimiters.auth, b)).toBeNull();
+    });
+
+    it('suit un utilisateur qui change de réseau', async () => {
+      // Le quota est attaché au compte : passer du wifi caserne à la 4G ne le
+      // remet pas à zéro, ce que la limitation par IP permettait.
+      const u = `user-roaming-${Date.now()}`;
+      for (let i = 0; i < 5; i++) await limitByUser(rateLimiters.auth, u);
+      expect(await limitByUser(rateLimiters.auth, u)).not.toBeNull();
+    });
+
+    it('renvoie une 429 avec Retry-After au dépassement, null sinon', async () => {
+      const u = `user-429-${Date.now()}`;
+      expect(await limitByUser(rateLimiters.auth, u)).toBeNull();
+
+      for (let i = 0; i < 5; i++) await limitByUser(rateLimiters.auth, u);
+      const denied = await limitByUser(rateLimiters.auth, u);
+
+      expect(denied).not.toBeNull();
+      expect(denied!.status).toBe(429);
+      expect(denied!.headers.get('Retry-After')).toBeTruthy();
+    });
+
+    it('garde les routes anonymes limitées par IP', async () => {
+      const request = requestFrom(`anon-${Date.now()}`);
+      for (let i = 0; i < 5; i++) {
+        expect(await limitByIp(rateLimiters.auth, request)).toBeNull();
+      }
+      expect(await limitByIp(rateLimiters.auth, request)).not.toBeNull();
+    });
+
+    it("n'entre pas en collision quand un identifiant ressemble à une IP", async () => {
+      // Justifie les préfixes : sans eux, ces deux appels partageraient un
+      // compteur dans le même espace Redis.
+      const value = `10.0.0.${Date.now() % 255}`;
+      const request = requestFrom(value);
+
+      for (let i = 0; i < 5; i++) await limitByIp(rateLimiters.auth, request);
+      expect(await limitByIp(rateLimiters.auth, request)).not.toBeNull();
+      expect(await limitByUser(rateLimiters.auth, value)).toBeNull();
     });
   });
 

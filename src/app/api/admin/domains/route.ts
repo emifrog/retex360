@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { domainCreateSchema } from '@/lib/validators/api';
 import { logger } from '@/lib/logger';
 
 // Ajoute un domaine email autorisé (admin SDIS / super_admin).
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { profile } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const body = await request.json();
     const validated = domainCreateSchema.safeParse(body);

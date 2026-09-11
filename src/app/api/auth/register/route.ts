@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByIp } from '@/lib/rate-limit';
 import { invitationRegisterSchema } from '@/lib/validators/api';
 import { acceptInvitationAndRegister } from '@/lib/invitations';
 import { logger } from '@/lib/logger';
 
 // Inscription sur invitation uniquement (cf. lib/invitations + server action register).
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rateLimitResult = await rateLimiters.auth.limit(ip);
-  if (!rateLimitResult.success) {
-    return rateLimitResponse(rateLimitResult.reset);
-  }
+  const limited = await limitByIp(rateLimiters.auth, request);
+  if (limited) return limited;
 
   try {
     const body = await request.json();

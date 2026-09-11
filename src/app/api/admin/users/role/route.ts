@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { roleUpdateSchema } from '@/lib/validators/api';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
 
 export async function PUT(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const body = await request.json();
@@ -26,6 +22,9 @@ export async function PUT(request: NextRequest) {
     const auth = await requireRole(supabase, ['admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { user, profile: currentProfile } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const isSuperAdmin = currentProfile.role === 'super_admin';
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { sdisOnboardSchema } from '@/lib/validators/super-admin';
 import { generateInvitationToken, hashToken, invitationExpiry } from '@/lib/invitations';
@@ -15,15 +15,14 @@ const iso = (d?: Date | null) => (d ? d.toISOString() : null);
 // Onboarding d'un SDIS client (super_admin) : crée/enrichit le SDIS, son
 // abonnement, ses domaines autorisés, et invite le compte admin initial.
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['super_admin']);
     if ('response' in auth) return auth.response;
     const { user } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const body = await request.json();
     const validated = sdisOnboardSchema.safeParse(body);

@@ -220,11 +220,15 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Insights IA cloisonnés par SDIS** : le corpus analysé se limite aux REX validés visibles par le SDIS de l'appelant, et la clé de cache inclut le `sdis_id`
 - **Suppressions ordonnées base → storage** : la ligne est supprimée d'abord et le nombre de lignes affectées est vérifié (la RLS reste l'autorité) ; le purge des objets ne suit qu'en cas de confirmation — PostgREST ne signalant pas par une erreur un `DELETE` bloqué par la RLS
 - **Headers de sécurité** : CSP, HSTS, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
-- **Rate limiting** :
-  - Global : 120 req/min par IP (Redis Upstash, persistant entre invocations serverless)
-  - Auth : 5/min, Upload : 10/min, API : 60/min, Recherche : 30/min, IA : 10/min, PDF : 10/min, **Exports : 5/min**
+- **Rate limiting** — deux couches aux rôles distincts :
+  - **Quotas par UTILISATEUR** dans les routes, appliqués après authentification (`limitByUser`) : Upload : 10/min, API : 60/min, Recherche : 30/min, IA : 10/min, PDF : 10/min, **Exports : 5/min**
+  - **Garde-fou anti-flood** dans le middleware, par IP et avant tout travail : 1000 req/min (ajustable via `GLOBAL_RATE_LIMIT_PER_MINUTE`)
+  - Les routes réellement anonymes (connexion, inscription, mot de passe oublié, invitation) restent limitées **par IP** (`limitByIp`, 5/min) — c'est l'effet recherché contre le bourrage d'identifiants
+  - Pourquoi par utilisateur : un SDIS est une collectivité dont les agents sortent derrière **une même IP publique**. Un quota par IP y devient un quota par SDIS — quelques dizaines d'agents en usage normal déclenchent des 429 qui ressemblent à une panne, tandis qu'aucun compte n'est réellement plafonné (changer de réseau remet le compteur à zéro)
   - Couverture vérifiée **handler par handler** (48/48), pas par fichier : un GET non protégé se cachait derrière un POST protégé dans le même fichier
   - **Fail-closed** sur auth & IA si Redis est injoignable ; **Upstash obligatoire en production** (échec au boot sinon)
+- **Optimiseur d'images épinglé au projet Supabase courant** (hostname dérivé de `NEXT_PUBLIC_SUPABASE_URL`) : un motif `*.supabase.co` autoriserait *tous* les projets Supabase existants, transformant `/_next/image` en proxy d'images ouvert
+- **Uploads validés par leurs octets d'en-tête** (`file-signature.ts`) et non par le Content-Type déclaré, falsifiable : liste blanche de signatures, contrôlée avant toute mise en décodeur, puis c'est le type **vérifié** qui sert en aval
 - **Permissions** vérifiées côté serveur (helpers réutilisables `requireUser`/`requireRole`/`isSdisAdmin`)
 - **Admin cloisonné par SDIS** : `isSdisAdmin` impose qu'un admin n'agisse que sur les ressources de son SDIS (`super_admin` transverse), en miroir exact des policies RLS — sinon la couche applicative laisse passer une action que la base refusera ensuite en silence
 - **Pièces jointes privées** : bucket non public, servies par **URLs signées** courtes (accès lié à la visibilité du REX)

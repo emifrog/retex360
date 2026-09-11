@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function DELETE(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.auth.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
 
@@ -19,6 +15,9 @@ export async function DELETE(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.auth, user.id);
+    if (limited) return limited;
 
     // Validate confirmation from body
     const body = await request.json();

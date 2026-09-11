@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { chatCompletion, OPENROUTER_MODELS } from '@/lib/openai';
-import { NextRequest, NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { NextResponse } from 'next/server';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireUser } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 
@@ -97,15 +97,14 @@ Règles :
   )();
 }
 
-export async function GET(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
+export async function GET() {
   try {
     const supabase = await createClient();
     const auth = await requireUser(supabase);
     if ('response' in auth) return auth.response;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const { data: profile } = await supabase
       .from('profiles')

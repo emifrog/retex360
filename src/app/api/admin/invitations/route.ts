@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { invitationCreateSchema } from '@/lib/validators/api';
 import { generateInvitationToken, hashToken, invitationExpiry } from '@/lib/invitations';
@@ -10,15 +10,14 @@ import { logger } from '@/lib/logger';
 
 // Crée une invitation (admin SDIS / super_admin) et renvoie le lien à transmettre.
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { user, profile } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const body = await request.json();
     const validated = invitationCreateSchema.safeParse(body);

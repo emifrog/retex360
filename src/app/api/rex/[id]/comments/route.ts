@@ -1,19 +1,25 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
+import { requireUser } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { commentSchema } from '@/lib/validators/api';
 import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // GET - Fetch comments for a REX
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
+
+    // Contrôle d'authentification désormais explicite : il ne reposait que sur
+    // la RLS, qui ne renvoie rien à un anonyme. C'est aussi ce qui donne une
+    // identité à limiter, plutôt qu'une IP partagée par tout un SDIS.
+    const auth = await requireUser(supabase);
+    if ('response' in auth) return auth.response;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     // Fetch all comments for this REX with author info
     const { data: comments, error } = await supabase
@@ -55,10 +61,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // POST - Create a new comment
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: rexId } = await params;
     const supabase = await createClient();
@@ -69,6 +71,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     const body = await request.json();
 

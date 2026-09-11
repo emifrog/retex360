@@ -1,13 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
-export async function GET(request: Request) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -17,6 +13,9 @@ export async function GET(request: Request) {
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Run all queries in parallel
     const [

@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { optimizeImage } from '@/lib/image-optimizer';
 import { verifyFileType } from '@/lib/file-signature';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
-  // Rate limiting
-  const ip = getClientIp(request);
-  const rateLimitResult = await rateLimiters.upload.limit(ip);
-
-  if (!rateLimitResult.success) {
-    return rateLimitResponse(rateLimitResult.reset);
-  }
-
   try {
     const supabase = await createClient();
 
@@ -25,6 +17,9 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.upload, user.id);
+    if (limited) return limited;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

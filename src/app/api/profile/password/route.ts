@@ -2,14 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { passwordChangeSchema } from '@/lib/validators/api';
 import { isPasswordCompromised } from '@/lib/password-breach';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export async function PUT(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.auth.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const body = await request.json();
@@ -28,6 +24,9 @@ export async function PUT(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.auth, user.id);
+    if (limited) return limited;
 
     // Rejeter les mots de passe figurant dans une fuite connue (fail-open).
     if (await isPasswordCompromised(validated.data.newPassword)) {

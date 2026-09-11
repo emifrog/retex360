@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { logAdminAction } from '@/lib/audit';
 import { logger } from '@/lib/logger';
@@ -10,15 +10,14 @@ import { logger } from '@/lib/logger';
 // pièces jointes. Admin → son propre SDIS ; super_admin → n'importe quel SDIS (?sdisId=).
 // Lecture via le rôle service (traverse la RLS), autorisation contrôlée ici.
 export async function GET(request: NextRequest) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['admin', 'super_admin']);
     if ('response' in auth) return auth.response;
     const { user, profile } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
     const isSuperAdmin = profile.role === 'super_admin';
 
     // SDIS cible : super_admin peut viser un SDIS ; l'admin est forcé sur le sien.

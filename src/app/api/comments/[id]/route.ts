@@ -2,17 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { isSdisAdmin } from '@/lib/api-auth';
 import { toOne } from '@/lib/supabase/relations';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { commentSchema } from '@/lib/validators/api';
 import { sanitizePlainText } from '@/lib/sanitize-server';
 
 // PUT - Update a comment
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: commentId } = await params;
     const supabase = await createClient();
@@ -23,6 +19,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Check if user is the author
     const { data: existingComment } = await supabase
@@ -87,10 +86,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id: commentId } = await params;
     const supabase = await createClient();
@@ -101,6 +96,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Check if user is the author or admin
     const { data: profile } = await supabase

@@ -135,6 +135,52 @@ export const rateLimiters = {
   ai: createRateLimiter(10, '1 m', { failClosed: true }),
 };
 
+export type RateLimiter = (typeof rateLimiters)[keyof typeof rateLimiters];
+
+/**
+ * Clé de limitation par utilisateur.
+ *
+ * Limiter par IP est inadapté à ce produit : un SDIS est une collectivité, et
+ * ses agents sortent derrière une même IP publique. Un quota « par IP » y
+ * devient un quota « par SDIS » — l'usage normal de quelques dizaines d'agents
+ * déclenche des 429 qui, côté client, ressemblent à une panne, tandis qu'aucun
+ * compte n'est réellement plafonné (un même utilisateur change d'IP en passant
+ * en 4G).
+ *
+ * Le préfixe évite toute collision avec les clés IP dans le même espace Redis.
+ */
+export function userKey(userId: string): string {
+  return `u:${userId}`;
+}
+
+export function ipKey(request: Request): string {
+  return `ip:${getClientIp(request)}`;
+}
+
+/**
+ * Applique un limiteur à l'utilisateur authentifié. Renvoie la réponse 429 à
+ * retourner, ou `null` si la requête peut continuer.
+ *
+ * À placer APRÈS le contrôle d'authentification : l'identité est ce qui est
+ * limité. Le flood anonyme, lui, est coupé en amont par le limiteur global du
+ * middleware, qui s'applique par IP avant tout travail.
+ */
+export async function limitByUser(limiter: RateLimiter, userId: string): Promise<Response | null> {
+  const result = await limiter.limit(userKey(userId));
+  return result.success ? null : rateLimitResponse(result.reset);
+}
+
+/**
+ * Applique un limiteur à l'IP appelante. Réservé aux routes réellement
+ * anonymes (connexion, inscription, mot de passe oublié), où l'IP est la seule
+ * identité disponible et où limiter par IP est précisément l'effet recherché
+ * contre le bourrage d'identifiants.
+ */
+export async function limitByIp(limiter: RateLimiter, request: Request): Promise<Response | null> {
+  const result = await limiter.limit(ipKey(request));
+  return result.success ? null : rateLimitResponse(result.reset);
+}
+
 // Helper to get client IP from request
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');

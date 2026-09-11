@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByIp } from '@/lib/rate-limit';
 import { loginSchema } from '@/lib/validators/auth';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   // Rate limiting
-  const ip = getClientIp(request);
-  const rateLimitResult = await rateLimiters.auth.limit(ip);
-
-  if (!rateLimitResult.success) {
-    return rateLimitResponse(rateLimitResult.reset);
-  }
+  const limited = await limitByIp(rateLimiters.auth, request);
+  if (limited) return limited;
 
   try {
     const body = await request.json();

@@ -1,15 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateRexEmbedding } from '@/lib/openai';
 import { NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 // POST - Generate and store embedding for a REX
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.ai.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -20,6 +16,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.ai, user.id);
+    if (limited) return limited;
 
     // Get REX data
     const { data: rex, error: rexError } = await supabase

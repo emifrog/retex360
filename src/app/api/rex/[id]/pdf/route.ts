@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { RexPdfTemplate } from '@/lib/pdf/rex-template';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, userKey, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { signAttachmentUrls } from '@/lib/storage';
 
-// PDF-specific rate limiter: 5 PDFs per hour per IP (expensive operation)
+// Limiteur PDF dédié, par utilisateur (opération coûteuse).
 const pdfRateLimiter = rateLimiters.ai; // Reuses AI limiter: 10/min — heavy ops
 
 // Safety limits to prevent OOM / timeout
@@ -22,11 +22,6 @@ function truncateText(text: string | null | undefined, max: number): string | nu
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  // PDF-specific rate limit (stricter than general API)
-  const ip = getClientIp(request);
-  const rl = await pdfRateLimiter.limit(`pdf:${ip}`);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   const log = logger.withCorrelation();
 
   try {
@@ -44,6 +39,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    // Rate limit PDF dédié, par utilisateur : la génération est coûteuse et le
+    // préfixe garde un compteur distinct de celui des autres opérations
+    // partageant ce limiteur.
+    const rl = await pdfRateLimiter.limit(`pdf:${userKey(user.id)}`);
+    if (!rl.success) return rateLimitResponse(rl.reset);
 
     // Fetch REX + attachments in parallel
     const [rexResult, attachmentsResult] = await Promise.all([

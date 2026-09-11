@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireRole } from '@/lib/api-auth';
 import { subscriptionUpdateSchema } from '@/lib/validators/super-admin';
 import { logAdminAction } from '@/lib/audit';
@@ -11,16 +11,15 @@ const iso = (d?: Date | null) => (d ? d.toISOString() : null);
 // Met à jour l'abonnement d'un SDIS : changement de plan, suspension/réactivation,
 // dates de période, limites. `id` = identifiant du SDIS. Super_admin uniquement.
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const { id } = await params;
     const supabase = await createClient();
     const auth = await requireRole(supabase, ['super_admin']);
     if ('response' in auth) return auth.response;
     const { user } = auth;
+
+    const limited = await limitByUser(rateLimiters.api, auth.user.id);
+    if (limited) return limited;
 
     const body = await request.json();
     const validated = subscriptionUpdateSchema.safeParse(body);

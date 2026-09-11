@@ -2,7 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/supabase/filters';
 import { paginationSchema } from '@/lib/validators/api';
 import { NextResponse } from 'next/server';
-import { rateLimiters, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { validateRexByType } from '@/lib/validators/rex';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
@@ -10,10 +10,6 @@ import { getSubscriptionState } from '@/lib/subscription';
 
 // POST - Create new REX
 export async function POST(request: Request) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
 
@@ -23,6 +19,9 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // Get user profile for sdis_id
     const { data: profile } = await supabase
@@ -159,10 +158,6 @@ export async function POST(request: Request) {
 
 // GET - List REX
 export async function GET(request: Request) {
-  const ip = getClientIp(request);
-  const rl = await rateLimiters.api.limit(ip);
-  if (!rl.success) return rateLimitResponse(rl.reset);
-
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
@@ -173,6 +168,9 @@ export async function GET(request: Request) {
     if (!user) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
+
+    const limited = await limitByUser(rateLimiters.api, user.id);
+    if (limited) return limited;
 
     // `?limit=999999` scannait toute la table ; `?page=abc` donnait NaN, donc un
     // `range(NaN, NaN)`. Le schéma coerce, borne à 100 et rejette le reste.

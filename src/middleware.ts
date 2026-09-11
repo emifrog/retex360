@@ -3,7 +3,21 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { updateSession } from '@/lib/supabase/middleware';
 
-// Global rate limiter using Upstash Redis (persists across serverless invocations)
+/**
+ * Garde-fou anti-flood, par IP, appliqué avant tout travail.
+ *
+ * Ce limiteur n'est PAS un quota métier : les quotas par utilisateur sont
+ * appliqués dans les routes, après authentification (`limitByUser`). Ici on ne
+ * cherche qu'à couper un flood brut avant qu'il ne coûte un appel réseau.
+ *
+ * Le plafond doit donc être calibré sur le trafic légitime d'une IP ENTIÈRE,
+ * pas d'un utilisateur : un SDIS de plusieurs dizaines d'agents derrière un
+ * même NAT génère facilement plusieurs centaines de requêtes par minute en
+ * usage normal. Ajustable sans redéploiement de code via
+ * `GLOBAL_RATE_LIMIT_PER_MINUTE` si un client dépasse le défaut.
+ */
+const GLOBAL_LIMIT_PER_MINUTE = Number(process.env.GLOBAL_RATE_LIMIT_PER_MINUTE) || 1000;
+
 let globalRateLimiter: Ratelimit | null = null;
 
 function getGlobalRateLimiter(): Ratelimit | null {
@@ -15,7 +29,7 @@ function getGlobalRateLimiter(): Ratelimit | null {
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       }),
-      limiter: Ratelimit.slidingWindow(120, '1 m'),
+      limiter: Ratelimit.slidingWindow(GLOBAL_LIMIT_PER_MINUTE, '1 m'),
       analytics: true,
       prefix: 'retex360_global',
     });
