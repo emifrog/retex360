@@ -58,6 +58,21 @@ export default function AccessibilitePage() {
             <li>Attributs ARIA sur les éléments interactifs et les landmarks</li>
             <li>Textes alternatifs sur les images</li>
             <li>Structure sémantique HTML (header, nav, main, aside)</li>
+            <li>
+              Éléments actionnables portés par des balises natives (
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">button</code>,{' '}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">a</code>) plutôt que par des
+              conteneurs cliquables, afin de rester atteignables au clavier
+            </li>
+            <li>
+              État des filtres et des sélecteurs annoncé par{' '}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">aria-pressed</code>, sans
+              dépendre de la seule couleur
+            </li>
+            <li>
+              Contrôle automatisé des règles d&apos;accessibilité à chaque intégration continue :
+              une régression fait échouer la construction
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -74,6 +89,15 @@ export default function AccessibilitePage() {
             </li>
             <li>Certains indicateurs de statut reposent uniquement sur la couleur</li>
             <li>La hiérarchie des titres peut présenter des sauts sur certaines pages</li>
+            <li>
+              Les rapports de contraste n&apos;ont pas encore fait l&apos;objet d&apos;une mesure
+              systématique sur les deux thèmes
+            </li>
+            <li>
+              Le parcours complet au clavier et la restitution par lecteur d&apos;écran n&apos;ont
+              pas encore été audités manuellement : les vérifications menées à ce jour sont
+              automatisées et ne couvrent que ce qu&apos;une analyse statique peut établir
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -115,7 +139,7 @@ export default function AccessibilitePage() {
             </a>
           </p>
           <p className="text-xs text-muted-foreground/60">
-            Cette déclaration a été établie le 5 mars 2026.
+            Cette déclaration a été établie le 5 mars 2026 et mise à jour le 11 septembre 2026.
           </p>
         </CardContent>
       </Card>

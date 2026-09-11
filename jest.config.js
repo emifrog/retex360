@@ -37,7 +37,7 @@ const config = {
     // NB : Jest retire du groupe « global » les fichiers ayant un seuil propre
     // (les quatre à 100 % ci-dessous). Ces chiffres portent donc sur le RESTE
     // de `src/lib`, pas sur l'ensemble affiché par le rapport.
-    global: { statements: 17, branches: 14, functions: 10, lines: 17 },
+    global: { statements: 21, branches: 18, functions: 15, lines: 21 },
     'src/lib/supabase/filters.ts': {
       statements: 100,
       branches: 100,
@@ -53,6 +53,14 @@ const config = {
     'src/lib/sanitize.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     'src/lib/sanitize-config.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     'src/lib/file-signature.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // `deriveState` décide qui peut écrire et quand l'accès se coupe : même
+    // exigence que les modules d'autorisation ci-dessus.
+    'src/lib/subscription.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // Règle de promotion DGSCGC. Les statements manquantes sont les déclarations
+    // des schémas exportés, exercées via `validateRexByType` plutôt que
+    // référencées directement — d'où 100 % sur les branches, fonctions et
+    // lignes, et un seuil de statements calé sur l'existant.
+    'src/lib/validators/rex.ts': { statements: 81, branches: 100, functions: 100, lines: 100 },
   },
 };
 

@@ -141,6 +141,12 @@ export function ImageUpload({
   return (
     <div className="space-y-4">
       {/* Drop Zone */}
+      {/* Le glisser-déposer est un raccourci À LA SOURIS qui double une voie
+          déjà accessible : le <label for="file-upload"> ci-dessous porte un
+          intitulé visible et ouvre le sélecteur au clavier. Ce conteneur ne
+          porte aucun onClick et n'est donc pas la seule façon d'envoyer un
+          fichier — la règle ne peut pas le déduire. */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -151,6 +157,10 @@ export function ImageUpload({
           isUploading && 'opacity-50 pointer-events-none'
         )}
       >
+        {/* Libellé assuré par le <label for="file-upload"> juste en dessous,
+            qui porte un texte visible. La règle n'accepte que l'imbrication ou
+            un attribut ARIA, et ne remonte pas jusqu'au label frère. */}
+        {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
         <input
           type="file"
           id="file-upload"

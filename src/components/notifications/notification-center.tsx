@@ -106,14 +106,12 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
                 const colorClass =
                   notificationColors[notification.type] || 'text-muted-foreground bg-muted';
 
-                const content = (
-                  <div
-                    className={cn(
-                      'p-4 hover:bg-muted/50 transition-colors cursor-pointer relative group',
-                      !notification.is_read && 'bg-primary/5'
-                    )}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
+                // Le corps est rendu DANS le lien ou le bouton ; les actions
+                // (marquer lue, supprimer) restent leurs frères. Les imbriquer
+                // dans la zone cliquable produisait un bouton dans un lien —
+                // HTML invalide, et une seule cible pour trois actions.
+                const body = (
+                  <>
                     <div className="flex gap-3">
                       {/* Icon */}
                       <div
@@ -153,18 +151,47 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
                         </p>
                       </div>
                     </div>
+                  </>
+                );
 
-                    {/* Actions on hover */}
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                // `pr-16` réserve la place des actions en position absolue pour
+                // qu'elles ne recouvrent jamais le texte.
+                const zoneClassName = cn(
+                  'block w-full text-left p-4 pr-16 hover:bg-muted/50 transition-colors',
+                  !notification.is_read && 'bg-primary/5'
+                );
+
+                return (
+                  <div key={notification.id} className="relative group">
+                    {notification.link ? (
+                      <Link
+                        href={notification.link}
+                        className={zoneClassName}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className={zoneClassName}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        {body}
+                      </button>
+                    )}
+
+                    {/* `focus-within` en plus de `group-hover` : sans lui, ces
+                        actions restent invisibles pour qui navigue au clavier,
+                        alors même qu'elles sont atteignables au Tab. */}
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex gap-1">
                       {!notification.is_read && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markAsRead(notification.id);
-                          }}
+                          aria-label={`Marquer « ${notification.title} » comme lue`}
+                          onClick={() => markAsRead(notification.id)}
                         >
                           <Check className="w-3 h-3" />
                         </Button>
@@ -173,23 +200,13 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNotification(notification.id);
-                        }}
+                        aria-label={`Supprimer la notification « ${notification.title} »`}
+                        onClick={() => deleteNotification(notification.id)}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
-                );
-
-                return notification.link ? (
-                  <Link key={notification.id} href={notification.link}>
-                    {content}
-                  </Link>
-                ) : (
-                  <div key={notification.id}>{content}</div>
                 );
               })}
             </div>

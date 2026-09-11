@@ -76,24 +76,38 @@ export const NotificationBell = memo(function NotificationBell({ userId }: Notif
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    'p-3 hover:bg-muted/50 transition-colors cursor-pointer',
-                    !notification.is_read && 'bg-primary/5'
-                  )}
-                  onClick={() => handleNotificationClick(notification.id, notification.link)}
-                >
-                  {notification.link ? (
-                    <Link href={notification.link} className="block">
-                      <NotificationContent notification={notification} />
-                    </Link>
-                  ) : (
+              {notifications.map((notification) => {
+                // L'élément cliquable est le lien ou le bouton lui-même, et non
+                // un conteneur qui les enveloppe : un <div onClick> n'est ni
+                // atteignable au clavier, ni annoncé comme actionnable, et
+                // imbriquer un lien dedans crée deux cibles pour une seule
+                // action.
+                const className = cn(
+                  'block w-full text-left p-3 hover:bg-muted/50 transition-colors',
+                  !notification.is_read && 'bg-primary/5'
+                );
+                const onSelect = () => handleNotificationClick(notification.id, notification.link);
+
+                return notification.link ? (
+                  <Link
+                    key={notification.id}
+                    href={notification.link}
+                    className={className}
+                    onClick={onSelect}
+                  >
                     <NotificationContent notification={notification} />
-                  )}
-                </div>
-              ))}
+                  </Link>
+                ) : (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    className={className}
+                    onClick={onSelect}
+                  >
+                    <NotificationContent notification={notification} />
+                  </button>
+                );
+              })}
             </div>
           )}
         </ScrollArea>

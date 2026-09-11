@@ -23,8 +23,16 @@ export function ProductionTypePicker({
 }: ProductionTypePickerProps) {
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-foreground">Type de production</label>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Intitulé de groupe, pas libellé de champ : le choix se fait par des
+          boutons bascule, pas par un contrôle de formulaire unique. */}
+      <span id="type-production-label" className="text-sm font-medium text-foreground">
+        Type de production
+      </span>
+      <div
+        className="grid grid-cols-1 md:grid-cols-3 gap-3"
+        role="group"
+        aria-labelledby="type-production-label"
+      >
         {(
           Object.entries(PRODUCTION_TYPE_RULES) as [
             ProductionType,
@@ -39,6 +47,8 @@ export function ProductionTypePicker({
               key={type}
               type="button"
               disabled={disabled}
+              // Sans cet état, seule la couleur signale le type retenu.
+              aria-pressed={isSelected}
               onClick={() => onChange(type)}
               className={cn(
                 'relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200',

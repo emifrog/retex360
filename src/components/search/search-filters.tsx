@@ -134,11 +134,11 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Type */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
+            <label htmlFor="filtre-type" className="text-sm font-medium text-muted-foreground">
               Type d&apos;intervention
             </label>
             <Select value={type || 'all'} onValueChange={(v) => setType(v === 'all' ? '' : v)}>
-              <SelectTrigger>
+              <SelectTrigger id="filtre-type">
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent>
@@ -154,9 +154,11 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* SDIS */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">SDIS</label>
+            <label htmlFor="filtre-sdis" className="text-sm font-medium text-muted-foreground">
+              SDIS
+            </label>
             <Select value={sdis || 'all'} onValueChange={(v) => setSdis(v === 'all' ? '' : v)}>
-              <SelectTrigger>
+              <SelectTrigger id="filtre-sdis">
                 <SelectValue placeholder="Tous les SDIS" />
               </SelectTrigger>
               <SelectContent>
@@ -172,12 +174,14 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* Severity */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Sévérité</label>
+            <label htmlFor="filtre-severite" className="text-sm font-medium text-muted-foreground">
+              Sévérité
+            </label>
             <Select
               value={severity || 'all'}
               onValueChange={(v) => setSeverity(v === 'all' ? '' : v)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="filtre-severite">
                 <SelectValue placeholder="Toutes" />
               </SelectTrigger>
               <SelectContent>
@@ -193,9 +197,11 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
 
           {/* Status */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Statut</label>
+            <label htmlFor="filtre-statut" className="text-sm font-medium text-muted-foreground">
+              Statut
+            </label>
             <Select value={status || 'all'} onValueChange={(v) => setStatus(v === 'all' ? '' : v)}>
-              <SelectTrigger>
+              <SelectTrigger id="filtre-statut">
                 <SelectValue placeholder="Tous" />
               </SelectTrigger>
               <SelectContent>
@@ -211,9 +217,16 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         </div>
 
         {/* Inter-SDIS toggle */}
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        <label
+          htmlFor="filtre-inter-sdis"
+          className="flex items-center gap-3 cursor-pointer select-none"
+        >
           <input
+            id="filtre-inter-sdis"
             type="checkbox"
+            // Reprend le texte visible (WCAG 2.5.3) en écartant la parenthèse
+            // explicative, qui alourdit l'annonce sans rien ajouter.
+            aria-label="Inter-SDIS uniquement"
             checked={interSdis}
             onChange={(e) => setInterSdis(e.target.checked)}
             className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
@@ -226,12 +239,29 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         {/* Date range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Date de début</label>
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <label
+              htmlFor="filtre-date-debut"
+              className="text-sm font-medium text-muted-foreground"
+            >
+              Date de début
+            </label>
+            <Input
+              id="filtre-date-debut"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Date de fin</label>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            <label htmlFor="filtre-date-fin" className="text-sm font-medium text-muted-foreground">
+              Date de fin
+            </label>
+            <Input
+              id="filtre-date-fin"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
           </div>
         </div>
 
@@ -239,7 +269,11 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
         {allTags.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-muted-foreground">Tags</label>
+              {/* Intitulé de groupe, pas libellé de champ : les tags sont des
+                  boutons bascule, pas un contrôle de formulaire unique. */}
+              <span id="filtre-tags-label" className="text-sm font-medium text-muted-foreground">
+                Tags
+              </span>
               {selectedTags.length > 0 && (
                 <Button
                   variant="ghost"
@@ -251,18 +285,28 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
                 </Button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="filtre-tags-label">
               {displayedTags.map((tag) => (
+                // `asChild` : le badge rend un vrai <button>, donc atteignable
+                // au clavier et activable par Entrée/Espace. `aria-pressed`
+                // annonce l'état du filtre au lecteur d'écran — la couleur
+                // seule ne le ferait pas.
                 <Badge
                   key={tag}
+                  asChild
                   variant={selectedTags.includes(tag) ? 'default' : 'outline'}
                   className={cn(
                     'cursor-pointer transition-colors',
                     selectedTags.includes(tag) ? 'bg-primary hover:bg-primary/90' : 'hover:bg-muted'
                   )}
-                  onClick={() => toggleTag(tag)}
                 >
-                  {tag}
+                  <button
+                    type="button"
+                    aria-pressed={selectedTags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                  </button>
                 </Badge>
               ))}
               {allTags.length > 12 && (

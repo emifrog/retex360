@@ -161,11 +161,17 @@ export function ProfileForm({ profile, sdisList }: ProfileFormProps) {
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
+                {/* Le libellé n'était qu'une icône : sans ce texte, le champ
+                    de fichier est annoncé sans intitulé. */}
+                <span className="sr-only">
+                  {isUploading ? 'Envoi de la photo en cours' : 'Changer la photo de profil'}
+                </span>
               </label>
               <input
                 id="avatar-upload"
                 type="file"
                 accept="image/*"
+                aria-label="Changer la photo de profil"
                 className="hidden"
                 onChange={handleAvatarChange}
                 disabled={isUploading}
