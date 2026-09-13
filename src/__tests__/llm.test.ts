@@ -116,37 +116,58 @@ describe('Génération de texte — Mistral en direct', () => {
   });
 });
 
-describe('Embeddings — OpenAI tant que le schéma est en 1536 dimensions', () => {
-  it('appelle OpenAI, pas Mistral', async () => {
-    // `mistral-embed` renvoie 1024 dimensions : incompatible avec la colonne
-    // `rex.embedding` sans migration ni régénération.
-    const llm = loadWith({ MISTRAL_API_KEY: 'k', OPENAI_API_KEY: 'o' });
-    embeddingsCreate.mockResolvedValue({ data: [{ embedding: [0.1] }], usage: {} });
+/** Vecteur de la dimension que le schéma attend (migration 022). */
+const vector1024 = () => Array.from({ length: 1024 }, () => 0.1);
+
+describe('Embeddings — mistral-embed', () => {
+  it('passe par Mistral, comme la génération de texte', async () => {
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    embeddingsCreate.mockResolvedValue({ data: [{ embedding: vector1024() }], usage: {} });
 
     await llm.generateEmbedding('texte');
 
-    expect(created[0]).toMatchObject({ apiKey: 'o' });
-    expect(created[0].baseURL).toBeUndefined();
-    expect(embeddingsCreate.mock.calls[0][0].model).toBe('text-embedding-3-small');
+    expect(created[0]).toMatchObject({ baseURL: 'https://api.mistral.ai/v1', apiKey: 'k' });
+    expect(embeddingsCreate.mock.calls[0][0].model).toBe('mistral-embed');
   });
 
-  it('annonce la dimension attendue par le schéma', () => {
-    // Sentinelle : si ce chiffre change, la migration SQL doit suivre.
-    const llm = loadWith({});
-    expect(llm.EMBEDDING_DIMENSIONS).toBe(1536);
+  it("impose encoding_format: 'float' — sans quoi le SDK corrompt le vecteur", async () => {
+    // Le SDK OpenAI demande `base64` de lui-même et décode la réponse comme
+    // telle. Mistral ignore ce paramètre et renvoie un tableau de nombres : le
+    // SDK interprète alors chaque flottant comme un octet et reconstruit
+    // 1024 / 4 = 256 valeurs, toutes nulles. Constaté sur l'API réelle — la
+    // taille ET le contenu sont faux, sans qu'aucune erreur ne soit levée.
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    embeddingsCreate.mockResolvedValue({ data: [{ embedding: vector1024() }], usage: {} });
+
+    await llm.generateEmbedding('texte');
+
+    expect(embeddingsCreate.mock.calls[0][0].encoding_format).toBe('float');
   });
 
-  it('échoue immédiatement sans clé, au lieu d’un aller-retour voué à l’échec', async () => {
-    // Le code appelait auparavant un endpoint d'embeddings OpenRouter que son
-    // propre commentaire reconnaissait comme non supporté.
-    const llm = loadWith({ OPENAI_API_KEY: undefined });
-    await expect(llm.generateEmbedding('texte')).rejects.toThrow(/OPENAI_API_KEY/);
+  it('annonce la dimension inscrite dans le schéma', () => {
+    // Sentinelle : ce chiffre, la colonne `rex.embedding` et la signature de
+    // `search_rex_by_embedding` doivent bouger ensemble (migration 022).
+    expect(loadWith({}).EMBEDDING_DIMENSIONS).toBe(1024);
+  });
+
+  it('refuse un vecteur dont la dimension ne correspond pas au schéma', async () => {
+    // Si le fournisseur changeait sa sortie, l'insertion Postgres échouerait
+    // loin d'ici : mieux vaut échouer à la source, avec le bon message.
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    embeddingsCreate.mockResolvedValue({ data: [{ embedding: [0.1, 0.2] }], usage: {} });
+
+    await expect(llm.generateEmbedding('texte')).rejects.toThrow(/1024 attendues/);
+  });
+
+  it('échoue clairement quand la clé manque', async () => {
+    const llm = loadWith({ MISTRAL_API_KEY: undefined });
+    await expect(llm.generateEmbedding('texte')).rejects.toThrow(/MISTRAL_API_KEY/);
     expect(embeddingsCreate).not.toHaveBeenCalled();
   });
 
-  it('borne aussi le corpus du REX avant envoi', async () => {
-    const llm = loadWith({ OPENAI_API_KEY: 'o' });
-    embeddingsCreate.mockResolvedValue({ data: [{ embedding: [0.1] }], usage: {} });
+  it('borne le corpus du REX avant envoi', async () => {
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    embeddingsCreate.mockResolvedValue({ data: [{ embedding: vector1024() }], usage: {} });
 
     await llm.generateRexEmbedding({ title: 'T', description: 'x'.repeat(500_000) });
 
@@ -161,10 +182,10 @@ describe('Disponibilité des fonctions IA', () => {
     expect(loadWith({ MISTRAL_API_KEY: undefined }).isLlmConfigured()).toBe(false);
   });
 
-  it('signale les embeddings indépendamment de la génération de texte', () => {
-    // Les deux fournisseurs sont dissociés : l'un peut manquer sans l'autre.
-    const llm = loadWith({ MISTRAL_API_KEY: 'k', OPENAI_API_KEY: undefined });
-    expect(llm.isLlmConfigured()).toBe(true);
-    expect(llm.isEmbeddingConfigured()).toBe(false);
+  it('fait dépendre les embeddings de la même clé', () => {
+    // Un seul fournisseur depuis la migration 022 : une seule clé à poser.
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    expect(llm.isEmbeddingConfigured()).toBe(true);
+    expect(loadWith({ MISTRAL_API_KEY: undefined }).isEmbeddingConfigured()).toBe(false);
   });
 });

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
+import { indexRexForSearch } from '@/lib/semantic';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -51,6 +53,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         content: `Votre REX "${rex.title}" a été validé`,
         link: `/rex/${rexId}`,
       });
+
+    // Indexation sémantique après l'envoi de la réponse : l'appel au
+    // fournisseur d'embeddings prend de l'ordre de la seconde, et le validateur
+    // n'a pas à l'attendre. `after` garantit l'exécution en serverless, là où un
+    // simple appel non attendu serait tué avec la fonction.
+    after(() => indexRexForSearch(rexId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

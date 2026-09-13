@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { orIlike } from '@/lib/supabase/filters';
+import { semanticMatches } from '@/lib/semantic';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Calendar, Building2, ChevronLeft, ChevronRight, FileText, Users } from 'lucide-react';
@@ -20,6 +21,7 @@ interface SearchResultsProps {
     dateTo?: string;
     tags?: string;
     page?: string;
+    semantic?: string;
   };
 }
 
@@ -29,6 +31,21 @@ const MAX_QUERY_LENGTH = 500;
 
 export async function SearchResults({ searchParams }: SearchResultsProps) {
   const supabase = await createClient();
+  const term = searchParams.q?.slice(0, MAX_QUERY_LENGTH);
+
+  // Recherche sémantique : on récupère d'abord les REX proches du sens de la
+  // requête, puis on laisse les filtres habituels s'appliquer dessus. C'est ce
+  // que l'ancienne route `/api/search` ne faisait pas — elle ignorait type,
+  // SDIS, gravité, dates et tags.
+  //
+  // `null` = voie indisponible ou aucun résultat : on retombe sur le plein
+  // texte plutôt que d'afficher une page vide.
+  let semanticIds: string[] | null = null;
+  if (searchParams.semantic === 'true' && term) {
+    const matches = await semanticMatches(supabase, term);
+    semanticIds = matches && matches.length > 0 ? matches : null;
+  }
+  const semanticActive = semanticIds !== null;
   // `?page=abc` donnait NaN, `?page=-5` un offset négatif : dans les deux cas
   // Postgres rejette la requête et la page part en erreur. Ce paramètre vient de
   // l'URL, donc de n'importe qui.
@@ -57,11 +74,12 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
   );
 
   // Apply filters
-  if (searchParams.q) {
+  if (semanticIds) {
+    query = query.in('id', semanticIds);
+  } else if (term) {
     // Full-text search on title, description, context. `q` comes straight from
     // the URL: cap it, and escape it (the `.or()` argument is a filter
     // EXPRESSION, not a value — see lib/supabase/filters).
-    const term = searchParams.q.slice(0, MAX_QUERY_LENGTH);
     query = query.or(orIlike(['title', 'description', 'context', 'lessons_learned'], term));
   }
 
@@ -104,12 +122,29 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
     query = query.overlaps('tags', tags);
   }
 
-  // Order and paginate
-  query = query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + ITEMS_PER_PAGE - 1);
+  // En mode sémantique, l'ordre qui compte est celui de la pertinence — que la
+  // base ne connaît pas, puisqu'il vient du classement rendu par la RPC. On
+  // récupère donc l'ensemble (déjà borné à SEMANTIC_MATCH_LIMIT côté RPC) et
+  // on trie puis pagine ici. Trier par date écraserait le classement.
+  if (!semanticActive) {
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + ITEMS_PER_PAGE - 1);
+  }
 
-  const { data: results, count, error } = await query;
+  const { data: rows, count: rowCount, error } = await query;
+
+  let results = rows;
+  let count = rowCount;
+
+  if (semanticActive && rows) {
+    const rank = new Map(semanticIds!.map((id, index) => [id, index]));
+    const ordered = [...rows].sort(
+      (a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)
+    );
+    count = ordered.length;
+    results = ordered.slice(offset, offset + ITEMS_PER_PAGE);
+  }
 
   if (error) {
     logger.error('Search error:', error);
@@ -150,9 +185,26 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
     <div className="space-y-4">
       {/* Results count */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{count}</span> résultat
-          {count !== 1 ? 's' : ''} trouvé{count !== 1 ? 's' : ''}
+        <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+          <span>
+            <span className="font-semibold text-foreground">{count}</span> résultat
+            {count !== 1 ? 's' : ''} trouvé{count !== 1 ? 's' : ''}
+          </span>
+          {/* Le repli doit se voir : demander la recherche sémantique et
+              recevoir du plein texte sans le savoir laisserait croire que le
+              classement par pertinence a joué. */}
+          {semanticActive ? (
+            <Badge variant="outline" className="text-[10px] font-normal">
+              par pertinence
+            </Badge>
+          ) : (
+            searchParams.semantic === 'true' &&
+            term && (
+              <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
+                recherche par mots-clés (sémantique indisponible)
+              </Badge>
+            )
+          )}
         </p>
         {totalPages > 1 && (
           <p className="text-sm text-muted-foreground">

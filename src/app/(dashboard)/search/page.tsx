@@ -35,6 +35,7 @@ interface SearchPageProps {
     severity?: string;
     status?: string;
     interSdis?: string;
+    semantic?: string;
     dateFrom?: string;
     dateTo?: string;
     tags?: string;

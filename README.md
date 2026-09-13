@@ -72,7 +72,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - Résultats paginés avec tri
   - Cache sur SDIS (1h) et tags (10min)
 - **Recherche rapide** dans le header
-- **Recherche sémantique** avec OpenAI embeddings
+- **Recherche par le sens** (case à cocher sur `/search`) — embeddings `mistral-embed`, classement par pertinence, **et tous les filtres restent appliqués** (type, SDIS, gravité, dates, tags). Repli automatique et signalé sur la recherche par mots-clés si aucun REX n'est encore indexé
 - **Statistiques** en haut de liste (total, validés, en attente, brouillons)
 
 ### ⭐ Favoris
@@ -120,7 +120,7 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
   - **Suggestions** : Recommandations d'amélioration
   - **Patterns** : Tendances identifiées
   - **Tags** : Suggestions de tags
-- **Recherche sémantique** avec embeddings vectoriels
+- **Indexation sémantique automatique** à la validation d'un REX (après réponse HTTP via `after()`, pour ne pas faire attendre le validateur). Réindexation en masse : `npm run embeddings:regenerate`
 
 ### 🔔 Notifications
 - **Notifications en temps réel** (Supabase Realtime WebSocket)
@@ -190,7 +190,9 @@ RETEX360 est une application web moderne permettant aux pompiers de partager, co
 - **Jest** + 106 tests unitaires (validators, pagination, rate-limit, sanitize, sanitize-server, image-optimizer, filtres PostgREST, gardes d'autorisation)
 - **67 tests RLS sur Postgres réel** (`npm run test:rls`) : le harnais applique les **vraies migrations** du dépôt à une base neuve (PGlite, PostgreSQL en WASM — ni Docker ni service container) et vérifie les policies rôle par rôle et SDIS par SDIS. Voir [Tests RLS](#-tests-rls).
 - **Seuil de couverture en CI** sur `src/lib`, en cliquet (toute baisse échoue), avec 100 % exigé sur les modules gardant une autorisation ou un échappement
-- **GitHub Actions** (lint + typecheck + tests + couverture + RLS + build + audit)
+- **GitHub Actions** (lint + typecheck + tests + couverture + RLS + build + audit) sur chaque push et chaque PR
+- **Audit de sécurité hebdomadaire** (`audit.yml`, lundi 6 h UTC) — indépendant de l'activité du dépôt. Une vulnérabilité n'attend pas qu'on écrive du code : l'arbre de production est passé de 0 à 7 CVE en un mois sans le moindre commit, donc sans que la CI ne tourne une seule fois
+- **Dependabot** hebdomadaire, mises à jour **groupées** (une PR pour l'ensemble des mineures et correctifs, les majeures séparées) : plusieurs dizaines de PR par semaine ne se relisent pas, elles se ferment en masse
 - **Prettier** + eslint-config-prettier (formatage)
 - **Logging structuré** avec correlation IDs + intégration Sentry
 

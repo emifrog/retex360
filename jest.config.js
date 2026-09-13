@@ -65,6 +65,9 @@ const config = {
     // Borne ce qui part au modèle (donc le coût) et empêche qu'un contenu
     // rédigé par un utilisateur soit lu comme une consigne.
     'src/lib/ai-context.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // Décide du repli vers le plein texte et garantit qu'une indexation ratée
+    // ne fait pas échouer une validation. Les deux se dégradent en silence.
+    'src/lib/semantic.ts': { statements: 100, branches: 90, functions: 100, lines: 100 },
     // `deriveState` décide qui peut écrire et quand l'accès se coupe : même
     // exigence que les modules d'autorisation ci-dessus.
     'src/lib/subscription.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },

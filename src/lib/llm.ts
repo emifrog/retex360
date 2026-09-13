@@ -3,26 +3,20 @@ import { logger } from '@/lib/logger';
 import { buildEmbeddingInput, type RexForAi } from '@/lib/ai-context';
 
 /**
- * Accès aux modèles de langage.
+ * Accès aux modèles de langage — Mistral, en direct (`api.mistral.ai`).
  *
- * Deux fournisseurs, pour deux raisons distinctes :
+ * Fournisseur européen appelé sans intermédiaire : les contenus de REX, qui
+ * décrivent des interventions réelles, ne transitent par aucune passerelle hors
+ * UE. Même exigence que celle qui a fait retenir Scaleway pour le stockage et
+ * GlitchTip comme alternative à Sentry — et, auprès d'un acheteur public, un
+ * critère de recevabilité plutôt qu'une préférence.
  *
- *  - **Génération de texte → Mistral, en direct** (`api.mistral.ai`). Fournisseur
- *    européen appelé sans intermédiaire : les contenus de REX — qui décrivent
- *    des interventions réelles — ne transitent par aucune passerelle hors UE.
- *    C'est la même exigence que celle qui a fait retenir Scaleway pour le
- *    stockage et GlitchTip comme alternative à Sentry.
+ * Génération de texte et embeddings passent désormais par le même fournisseur.
+ * Le second a nécessité la migration 022 : `mistral-embed` produit des vecteurs
+ * de 1024 dimensions, là où le schéma était figé à 1536 par `text-embedding-3-small`.
  *
- *  - **Embeddings → OpenAI**, pour l'instant. `mistral-embed` produit des
- *    vecteurs de 1024 dimensions, or la colonne `rex.embedding` et la fonction
- *    `search_rex_by_embedding` sont figées à 1536 (migrations 001 et 002).
- *    Basculer demande une migration de schéma ET la régénération de tous les
- *    embeddings existants — les anciens vecteurs ne deviennent pas imprécis,
- *    ils deviennent incomparables. Tant que ce n'est pas fait, la recherche
- *    sémantique reste sur OpenAI.
- *
- * L'API Mistral est compatible OpenAI au niveau du fil : le SDK `openai` sert
- * donc les deux, avec une `baseURL` différente.
+ * L'API Mistral est compatible OpenAI au niveau du fil : le SDK `openai` la sert
+ * telle quelle, avec une `baseURL` différente.
  */
 
 /** Marge sous le `maxDuration: 30` déclaré dans `vercel.json`. */
@@ -118,54 +112,64 @@ export async function chatCompletion(
 }
 
 // ---------------------------------------------------------------------------
-// Embeddings — OpenAI tant que le schéma est en 1536 dimensions (voir en-tête).
+// Embeddings — mistral-embed (migration 022)
 // ---------------------------------------------------------------------------
 
-/** Dimension attendue par `rex.embedding` et `search_rex_by_embedding`. */
-export const EMBEDDING_DIMENSIONS = 1536;
+export const EMBEDDING_MODEL = 'mistral-embed';
 
-let _openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!_openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      // Anciennement : repli vers `openrouter.ai/api/v1/embeddings`, que le
-      // commentaire d'origine reconnaissait lui-même comme non supporté. Chaque
-      // recherche sémantique payait donc un aller-retour voué à l'échec avant
-      // de retomber sur la recherche plein texte. Échouer tout de suite est
-      // plus honnête, et l'appelant a déjà ce repli.
-      throw new Error(
-        'OPENAI_API_KEY is not configured — la recherche sémantique est indisponible ' +
-          '(les embeddings restent sur OpenAI tant que le schéma est en 1536 dimensions).'
-      );
-    }
-    _openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: LLM_TIMEOUT_MS,
-      maxRetries: 1,
-    });
-  }
-  return _openai;
-}
+/**
+ * Dimension produite par `mistral-embed`, et donc attendue par la colonne
+ * `rex.embedding` et la fonction `search_rex_by_embedding` (migration 022).
+ *
+ * Ces trois valeurs doivent rester alignées. Un écart ne dégrade pas les
+ * résultats : Postgres rejette l'écriture et la recherche tombe en erreur.
+ */
+export const EMBEDDING_DIMENSIONS = 1024;
 
 export function isEmbeddingConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY);
+  return isLlmConfigured();
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   const startedAt = Date.now();
-  const response = await getOpenAI().embeddings.create({
-    model: 'text-embedding-3-small',
+  const response = await getMistral().embeddings.create({
+    model: EMBEDDING_MODEL,
     input: text,
+    // OBLIGATOIRE, et c'est la seule ligne qui empêche une corruption
+    // silencieuse. Sans elle, le SDK OpenAI demande `encoding_format: 'base64'`
+    // de lui-même, puis décode la réponse comme une chaîne base64. Or Mistral
+    // ignore ce paramètre et renvoie toujours un tableau de nombres : le SDK
+    // interprète alors chaque flottant comme un OCTET, et reconstruit
+    // 1024 / 4 = 256 valeurs — toutes nulles, puisque des flottants entre -1 et
+    // 1 tronqués en octets donnent zéro.
+    //
+    // Le résultat est un vecteur de la mauvaise taille ET vide de sens. Aucune
+    // erreur n'est levée : si la colonne avait eu 256 dimensions, ces zéros
+    // auraient été stockés et la recherche sémantique aurait rendu n'importe
+    // quoi sans que rien ne le signale.
+    encoding_format: 'float',
   });
 
+  const embedding = response.data[0].embedding;
+
+  // Garde de cohérence : si le fournisseur change la dimension de sortie, mieux
+  // vaut l'apprendre ici, avec un message qui nomme la migration à refaire, que
+  // par une erreur d'insertion Postgres à l'autre bout de la chaîne.
+  if (embedding.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(
+      `Embedding de ${embedding.length} dimensions, ${EMBEDDING_DIMENSIONS} attendues. ` +
+        'Le schéma (migration 022) et EMBEDDING_DIMENSIONS doivent être repris ensemble.'
+    );
+  }
+
   logger.info('Embedding call', {
-    provider: 'openai',
+    provider: 'mistral',
+    model: EMBEDDING_MODEL,
     promptTokens: response.usage?.prompt_tokens ?? null,
     durationMs: Date.now() - startedAt,
   });
 
-  return response.data[0].embedding;
+  return embedding;
 }
 
 export async function generateRexEmbedding(rex: RexForAi): Promise<number[]> {

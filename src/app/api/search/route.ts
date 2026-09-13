@@ -1,10 +1,36 @@
 import { createClient } from '@/lib/supabase/server';
 import { orIlike } from '@/lib/supabase/filters';
-import { generateEmbedding } from '@/lib/llm';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { searchSchema } from '@/lib/validators/api';
+import { semanticMatches } from '@/lib/semantic';
 import { logger } from '@/lib/logger';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+const REX_SELECT = '*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)';
+
+/**
+ * Recherche plein texte — le repli quand la voie vectorielle ne donne rien.
+ *
+ * Trois situations y mènent, et une seule était traitée :
+ *  - le calcul de l'embedding échoue (clé absente, fournisseur injoignable) ;
+ *  - la fonction de recherche vectorielle renvoie une erreur ;
+ *  - elle réussit mais ne renvoie AUCUN résultat, parce que la colonne
+ *    `embedding` est vide.
+ *
+ * Ce dernier cas est précisément l'état de la base pendant une régénération des
+ * embeddings : la recherche répondait « aucun résultat » sur un corpus pourtant
+ * présent et interrogeable en plein texte.
+ */
+async function textSearch(supabase: SupabaseClient, query: string, limit: number) {
+  const { data } = await supabase
+    .from('rex')
+    .select(REX_SELECT)
+    .or(orIlike(['title', 'description', 'lessons_learned'], query))
+    .eq('status', 'validated')
+    .limit(limit);
+  return data ?? [];
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,59 +56,34 @@ export async function POST(request: NextRequest) {
 
     const { query, limit } = validated.data;
 
-    // Generate embedding for the search query
-    const queryEmbedding = await generateEmbedding(query);
+    // Même module que la page `/search` : une seule définition du seuil de
+    // similarité, du plafond de résultats et du traitement des indisponibilités.
+    const rexIds = await semanticMatches(supabase, query);
 
-    // Search using vector similarity
-    const { data: results, error } = await supabase.rpc('search_rex_by_embedding', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.5,
-      match_count: limit,
-    });
-
-    if (error) {
-      logger.error('Search error:', error);
-      // Fallback to text search if vector search fails
-      const { data: textResults } = await supabase
-        .from('rex')
-        .select('*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)')
-        .or(orIlike(['title', 'description', 'lessons_learned'], query))
-        .eq('status', 'validated')
-        .limit(limit);
-
+    // Zéro résultat vaut repli, au même titre qu'une indisponibilité : pendant
+    // une régénération des embeddings, la colonne est vide et la voie sémantique
+    // ne peut rien trouver, alors que le plein texte le peut.
+    if (!rexIds || rexIds.length === 0) {
       return NextResponse.json({
-        results: textResults || [],
+        results: await textSearch(supabase, query, limit),
         searchType: 'text',
       });
     }
 
-    // Fetch full REX data for results
-    if (results && results.length > 0) {
-      const rexIds = results.map((r: { id: string }) => r.id);
-      const { data: fullResults } = await supabase
-        .from('rex')
-        .select('*, author:profiles!author_id(full_name, avatar_url), sdis:sdis_id(code, name)')
-        .in('id', rexIds);
+    const { data: fullResults } = await supabase
+      .from('rex')
+      .select(REX_SELECT)
+      .in('id', rexIds.slice(0, limit));
 
-      // Sort by similarity score
-      const sortedResults = fullResults?.sort((a, b) => {
-        const aIndex = rexIds.indexOf(a.id);
-        const bIndex = rexIds.indexOf(b.id);
-        return aIndex - bIndex;
-      });
+    // La RPC rend les identifiants par similarité décroissante ; `in()` les rend
+    // dans un ordre quelconque. On réaligne sur l'ordre de pertinence.
+    const sortedResults = fullResults?.sort((a, b) => rexIds.indexOf(a.id) - rexIds.indexOf(b.id));
 
-      return NextResponse.json({
-        results: sortedResults || [],
-        searchType: 'semantic',
-        scores: results.map((r: { id: string; similarity: number }) => ({
-          id: r.id,
-          similarity: r.similarity,
-        })),
-      });
-    }
-
+    // `scores` a disparu de la réponse : la recherche partagée ne rend que le
+    // classement, et l'ordre des résultats le porte déjà. Aucun appelant ne
+    // lisait ce champ.
     return NextResponse.json({
-      results: [],
+      results: sortedResults ?? [],
       searchType: 'semantic',
     });
   } catch (error) {

@@ -710,3 +710,180 @@ Images	A	next/image + sharp + lazy loading + sizes responsive
   être considérée comme compromise — à régénérer avant tout déploiement.
 - **Quota IA par SDIS** (item 93) : toujours ouvert. Les garde-fous de la
   phase 12 bornent le coût PAR APPEL, pas le volume mensuel.
+
+---
+
+## Phase 14 — Embeddings sur Mistral (13 septembre 2026) : ✅ SOCLE POSÉ
+
+136. ✅ **Migration 022** : `rex.embedding` passe de `VECTOR(1536)` à
+     `VECTOR(1024)`, signature de `search_rex_by_embedding` et index ivfflat
+     repris. Un vecteur de 1536 dimensions ne se convertit pas en 1024 — ce sont
+     deux espaces différents — mais un embedding est une donnée DÉRIVÉE,
+     recalculable depuis le contenu du REX. La fonction reste SECURITY INVOKER
+     (le cloisonnement RLS par SDIS de la migration 013 s'applique donc aussi à
+     la recherche sémantique) et gagne un `search_path` fixé, comme les
+     fonctions durcies en 013.
+137. ✅ `generateEmbedding` bascule sur `mistral-embed`. Plus aucune dépendance
+     à OpenAI : un seul fournisseur, européen, une seule clé.
+     Garde de cohérence ajoutée — un vecteur dont la dimension ne correspond pas
+     à `EMBEDDING_DIMENSIONS` est refusé à la source, avec un message qui nomme
+     la migration à reprendre, plutôt qu'une erreur d'insertion Postgres à
+     l'autre bout de la chaîne.
+138. ✅ `supabase/maintenance/regenerate_embeddings.ts` + `npm run
+     embeddings:regenerate` / `embeddings:count`. Reprenable (ne traite que
+     `embedding IS NULL`, donc une coupure ne coûte que le lot en vol et rien
+     n'est recalculé deux fois), paginé sans offset (chaque ligne traitée sort
+     du filtre — un offset ferait sauter des lignes), tolérant aux échecs
+     unitaires. `tsx` ajouté en devDependency.
+139. ✅ **Repli de recherche corrigé** — prérequis de la migration, et bug
+     autonome. `/api/search` ne repliait sur le plein texte QUE si la fonction
+     vectorielle renvoyait une erreur. Deux cas manquaient : l'embedding
+     indisponible (exception non rattrapée → 500) et surtout **zéro résultat
+     vectoriel**, qui renvoyait « aucun résultat » sur un corpus pourtant
+     interrogeable. C'est exactement l'état de la base pendant une régénération.
+
+### ⚠️ Constat : la recherche sémantique n'a jamais fonctionné
+
+Vérifié sur la base de production avant migration : **13 REX sur 13 sans
+embedding**. La migration ne détruit donc rien, mais la cause est plus large :
+
+- **rien n'appelle `POST /api/rex/[id]/embedding`** — aucune référence dans le
+  front, ni à la création, ni à la modification, ni à la validation d'un REX ;
+- **rien n'appelle `POST /api/search`** — la page `/search` fait sa propre
+  requête plein texte dans `search-results.tsx`.
+
+La colonne, la fonction SQL, l'index ivfflat et les deux routes sont donc du
+code inutilisé, et le README annonce la « recherche sémantique » comme une
+fonctionnalité livrée. Avant ce lot, `/api/search` aurait d'ailleurs renvoyé
+**toujours vide** : la fonction vectorielle réussissait avec 0 ligne, ce que le
+code ne traitait pas comme un repli (corrigé en 139).
+
+Trois suites possibles, à trancher :
+- **Brancher** : déclencher la génération d'embedding à la validation d'un REX
+  (la recherche ne porte que sur les REX validés) et exposer le mode sémantique
+  dans `/search`. C'est ce qui fait exister la fonctionnalité.
+- **Supprimer** : retirer colonne, fonction, index, les deux routes et la
+  mention du README. Moins de surface, moins de code mort.
+- **Laisser en l'état** : le schéma est désormais cohérent et prêt, mais le
+  README continue d'annoncer une fonctionnalité inexistante.
+
+### Phase 14 bis — La recherche sémantique est branchée : ✅ TERMINÉE
+
+> Décision prise après le constat ci-dessus : brancher plutôt que supprimer.
+
+140. ✅ `src/lib/semantic.ts` (11 tests) — indexation et interrogation au même
+     endroit, une seule définition du seuil de similarité et du plafond de
+     résultats.
+141. ✅ **Indexation déclenchée à la validation** d'un REX, via `after()` de
+     Next : l'appel au fournisseur a lieu APRÈS l'envoi de la réponse, donc le
+     validateur n'attend pas. `after()` et non un appel non attendu : en
+     serverless, ce dernier serait tué avec la fonction. Une indexation ratée
+     n'échoue jamais vers l'appelant — la validation, elle, a eu lieu ; le REX
+     reste trouvable en plein texte et `embeddings:regenerate` rattrape.
+     Déclenchée à la validation et non à la création : `search_rex_by_embedding`
+     ne retient que les REX `validated`, un brouillon change beaucoup et chaque
+     calcul est facturé.
+142. ✅ **Mode « recherche par le sens »** sur `/search` (case à cocher). Les
+     identifiants proches sont récupérés d'abord, puis **tous les filtres
+     existants s'appliquent dessus** — type, SDIS, gravité, statut, dates,
+     tags. C'est ce que l'ancienne route `/api/search` ne faisait pas : elle les
+     ignorait tous. Tri par pertinence (et non par date, qui écraserait le
+     classement), pagination côté serveur sur l'ensemble rapporté.
+143. ✅ **Le repli est signalé à l'utilisateur** : demander la recherche par le
+     sens et recevoir du plein texte sans le savoir laisserait croire que le
+     classement par pertinence a joué. Un badge dit lequel des deux a servi.
+144. ✅ `/api/search` refactorée sur le même module au lieu de dupliquer la
+     logique. Le champ `scores` disparaît de sa réponse (aucun appelant ne le
+     lisait ; l'ordre porte déjà la pertinence).
+
+### Déploiement, dans cet ordre
+1. Déployer le code — `/api/search` et `/search` traitent le corpus non indexé
+   comme un repli plein texte, donc l'application reste correcte avant migration.
+2. Appliquer `022_embeddings_mistral_1024.sql` (SQL editor Supabase).
+3. `npm run embeddings:regenerate` (13 REX, ~1 min).
+4. `REINDEX INDEX rex_embedding_idx;` — l'index ivfflat a été créé sur une table
+   vide, ses centroïdes ne servent à rien avant cette reconstruction.
+
+### Résidus signalés, non traités
+- `src/app/api/rex/[id]/validate/` est un dossier VIDE (aucun `route.ts`) :
+  l'unique route de validation est `/api/admin/rex/[id]/validate`. Sans effet,
+  mais trompeur à la lecture.
+
+### Phase 14 ter — Corruption silencieuse du SDK, attrapée à l'exécution
+
+> La migration et la régénération ont d'abord échoué. Le garde de dimension
+> ajouté en 137 a arrêté le processus avec le bon message ; sans lui, l'échec
+> aurait été silencieux et bien pire.
+
+145. ✅ **`encoding_format: 'float'` est obligatoire sur `embeddings.create`.**
+     Le SDK OpenAI demande `base64` de lui-même, puis décode la réponse comme
+     une chaîne base64. Mistral **ignore** ce paramètre et renvoie toujours un
+     tableau de nombres : le SDK interprète alors chaque flottant comme un
+     OCTET et reconstruit 1024 / 4 = **256 valeurs, toutes nulles** — des
+     flottants entre -1 et 1 tronqués en octets donnent zéro.
+     Vérifié sur l'API réelle :
+       - sans le paramètre  → 256 dimensions, `[0, 0, 0, …]`
+       - avec `'float'`     → 1024 dimensions, valeurs réelles
+     Aucune erreur n'est levée dans les deux cas. Si la colonne avait été
+     dimensionnée à 256, ces vecteurs nuls auraient été stockés et la recherche
+     aurait rendu n'importe quoi sans que rien ne le signale. C'est le garde de
+     dimension qui a transformé cette corruption en échec bruyant.
+     Un test fige désormais le paramètre.
+     NB : `output_dimension` existe dans l'API Mistral mais `mistral-embed` ne
+     le supporte pas (HTTP 400) — 1024 est bien sa sortie native, la migration
+     022 était correcte.
+146. ✅ `supabase/maintenance/check_semantic_search.ts` + `npm run
+     embeddings:check` : vérification de bout en bout que le fournisseur, la
+     dimension de la colonne et la fonction SQL s'accordent réellement — ce
+     qu'aucun test unitaire ne peut établir. Contrôle aussi le nombre de
+     valeurs NON NULLES, parce qu'un vecteur peut avoir la bonne taille et ne
+     rien vouloir dire. À relancer après toute migration touchant
+     `rex.embedding`, tout changement de modèle, et après déploiement.
+
+### État constaté en production (13 septembre 2026)
+- **13 REX sur 13 indexés**, 0 échec.
+- Recherche vérifiée : « incendie dans un bâtiment avec difficulté d'accès des
+  secours » remonte incendie de centre commercial (78,2 %), feu d'entrepôt
+  chimique (77,6 %) et effondrement de parking (75,0 %) — aucun de ces titres
+  ne partage de mot avec la requête. La recherche par le sens fonctionne.
+- ⚠️ **`REINDEX INDEX rex_embedding_idx;` reste à exécuter** : l'index ivfflat a
+  été créé sur une table vide, ses centroïdes ne servent à rien. Sans effet
+  visible à 13 REX (Postgres fait un parcours séquentiel), à faire avant que le
+  corpus grossisse.
+- Le jeu de données contient des doublons apparents (« Feu d'entrepôt chimique
+  - Zone industrielle Carros » et « — Zone industrielle de Carros », idem pour
+  l'effondrement de parking) : probablement des restes de données de démo.
+
+---
+
+## Phase 15 — Veille des dépendances (13 septembre 2026) : ✅ TERMINÉE
+
+> **Correction d'un diagnostic erroné.** Les lots précédents recommandaient
+> d'« ajouter `npm audit` en CI ». Ce job EXISTAIT déjà dans `ci.yml`, avec
+> exactement la commande recommandée (`npm audit --omit=dev --audit-level=high`).
+> Le README le documentait. La recommandation était fausse.
+>
+> Le vrai défaut est plus précis, et il est ailleurs : `ci.yml` ne se déclenche
+> que sur `push` et `pull_request`. Entre le 9 août et le 11 septembre, aucun
+> push — donc **aucune exécution de la CI**, donc aucun audit, pendant que
+> l'arbre de production passait de 0 à 7 vulnérabilités dont deux RCE non
+> authentifiées. Le job aurait attrapé les six de niveau high et critical. Il
+> n'a simplement jamais tourné.
+
+147. ✅ `.github/workflows/audit.yml` : audit **programmé** (lundi 6 h UTC) et
+     déclenchable à la main. Tourne sur le calendrier, pas sur l'activité —
+     seul dispositif qui tienne pendant une période sans développement, et ce
+     produit en connaîtra : un logiciel vendu à des SDIS vit plus longtemps
+     qu'il n'est développé.
+148. ✅ `.github/dependabot.yml` : mises à jour hebdomadaires npm + mensuelles
+     des actions GitHub, **groupées**. Sans groupement, ce dépôt ouvrirait
+     plusieurs dizaines de PR par semaine (une quinzaine de paquets
+     `@radix-ui` à eux seuls) — et un déluge de PR ne se relit pas, il se ferme
+     en masse, ce qui revient à n'avoir aucune veille. Un lot pour les mineures
+     et correctifs, les majeures séparées. Majeures de `next`, `react` et
+     `react-dom` ignorées : elles se préparent, elles ne se fusionnent pas sur
+     une CI verte. Les mineures et correctifs passent bien — c'est ainsi que
+     `next` 16.3.0 → 16.3.4 aurait été proposée automatiquement.
+149. ✅ Suppression de `src/app/api/rex/[id]/validate/`, dossier vide (aucun
+     `route.ts`, non suivi par git). L'unique route de validation est
+     `/api/admin/rex/[id]/validate`.

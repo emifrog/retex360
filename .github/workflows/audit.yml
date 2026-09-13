@@ -1,0 +1,46 @@
+name: Audit de sécurité
+
+# Le workflow CI porte déjà un job `audit`, mais il ne se déclenche que sur
+# `push` et `pull_request`. Or une vulnérabilité n'attend pas qu'on écrive du
+# code : entre le 9 août et le 11 septembre 2026, sans un seul push, l'arbre de
+# production est passé de 0 à 7 vulnérabilités — dont deux RCE non
+# authentifiées — sans que rien ne le signale.
+#
+# Ce workflow-ci tourne sur le calendrier, pas sur l'activité. C'est le seul
+# dispositif qui tienne pendant une période sans développement, et ce produit en
+# connaîtra (un logiciel vendu à des SDIS vit plus longtemps qu'il n'est
+# développé).
+on:
+  schedule:
+    # Tous les lundis à 6 h UTC. Un écart d'une semaine au pire entre la
+    # publication d'un avis et sa détection ; Dependabot couvre l'intervalle en
+    # ouvrant une PR dès qu'un correctif existe.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: # déclenchable à la main depuis l'onglet Actions
+
+jobs:
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # `--omit=dev` : seul l'arbre de production est exposé aux utilisateurs.
+      # Une faille dans un outil de build mérite d'être corrigée, pas de faire
+      # échouer un audit de sécurité.
+      - name: Vulnérabilités de production (high et au-delà)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Informatif : l'arbre complet, sans faire échouer le job. Donne la
+      # visibilité sur les dépendances de développement sans transformer chaque
+      # avis mineur en alerte.
+      - name: Arbre complet (informatif)
+        if: always()
+        run: npm audit || true

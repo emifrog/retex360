@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, X, Filter, RotateCcw, Users } from 'lucide-react';
+import { Search, X, Filter, RotateCcw, Users, Sparkles } from 'lucide-react';
 import { REX_TYPES, SEVERITIES, STATUSES } from '@/types';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
@@ -28,6 +28,7 @@ interface SearchFiltersProps {
     severity?: string;
     status?: string;
     interSdis?: string;
+    semantic?: string;
     dateFrom?: string;
     dateTo?: string;
     tags?: string;
@@ -44,6 +45,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
   const [severity, setSeverity] = useState(currentParams.severity || '');
   const [status, setStatus] = useState(currentParams.status || '');
   const [interSdis, setInterSdis] = useState(currentParams.interSdis === 'true');
+  const [semantic, setSemantic] = useState(currentParams.semantic === 'true');
   const [dateFrom, setDateFrom] = useState(currentParams.dateFrom || '');
   const [dateTo, setDateTo] = useState(currentParams.dateTo || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(
@@ -58,6 +60,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
     severity ||
     status ||
     interSdis ||
+    semantic ||
     dateFrom ||
     dateTo ||
     selectedTags.length > 0;
@@ -70,6 +73,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
     if (severity) params.set('severity', severity);
     if (status) params.set('status', status);
     if (interSdis) params.set('interSdis', 'true');
+    if (semantic) params.set('semantic', 'true');
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
     if (selectedTags.length > 0) params.set('tags', selectedTags.join(','));
@@ -89,6 +93,7 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
     setSeverity('');
     setStatus('');
     setInterSdis(false);
+    setSemantic(false);
     setDateFrom('');
     setDateTo('');
     setSelectedTags([]);
@@ -129,6 +134,31 @@ export function SearchFilters({ sdisList, allTags, currentParams }: SearchFilter
             <span className="ml-2">Rechercher</span>
           </Button>
         </div>
+
+        {/* Mode de recherche — placé sous la barre parce qu'il change la façon
+            dont le texte saisi est interprété, pas ce qu'il filtre. */}
+        <label
+          htmlFor="recherche-semantique"
+          className="flex items-start gap-3 cursor-pointer select-none -mt-3"
+        >
+          <input
+            id="recherche-semantique"
+            type="checkbox"
+            aria-label="Recherche par le sens"
+            checked={semantic}
+            onChange={(e) => setSemantic(e.target.checked)}
+            className="w-4 h-4 mt-0.5 rounded border-border text-primary focus:ring-primary"
+          />
+          <Sparkles className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+          <span className="text-sm">
+            <span className="font-medium">Recherche par le sens</span>
+            <span className="text-muted-foreground">
+              {' '}
+              — trouve les REX proches de votre formulation, même sans les mêmes mots. Les filtres
+              ci-dessous restent appliqués.
+            </span>
+          </span>
+        </label>
 
         {/* Filters grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

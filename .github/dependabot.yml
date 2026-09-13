@@ -1,0 +1,61 @@
+version: 2
+
+# Dependabot ouvre les PR de mise à jour ; l'audit programmé
+# (.github/workflows/audit.yml) signale ce qui traîne. Les deux sont
+# complémentaires : le premier propose le correctif, le second rappelle qu'il
+# existe une faille même si personne ne regarde le dépôt.
+#
+# Les mises à jour sont GROUPÉES. Sans cela, ce projet ouvrirait plusieurs
+# dizaines de PR par semaine (une quinzaine de paquets `@radix-ui` à eux seuls),
+# et un déluge de PR ne se relit pas — il se ferme en masse, ce qui revient à
+# n'avoir aucune veille.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    labels:
+      - dépendances
+    groups:
+      # Un seul lot pour tout ce qui ne change pas d'API : c'est la PR qu'on
+      # fusionne après lecture verte de la CI, sans relecture ligne à ligne.
+      mineures-et-correctifs:
+        update-types:
+          - minor
+          - patch
+      # Les majeures restent séparées, une par paquet : elles portent des
+      # ruptures d'API et se relisent une par une.
+      radix-ui:
+        patterns:
+          - '@radix-ui/*'
+        update-types:
+          - major
+    ignore:
+      # Next et React suivent le cycle de l'application, pas celui de
+      # Dependabot : une majeure s'y prépare (migration guide, tests manuels),
+      # elle ne se fusionne pas sur une CI verte. Les mineures et correctifs,
+      # eux, passent bien par le groupe ci-dessus — c'est ainsi que la CVE
+      # `next` 16.3.0 → 16.3.4 aurait été proposée automatiquement.
+      - dependency-name: next
+        update-types: ['version-update:semver-major']
+      - dependency-name: react
+        update-types: ['version-update:semver-major']
+      - dependency-name: react-dom
+        update-types: ['version-update:semver-major']
+
+  # Les actions GitHub sont du code exécuté avec un jeton sur le dépôt : elles
+  # méritent la même veille que les dépendances applicatives.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dépendances
+    groups:
+      actions:
+        patterns:
+          - '*'

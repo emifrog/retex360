@@ -32,6 +32,13 @@ const SKIPPED_MIGRATIONS = new Map<string, string>([
     "pgvector n'est pas disponible sous PGlite ; cette migration ne contient " +
       "qu'une fonction de recherche et un index ivfflat, aucune policy.",
   ],
+  [
+    '022_embeddings_mistral_1024.sql',
+    'Même raison que 002 : passage de la colonne `embedding` à 1024 dimensions ' +
+      '(mistral-embed), fonction de recherche et index ivfflat. Aucune policy — ' +
+      'et la fonction reste SECURITY INVOKER, donc le cloisonnement RLS de `rex` ' +
+      "(migration 013) continue de s'appliquer et reste testé par `rex.rls.test.ts`.",
+  ],
 ]);
 
 /**
