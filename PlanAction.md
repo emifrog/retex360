@@ -887,3 +887,52 @@ Trois suites possibles, à trancher :
 149. ✅ Suppression de `src/app/api/rex/[id]/validate/`, dossier vide (aucun
      `route.ts`, non suivi par git). L'unique route de validation est
      `/api/admin/rex/[id]/validate`.
+
+---
+
+## Phase 16 — `cookies()` dans `unstable_cache` : erreur de rendu et fuite de tags
+
+> Signalé en production sous la forme d'un « Minified React error #441 » sur
+> `/search` — une enveloppe générique (« erreur dans le rendu d'un Server
+> Component ») dont le message réel n'apparaît que dans les journaux serveur.
+> Message obtenu :
+>
+>   Route /search used `cookies()` inside a function cached with
+>   `unstable_cache()`. Accessing Dynamic data sources inside a cache scope is
+>   not supported.
+
+150. ✅ **Cause** : `getCachedSdisList` et `getCachedTags` appelaient
+     `createClient()` — qui lit les cookies — À L'INTÉRIEUR d'`unstable_cache`.
+     Code d'origine du **18 mars 2026** (Phase 5D, item 31), écrit sous Next
+     16.0.7 ; révélé par la montée en 16.3.4 du lot P0. Le défaut est donc
+     antérieur de six mois aux lots récents, mais c'est bien cette montée de
+     version qui l'a rendu visible.
+
+151. ⚠️ **Et ce que l'erreur cachait : une fuite inter-tenant.**
+     `getCachedTags` lisait `rex.tags` avec le client utilisateur — donc filtré
+     par la RLS, donc par le SDIS de l'appelant — et mettait le résultat en
+     cache sous une clé **globale** (`['rex-tags']`). Le premier utilisateur à
+     charger `/search` remplissait le cache avec SES tags ; pendant dix
+     minutes, les membres des autres SDIS voyaient cette liste. Les tags ne
+     sont pas le contenu d'un REX, mais ils en nomment les sujets, les lieux et
+     les opérations.
+     Next avait raison de refuser : une valeur mise en cache sous une clé
+     globale ne peut pas dépendre de qui la demande.
+
+152. ✅ **Corrections.**
+     - `createStaticClient()` (`supabase/server.ts`) : client anonyme SANS
+       cookies, réservé aux tables dont la policy de lecture ne dépend pas de
+       l'appelant. `sdis` est en `FOR SELECT USING (true)` : son cache global
+       est légitime. Clé anonyme et non service role — la RLS continue de
+       s'appliquer, une donnée de référence n'a pas à être lue avec des droits
+       étendus.
+     - `getCachedTags(sdisId)` : cache **par SDIS**, filtre EXPLICITE
+       (validés du SDIS + inter-SDIS et publics des autres), `sdisId` dans la
+       clé de cache — même schéma que `dashboard/insights`, déjà éprouvé.
+     - Le SDIS est lu HORS du cache et passé en argument, ce que demande
+       précisément le message d'erreur de Next.
+
+> Leçon retenue : `unstable_cache` + client porteur de session = soit une erreur
+> de rendu, soit — si la plateforme ne l'attrape pas — un cache partagé entre
+> tenants. Le seul autre usage du dépôt (`dashboard/insights`) était déjà
+> correct : client service + filtre explicite + `sdis_id` dans la clé.

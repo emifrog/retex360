@@ -1,14 +1,17 @@
 import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createStaticClient, createAdminClient } from '@/lib/supabase/server';
 import { SearchFilters } from '@/components/search/search-filters';
 import { SearchResults } from '@/components/search/search-results';
 import { Search } from 'lucide-react';
 
-// Cache SDIS list for 1 hour (quasi-static data)
+// Liste des SDIS — donnée de référence, identique pour tout le monde
+// (`sdis` est en `FOR SELECT USING (true)`). Cache global légitime, avec un
+// client SANS cookies : `unstable_cache` refuse toute source dynamique, et
+// `createClient()` en lit.
 const getCachedSdisList = unstable_cache(
   async () => {
-    const supabase = await createClient();
+    const supabase = createStaticClient();
     const { data } = await supabase.from('sdis').select('id, code, name').order('code');
     return data || [];
   },
@@ -16,16 +19,37 @@ const getCachedSdisList = unstable_cache(
   { revalidate: 3600 }
 );
 
-// Cache unique tags for 10 minutes (changes when REX are created)
-const getCachedTags = unstable_cache(
-  async () => {
-    const supabase = await createClient();
-    const { data: rexWithTags } = await supabase.from('rex').select('tags').not('tags', 'is', null);
-    return Array.from(new Set(rexWithTags?.flatMap((r) => r.tags || []) || [])).sort();
-  },
-  ['rex-tags'],
-  { revalidate: 600 }
-);
+/**
+ * Tags disponibles — mis en cache PAR SDIS.
+ *
+ * Ce cache était global (`['rex-tags']`) alors que son contenu était filtré par
+ * la RLS de `rex`, donc par le SDIS de l'appelant : le premier utilisateur à
+ * charger la page remplissait le cache avec SES tags, et pendant dix minutes
+ * les autres SDIS voyaient cette liste. Les tags ne sont pas le contenu d'un
+ * REX, mais ils en nomment les sujets, les lieux et les opérations.
+ *
+ * Le filtre est désormais EXPLICITE et le `sdisId` entre dans la clé de cache,
+ * comme pour les tendances du tableau de bord (`dashboard/insights`) : REX
+ * validés du SDIS, plus les REX validés inter-SDIS et publics des autres —
+ * exactement ce que la RLS (migration 013) laisse voir à un membre du SDIS.
+ */
+function getCachedTags(sdisId: string) {
+  return unstable_cache(
+    async () => {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from('rex')
+        .select('tags')
+        .eq('status', 'validated')
+        .not('tags', 'is', null)
+        // `sdisId` est un UUID lu en base, pas une entrée utilisateur.
+        .or(`sdis_id.eq.${sdisId},visibility.in.(inter_sdis,public)`);
+      return Array.from(new Set(data?.flatMap((r) => r.tags || []) || [])).sort();
+    },
+    ['rex-tags', sdisId],
+    { revalidate: 600, tags: ['rex-tags', `rex-tags:${sdisId}`] }
+  )();
+}
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -45,8 +69,23 @@ interface SearchPageProps {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
-  // Use cached data for quasi-static content
-  const [sdisList, allTags] = await Promise.all([getCachedSdisList(), getCachedTags()]);
+
+  // Le SDIS est lu HORS du cache et passé en argument : c'est ce que demande
+  // `unstable_cache`, et c'est aussi ce qui rend la clé de cache des tags
+  // spécifique au tenant.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('sdis_id').eq('id', user.id).single()
+    : { data: null };
+
+  const [sdisList, allTags] = await Promise.all([
+    getCachedSdisList(),
+    // Sans SDIS rattaché, aucun corpus cloisonné : pas de tags à proposer.
+    profile?.sdis_id ? getCachedTags(profile.sdis_id) : Promise.resolve<string[]>([]),
+  ]);
 
   return (
     <div className="space-y-6">
