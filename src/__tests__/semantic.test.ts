@@ -15,7 +15,13 @@ jest.mock('@/lib/llm', () => ({
   generateEmbedding: (...args: unknown[]) => generateEmbedding(...args),
   generateRexEmbedding: (...args: unknown[]) => generateRexEmbedding(...args),
   isEmbeddingConfigured: () => isEmbeddingConfigured(),
+  // Littéral, et non une constante du fichier : `jest.mock` est remonté
+  // au-dessus des déclarations, qui ne sont donc pas encore initialisées ici.
+  INTERACTIVE_EMBEDDING_TIMEOUT_MS: 5_000,
 }));
+
+/** Doit refléter le littéral ci-dessus. La VRAIE valeur est vérifiée par `llm.test.ts`. */
+const MOCK_TIMEOUT_MS = 5_000;
 jest.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => createAdminClient(),
 }));
@@ -44,6 +50,20 @@ describe('semanticMatches — classement et repli', () => {
     generateEmbedding.mockResolvedValue([0.1]);
 
     expect(await semanticMatches(supabase, 'feu de hangar')).toEqual(['b', 'a', 'c']);
+  });
+
+  it('impose un budget d’attente au lieu de laisser courir le défaut', async () => {
+    // `vercel.json` n'accorde 30 s qu'aux routes API ; une PAGE garde la durée
+    // par défaut de la plateforme, de l'ordre de 10 s. Laisser courir le
+    // timeout par défaut du client ferait tuer le rendu par l'hébergeur AVANT
+    // que le try/catch ci-dessus ne s'exécute — donc sans repli possible, et
+    // avec une erreur de Server Component opaque à la clé.
+    const supabase = clientWithRpc({ data: [] });
+    generateEmbedding.mockResolvedValue([0.1]);
+
+    await semanticMatches(supabase, 'feu');
+
+    expect(generateEmbedding.mock.calls[0][1]).toEqual({ timeoutMs: MOCK_TIMEOUT_MS });
   });
 
   it('demande plus de résultats qu’une page n’en affiche', async () => {

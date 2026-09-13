@@ -19,8 +19,26 @@ import { buildEmbeddingInput, type RexForAi } from '@/lib/ai-context';
  * telle quelle, avec une `baseURL` différente.
  */
 
-/** Marge sous le `maxDuration: 30` déclaré dans `vercel.json`. */
+/**
+ * Marge sous le `maxDuration: 30` déclaré dans `vercel.json` — qui ne couvre
+ * que `src/app/api/**`.
+ */
 const LLM_TIMEOUT_MS = 25_000;
+
+/**
+ * Budget d'un embedding calculé PENDANT LE RENDU D'UNE PAGE.
+ *
+ * Les pages ne sont pas dans `vercel.json` : elles gardent la durée par défaut
+ * de la plateforme (de l'ordre de 10 s), et non les 30 s des routes API.
+ * Attendre 25 s dans un Server Component fait donc tuer la fonction de rendu
+ * par l'hébergeur AVANT que le `try/catch` appelant ne puisse s'exécuter — et
+ * une fonction tuée en plein rendu produit une erreur de Server Component
+ * opaque, sans repli possible.
+ *
+ * 5 s est par ailleurs déjà long pour une recherche interactive : au-delà, la
+ * bonne réponse est de rendre la recherche plein texte, pas de faire patienter.
+ */
+export const INTERACTIVE_EMBEDDING_TIMEOUT_MS = 5_000;
 
 const MISTRAL_BASE_URL = 'https://api.mistral.ai/v1';
 
@@ -130,25 +148,33 @@ export function isEmbeddingConfigured(): boolean {
   return isLlmConfigured();
 }
 
-export async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(
+  text: string,
+  options?: { timeoutMs?: number }
+): Promise<number[]> {
   const startedAt = Date.now();
-  const response = await getMistral().embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: text,
-    // OBLIGATOIRE, et c'est la seule ligne qui empêche une corruption
-    // silencieuse. Sans elle, le SDK OpenAI demande `encoding_format: 'base64'`
-    // de lui-même, puis décode la réponse comme une chaîne base64. Or Mistral
-    // ignore ce paramètre et renvoie toujours un tableau de nombres : le SDK
-    // interprète alors chaque flottant comme un OCTET, et reconstruit
-    // 1024 / 4 = 256 valeurs — toutes nulles, puisque des flottants entre -1 et
-    // 1 tronqués en octets donnent zéro.
-    //
-    // Le résultat est un vecteur de la mauvaise taille ET vide de sens. Aucune
-    // erreur n'est levée : si la colonne avait eu 256 dimensions, ces zéros
-    // auraient été stockés et la recherche sémantique aurait rendu n'importe
-    // quoi sans que rien ne le signale.
-    encoding_format: 'float',
-  });
+  const response = await getMistral().embeddings.create(
+    {
+      model: EMBEDDING_MODEL,
+      input: text,
+      // OBLIGATOIRE, et c'est la seule ligne qui empêche une corruption
+      // silencieuse. Sans elle, le SDK OpenAI demande `encoding_format: 'base64'`
+      // de lui-même, puis décode la réponse comme une chaîne base64. Or Mistral
+      // ignore ce paramètre et renvoie toujours un tableau de nombres : le SDK
+      // interprète alors chaque flottant comme un OCTET, et reconstruit
+      // 1024 / 4 = 256 valeurs — toutes nulles, puisque des flottants entre -1 et
+      // 1 tronqués en octets donnent zéro.
+      //
+      // Le résultat est un vecteur de la mauvaise taille ET vide de sens. Aucune
+      // erreur n'est levée : si la colonne avait eu 256 dimensions, ces zéros
+      // auraient été stockés et la recherche sémantique aurait rendu n'importe
+      // quoi sans que rien ne le signale.
+      encoding_format: 'float',
+    },
+    // Timeout par requête : l'appelant sait combien de temps il a, le client
+    // partagé ne peut pas le deviner.
+    options?.timeoutMs ? { timeout: options.timeoutMs } : undefined
+  );
 
   const embedding = response.data[0].embedding;
 

@@ -1,5 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/server';
-import { generateEmbedding, generateRexEmbedding, isEmbeddingConfigured } from '@/lib/llm';
+import {
+  generateEmbedding,
+  generateRexEmbedding,
+  isEmbeddingConfigured,
+  INTERACTIVE_EMBEDDING_TIMEOUT_MS,
+} from '@/lib/llm';
 import { logger } from '@/lib/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -47,7 +52,12 @@ export async function semanticMatches(
   if (!isEmbeddingConfigured()) return null;
 
   try {
-    const embedding = await generateEmbedding(query);
+    // Budget court : cette fonction est appelée pendant le rendu de `/search`,
+    // où l'hébergeur coupe bien avant les 25 s du client par défaut. Dépasser
+    // ferait tuer le rendu entier au lieu de retomber sur le plein texte.
+    const embedding = await generateEmbedding(query, {
+      timeoutMs: INTERACTIVE_EMBEDDING_TIMEOUT_MS,
+    });
     const { data, error } = await supabase.rpc('search_rex_by_embedding', {
       query_embedding: embedding,
       match_threshold: SIMILARITY_THRESHOLD,

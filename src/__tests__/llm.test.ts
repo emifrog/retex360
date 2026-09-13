@@ -144,6 +144,22 @@ describe('Embeddings — mistral-embed', () => {
     expect(embeddingsCreate.mock.calls[0][0].encoding_format).toBe('float');
   });
 
+  it('garde le budget interactif sous la durée d’un rendu de page', () => {
+    // Les pages ne figurent pas dans `vercel.json` : elles gardent la durée par
+    // défaut de la plateforme, de l'ordre de 10 s, là où les routes API ont 30 s.
+    // Un budget au-delà ferait tuer le rendu par l'hébergeur avant tout repli.
+    expect(loadWith({}).INTERACTIVE_EMBEDDING_TIMEOUT_MS).toBeLessThan(10_000);
+  });
+
+  it('transmet le budget demandé au client', async () => {
+    const llm = loadWith({ MISTRAL_API_KEY: 'k' });
+    embeddingsCreate.mockResolvedValue({ data: [{ embedding: vector1024() }], usage: {} });
+
+    await llm.generateEmbedding('texte', { timeoutMs: 1234 });
+
+    expect(embeddingsCreate.mock.calls[0][1]).toEqual({ timeout: 1234 });
+  });
+
   it('annonce la dimension inscrite dans le schéma', () => {
     // Sentinelle : ce chiffre, la colonne `rex.embedding` et la signature de
     // `search_rex_by_embedding` doivent bouger ensemble (migration 022).
