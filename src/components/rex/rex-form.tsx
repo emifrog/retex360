@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, VISIBILITY_LABELS } from '@/lib/constants';
+import { getRequiredFieldsForType } from '@/lib/validators/rex';
 
 // Lazy-load TiptapEditor (@tiptap ~150KB)
 const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.TiptapEditor), {
@@ -56,6 +57,9 @@ const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.Tipta
 interface RexFormData {
   title: string;
   intervention_date: string;
+  intervention_heure: string;
+  localisation: string;
+  commune: string;
   type: string;
   severity: string;
   visibility: string;
@@ -70,6 +74,9 @@ interface RexFormData {
   elements_favorables: string;
   elements_defavorables: string;
   documentation_operationnelle: string;
+  objectifs: string;
+  donnees_sources: string;
+  methode_argumentation: string;
   focus_thematiques: FocusThematique[];
   key_figures: KeyFigures;
   chronologie: TimelineEvent[];
@@ -114,6 +121,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     defaultValues: {
       title: initialData?.title || '',
       intervention_date: initialData?.intervention_date || '',
+      intervention_heure: initialData?.intervention_heure || '',
+      localisation: initialData?.localisation || '',
+      commune: initialData?.commune || '',
       type: initialData?.type || '',
       severity: initialData?.severity || '',
       visibility: initialData?.visibility || 'sdis',
@@ -128,6 +138,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
       elements_favorables: initialData?.elements_favorables || '',
       elements_defavorables: initialData?.elements_defavorables || '',
       documentation_operationnelle: initialData?.documentation_operationnelle || '',
+      objectifs: initialData?.objectifs || '',
+      donnees_sources: initialData?.donnees_sources || '',
+      methode_argumentation: initialData?.methode_argumentation || '',
       focus_thematiques: initialData?.focus_thematiques || [],
       key_figures: initialData?.key_figures || {},
       chronologie: initialData?.chronologie || [],
@@ -191,32 +204,21 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     );
   };
 
+  /**
+   * Champs marqués obligatoires dans le formulaire.
+   *
+   * Délègue à `getRequiredFieldsForType`, source unique partagée avec la
+   * validation serveur, l'indicateur de complétion et le bouton de promotion.
+   * Cette fonction en tenait auparavant une COPIE : une règle ajoutée d'un côté
+   * et pas de l'autre, et le formulaire annonce « complet » sur un dossier que
+   * l'API refusera — sans rien dire de ce qui manque.
+   *
+   * `severity` est ajoutée ici : le formulaire l'exige de tous les niveaux,
+   * alors que le plan type ne la liste pas comme rubrique.
+   */
   const isFieldRequired = (field: string): boolean => {
-    const requiredByType: Record<ProductionType, string[]> = {
-      signalement: ['title', 'intervention_date', 'type', 'severity', 'description'],
-      pex: [
-        'title',
-        'intervention_date',
-        'type',
-        'severity',
-        'description',
-        'context',
-        'means_deployed',
-        'lessons_learned',
-      ],
-      retex: [
-        'title',
-        'intervention_date',
-        'type',
-        'severity',
-        'description',
-        'context',
-        'means_deployed',
-        'lessons_learned',
-        'focus_thematiques',
-      ],
-    };
-    return requiredByType[typeProduction]?.includes(field) || false;
+    if (field === 'severity') return true;
+    return getRequiredFieldsForType(typeProduction).includes(field);
   };
 
   const onSubmit = async (data: RexFormData, status: 'draft' | 'pending') => {
@@ -309,6 +311,20 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               />
             </div>
 
+            {/* Heure — plan type PEX (annexe D), rubrique « date et heure ».
+                Facultative : beaucoup de signalements ne la connaissent pas,
+                mais une intervention de nuit ou d'heure de pointe ne se lit
+                pas comme une autre. */}
+            <div className="space-y-2">
+              <Label htmlFor="intervention_heure">Heure d&apos;intervention</Label>
+              <Input
+                id="intervention_heure"
+                type="time"
+                {...register('intervention_heure')}
+                className="bg-background/50"
+              />
+            </div>
+
             {/* Type */}
             <div className="space-y-2">
               <Label>
@@ -360,6 +376,31 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Lieu — plan type PEX (annexe D) et RETEX (annexe E), rubrique
+              « lieu de l'intervention ». La commune est séparée du libellé :
+              c'est elle qui rend le REX filtrable et cartographiable, là où le
+              lieu écrit dans le titre ne l'était pas. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="localisation">Lieu de l&apos;intervention</Label>
+              <Input
+                id="localisation"
+                {...register('localisation')}
+                placeholder="Parking souterrain Nice Étoile, 30 av. Jean Médecin"
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="commune">Commune</Label>
+              <Input
+                id="commune"
+                {...register('commune')}
+                placeholder="Nice"
+                className="bg-background/50"
+              />
             </div>
           </div>
 
@@ -708,6 +749,72 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
               onChange={(content) => setValue('description_site', content)}
               placeholder="Décrivez l'ouvrage ou le site concerné par l'intervention..."
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Démarche RETEX — rubriques 2, 4 et 6 du plan type (annexe E).
+          Affichées pour le seul RETEX : le mémento veut un PEX léger, et les
+          imposer à une synthèse de quatre pages contredirait la doctrine. */}
+      {typeProduction === 'retex' && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-lg">Démarche du RETEX</CardTitle>
+            <CardDescription>
+              Ce qui distingue un RETEX d&apos;une synthèse : pourquoi il est mené, d&apos;où
+              viennent les informations, et comment elles ont été analysées
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                Objectifs du RETEX
+                {isFieldRequired('objectifs') && <span className="text-destructive">*</span>}
+              </Label>
+              <TiptapEditor
+                content={watch('objectifs') || ''}
+                onChange={(content) => setValue('objectifs', content)}
+                placeholder="Ce que la démarche cherche à établir, et pourquoi cette intervention a été retenue..."
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Plan type RETEX — Annexe E, rubrique 2
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                Données et sources
+                {isFieldRequired('donnees_sources') && <span className="text-destructive">*</span>}
+              </Label>
+              <TiptapEditor
+                content={watch('donnees_sources') || ''}
+                onChange={(content) => setValue('donnees_sources', content)}
+                placeholder="Nature des données et méthodes de collecte : entretiens, rapports d'intervention, enregistrements radio, main courante..."
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Plan type RETEX — Annexe E, rubrique 4
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                Argumentation de la méthode
+                {isFieldRequired('methode_argumentation') && (
+                  <span className="text-destructive">*</span>
+                )}
+              </Label>
+              <TiptapEditor
+                content={watch('methode_argumentation') || ''}
+                onChange={(content) => setValue('methode_argumentation', content)}
+                placeholder="Justification de la démarche d'analyse retenue, et ses limites..."
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Plan type RETEX — Annexe E, rubrique 6
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

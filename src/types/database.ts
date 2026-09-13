@@ -91,6 +91,13 @@ export type Database = {
           elements_favorables: string | null;
           elements_defavorables: string | null;
           documentation_operationnelle: string | null;
+          // Plans types DGSCGC — annexes D et E (migration 023)
+          intervention_heure: string | null;
+          localisation: string | null;
+          commune: string | null;
+          objectifs: string | null;
+          donnees_sources: string | null;
+          methode_argumentation: string | null;
           focus_thematiques: Json | null;
           key_figures: Json | null;
           chronologie: Json | null;
@@ -132,6 +139,13 @@ export type Database = {
           elements_favorables?: string | null;
           elements_defavorables?: string | null;
           documentation_operationnelle?: string | null;
+          // Plans types DGSCGC — annexes D et E (migration 023)
+          intervention_heure?: string | null;
+          localisation?: string | null;
+          commune?: string | null;
+          objectifs?: string | null;
+          donnees_sources?: string | null;
+          methode_argumentation?: string | null;
           focus_thematiques?: Json | null;
           key_figures?: Json | null;
           chronologie?: Json | null;
@@ -173,6 +187,13 @@ export type Database = {
           elements_favorables?: string | null;
           elements_defavorables?: string | null;
           documentation_operationnelle?: string | null;
+          // Plans types DGSCGC — annexes D et E (migration 023)
+          intervention_heure?: string | null;
+          localisation?: string | null;
+          commune?: string | null;
+          objectifs?: string | null;
+          donnees_sources?: string | null;
+          methode_argumentation?: string | null;
           focus_thematiques?: Json | null;
           key_figures?: Json | null;
           chronologie?: Json | null;

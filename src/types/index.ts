@@ -156,6 +156,11 @@ export const PRODUCTION_TYPE_RULES = {
       'means_deployed',
       'lessons_learned',
       'focus_thematiques',
+      // Plan type RETEX (annexe E) : rubriques 2, 4 et 6. Exigées du seul
+      // RETEX — le PEX est volontairement plus léger (migration 023).
+      'objectifs',
+      'donnees_sources',
+      'methode_argumentation',
     ],
   },
 } as const;

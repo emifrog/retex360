@@ -54,6 +54,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           type_production, focus_thematiques, key_figures, chronologie,
           prescriptions, message_ambiance, sitac, elements_favorables,
           elements_defavorables, documentation_operationnelle, updated_at,
+          intervention_heure, localisation, commune,
+          objectifs, donnees_sources, methode_argumentation,
           author:author_id(id, full_name, grade),
           sdis:sdis_id(id, code, name)
         `
@@ -114,6 +116,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     rex.sitac = truncateText(rex.sitac, MAX_TEXT_LENGTH);
     rex.elements_favorables = truncateText(rex.elements_favorables, MAX_TEXT_LENGTH);
     rex.elements_defavorables = truncateText(rex.elements_defavorables, MAX_TEXT_LENGTH);
+    rex.objectifs = truncateText(rex.objectifs, MAX_TEXT_LENGTH);
+    rex.donnees_sources = truncateText(rex.donnees_sources, MAX_TEXT_LENGTH);
+    rex.methode_argumentation = truncateText(rex.methode_argumentation, MAX_TEXT_LENGTH);
     rex.documentation_operationnelle = truncateText(
       rex.documentation_operationnelle,
       MAX_TEXT_LENGTH

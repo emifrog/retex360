@@ -83,11 +83,14 @@ export interface RexForAi {
   type?: string | null;
   severity?: string | null;
   intervention_date?: string | null;
+  localisation?: string | null;
+  commune?: string | null;
   description?: string | null;
   context?: string | null;
   means_deployed?: string | null;
   difficulties?: string | null;
   lessons_learned?: string | null;
+  objectifs?: string | null;
   tags?: string[] | null;
 }
 
@@ -105,11 +108,23 @@ function field(value: string | null | undefined): string {
  */
 export function buildAnalysisContext(rex: RexForAi): string {
   const tags = (rex.tags ?? []).slice(0, 30).join(', ');
+  const lieu = [rex.localisation, rex.commune].filter(Boolean).join(' — ');
   const body = [
     `Titre: ${field(rex.title)}`,
     `Type: ${field(rex.type)}`,
     `Gravité: ${field(rex.severity)}`,
     `Date d'intervention: ${field(rex.intervention_date)}`,
+    // Le lieu situe l'intervention (milieu urbain, zone industrielle, massif) :
+    // une analyse qui l'ignore passe à côté du contexte.
+    `Lieu: ${lieu ? field(lieu) : 'Non renseigné'}`,
+    '',
+    // Rubrique 2 du plan type RETEX : ce que la démarche cherche à établir.
+    // C'est la consigne la plus utile qu'un analyste puisse recevoir.
+    // `donnees_sources` et `methode_argumentation` sont volontairement ABSENTS :
+    // ils décrivent la méthode, pas l'intervention. Les inclure ferait commenter
+    // au modèle la façon dont le RETEX a été mené plutôt que ce qui s'est passé,
+    // et gonflerait le prompt sans rien apporter à la synthèse.
+    `Objectifs du RETEX: ${field(rex.objectifs)}`,
     '',
     `Description:\n${field(rex.description)}`,
     '',
@@ -140,6 +155,10 @@ export function buildAnalysisContext(rex: RexForAi): string {
 export function buildEmbeddingInput(rex: RexForAi): string {
   const combined = [
     rex.title,
+    // Le lieu est un critère de recherche naturel (« que s'est-il passé à
+    // Carros ? ») et tient en quelques mots : son rapport signal/coût est le
+    // meilleur de tous les champs.
+    [rex.localisation, rex.commune].filter(Boolean).join(' '),
     rex.description,
     rex.context,
     rex.lessons_learned,

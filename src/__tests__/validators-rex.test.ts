@@ -45,6 +45,25 @@ const pexPayload = {
   lessons_learned: MEDIUM,
 };
 
+/**
+ * Rubriques 2, 4 et 6 du plan type RETEX (annexe E), ajoutées par la
+ * migration 023. Un PEX complet promu en RETEX sans elles doit être refusé.
+ */
+const rubriquesRetex = {
+  objectifs: 'Établir pourquoi la reconnaissance initiale a tardé de douze minutes.',
+  donnees_sources:
+    "Entretiens avec le COS et les chefs d'agrès, enregistrements radio, main courante.",
+  methode_argumentation:
+    'Analyse chronologique croisée avec les témoignages, méthode retenue pour recouper les perceptions.',
+};
+
+const retexPayload = {
+  ...pexPayload,
+  type_production: 'retex',
+  focus_thematiques: [focus],
+  ...rubriquesRetex,
+};
+
 /** Chemins de champs en erreur, pour assertions lisibles. */
 function errorFields(result: ReturnType<typeof validateRexByType>): string[] {
   if (result.success) return [];
@@ -150,13 +169,8 @@ describe('PEX — synthèse factuelle', () => {
 });
 
 describe('RETEX — dossier complet', () => {
-  it('accepte un dossier comportant au moins un focus thématique', () => {
-    const r = validateRexByType({
-      ...pexPayload,
-      type_production: 'retex',
-      focus_thematiques: [focus],
-    });
-    expect(r.success).toBe(true);
+  it('accepte un dossier complet', () => {
+    expect(validateRexByType(retexPayload).success).toBe(true);
   });
 
   it('refuse un dossier sans aucun focus thématique', () => {
@@ -179,6 +193,7 @@ describe('RETEX — dossier complet', () => {
     const r = validateRexByType({
       ...pexPayload,
       type_production: 'retex',
+      ...rubriquesRetex,
       focus_thematiques: [{ ...focus, problematique: 'RAS' }],
     });
     expect(errorFields(r)).toContain('focus_thematiques.0.problematique');
@@ -190,6 +205,7 @@ describe('RETEX — dossier complet', () => {
     const r = validateRexByType({
       ...pexPayload,
       type_production: 'retex',
+      ...rubriquesRetex,
       focus_thematiques: [{ ...focus, problematique: '0123456789' }],
     });
     expect(r.success).toBe(true);
@@ -199,9 +215,67 @@ describe('RETEX — dossier complet', () => {
     const r = validateRexByType({
       ...pexPayload,
       type_production: 'retex',
+      ...rubriquesRetex,
       focus_thematiques: [{ ...focus, theme: '' }],
     });
     expect(errorFields(r)).toContain('focus_thematiques.0.theme');
+  });
+});
+
+describe('RETEX — rubriques du plan type (annexe E)', () => {
+  it('exige les objectifs, les données/sources et la méthode', () => {
+    // Rubriques 2, 4 et 6 : c'est ce qui sépare un RETEX d'un PEX étoffé.
+    const r = validateRexByType({
+      ...pexPayload,
+      type_production: 'retex',
+      focus_thematiques: [focus],
+    });
+    expect(errorFields(r)).toEqual(
+      expect.arrayContaining(['objectifs', 'donnees_sources', 'methode_argumentation'])
+    );
+  });
+
+  it('refuse une rubrique expédiée en trois mots', () => {
+    const r = validateRexByType({ ...retexPayload, donnees_sources: 'RAS' });
+    expect(errorFields(r)).toContain('donnees_sources');
+  });
+
+  it('ne les exige NI du PEX NI du signalement', () => {
+    // Le mémento veut un PEX léger : les imposer contredirait la doctrine.
+    expect(validateRexByType(pexPayload).success).toBe(true);
+    expect(
+      validateRexByType({ ...base, type_production: 'signalement', description: MEDIUM }).success
+    ).toBe(true);
+  });
+});
+
+describe('Lieu et heure — plan type PEX (annexe D)', () => {
+  it('accepte un lieu et une heure', () => {
+    const r = validateRexByType({
+      ...pexPayload,
+      intervention_heure: '14:32',
+      localisation: 'Parking souterrain Nice Étoile, 30 av. Jean Médecin',
+      commune: 'Nice',
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('les laisse facultatifs — une heure est souvent inconnue', () => {
+    expect(validateRexByType(pexPayload).success).toBe(true);
+  });
+
+  it('accepte les secondes, refuse une heure impossible', () => {
+    expect(validateRexByType({ ...pexPayload, intervention_heure: '23:59:59' }).success).toBe(true);
+    expect(
+      errorFields(validateRexByType({ ...pexPayload, intervention_heure: '25:00' }))
+    ).toContain('intervention_heure');
+    expect(
+      errorFields(validateRexByType({ ...pexPayload, intervention_heure: '14h32' }))
+    ).toContain('intervention_heure');
+  });
+
+  it('tolère une heure vide, que renvoie un formulaire non rempli', () => {
+    expect(validateRexByType({ ...pexPayload, intervention_heure: '' }).success).toBe(true);
   });
 });
 
@@ -297,6 +371,18 @@ describe('getRequiredFieldsForType', () => {
   it('réclame un focus thématique pour le seul RETEX', () => {
     expect(getRequiredFieldsForType('retex')).toContain('focus_thematiques');
     expect(getRequiredFieldsForType('pex')).not.toContain('focus_thematiques');
+  });
+
+  it('réclame les rubriques du plan type RETEX pour le seul RETEX', () => {
+    // Cette liste pilote l'indicateur de complétion et le bouton de promotion :
+    // si elle diverge des schémas Zod, l'interface annonce « complet » sur un
+    // dossier que la validation refusera.
+    const retex = getRequiredFieldsForType('retex');
+    const pex = getRequiredFieldsForType('pex');
+    for (const champ of ['objectifs', 'donnees_sources', 'methode_argumentation']) {
+      expect(retex).toContain(champ);
+      expect(pex).not.toContain(champ);
+    }
   });
 
   it('retombe sur le socle minimal pour un type inattendu', () => {

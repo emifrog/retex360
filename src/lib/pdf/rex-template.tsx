@@ -597,11 +597,23 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
             <Text style={[styles.metaText, styles.metaTextDefault]}>{rex.type}</Text>
           </View>
+          {/* Plan type (annexes D et E), rubrique « date et heure » : l'heure
+              complète la date quand elle est connue. */}
           <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
             <Text style={[styles.metaText, styles.metaTextDefault]}>
               {new Date(rex.intervention_date).toLocaleDateString('fr-FR')}
+              {rex.intervention_heure ? ` à ${rex.intervention_heure.slice(0, 5)}` : ''}
             </Text>
           </View>
+          {/* Rubrique « lieu de l'intervention ». La commune suffit au badge ;
+              le libellé complet est repris dans le corps du document. */}
+          {(rex.commune || rex.localisation) && (
+            <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
+              <Text style={[styles.metaText, styles.metaTextDefault]}>
+                {rex.commune || rex.localisation}
+              </Text>
+            </View>
+          )}
           {rex.author && (
             <View style={[styles.metaBadge, styles.metaBadgeDefault]}>
               <Text style={[styles.metaText, styles.metaTextDefault]}>{getAuthorDisplay()}</Text>
@@ -777,6 +789,43 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Description de l&apos;ouvrage / site</Text>
             <Text style={styles.sectionContent}>{stripHtml(rex.description_site)}</Text>
+          </View>
+        )}
+
+        {/* Lieu de l'intervention — plan type PEX (annexe D) et RETEX (annexe E).
+            Le badge d'en-tête ne porte que la commune : ici le libellé complet. */}
+        {(rex.localisation || rex.commune) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Lieu de l&apos;intervention</Text>
+            <Text style={styles.sectionContent}>
+              {[rex.localisation, rex.commune].filter(Boolean).join(' — ')}
+            </Text>
+          </View>
+        )}
+
+        {/* Démarche du RETEX — rubriques 2, 4 et 6 du plan type (annexe E).
+            Placées avant l'analyse thématique : le lecteur doit savoir pourquoi
+            le RETEX est mené et d'où viennent les données avant d'en lire les
+            conclusions. Chaque rubrique s'affiche seulement si renseignée — un
+            intitulé sans contenu ferait passer une absence pour un oubli. */}
+        {rex.objectifs && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Objectifs du RETEX</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.objectifs)}</Text>
+          </View>
+        )}
+
+        {rex.donnees_sources && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Données et sources</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.donnees_sources)}</Text>
+          </View>
+        )}
+
+        {rex.methode_argumentation && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Argumentation de la méthode retenue</Text>
+            <Text style={styles.sectionContent}>{stripHtml(rex.methode_argumentation)}</Text>
           </View>
         )}
 

@@ -130,6 +130,32 @@ describe('buildAnalysisContext', () => {
     expect(out).not.toContain('t499');
   });
 
+  it('inclut le lieu et les objectifs du RETEX', () => {
+    // Le lieu situe l'intervention ; les objectifs disent ce que la démarche
+    // cherche à établir — la consigne la plus utile pour une analyse.
+    const out = buildAnalysisContext({
+      ...rex,
+      localisation: 'Zone industrielle de Carros',
+      commune: 'Carros',
+      objectifs: 'Établir pourquoi la reconnaissance a tardé.',
+    });
+    expect(out).toContain('Zone industrielle de Carros — Carros');
+    expect(out).toContain('Établir pourquoi la reconnaissance a tardé.');
+  });
+
+  it("n'envoie ni les sources ni l'argumentation de méthode", () => {
+    // Décision explicite : ces deux rubriques décrivent la MÉTHODE du RETEX, pas
+    // l'intervention. Les inclure ferait commenter au modèle la façon dont le
+    // RETEX a été mené plutôt que ce qui s'est passé, et gonflerait le prompt.
+    const out = buildAnalysisContext({
+      ...rex,
+      donnees_sources: 'ENTRETIENS-AVEC-LE-COS',
+      methode_argumentation: 'ANALYSE-CHRONOLOGIQUE-CROISEE',
+    } as Parameters<typeof buildAnalysisContext>[0]);
+    expect(out).not.toContain('ENTRETIENS-AVEC-LE-COS');
+    expect(out).not.toContain('ANALYSE-CHRONOLOGIQUE-CROISEE');
+  });
+
   it('remplace les champs vides par une mention explicite', () => {
     // Une ligne vide laisserait le modèle inventer le contenu manquant.
     const out = buildAnalysisContext({ title: 'Titre', description: null, tags: [] });
@@ -164,6 +190,17 @@ describe('buildEmbeddingInput', () => {
   it('ignore les champs absents sans laisser de trous', () => {
     const out = buildEmbeddingInput({ title: 'Titre', description: null, context: undefined });
     expect(out).toBe('Titre');
+  });
+
+  it('indexe le lieu — critère de recherche naturel et peu coûteux', () => {
+    // « Que s'est-il passé à Carros ? » est une requête que les agents font
+    // spontanément, et le lieu tient en quelques mots.
+    const out = buildEmbeddingInput({
+      title: 'Feu d’entrepôt',
+      localisation: 'Zone industrielle',
+      commune: 'Carros',
+    });
+    expect(out).toContain('Zone industrielle Carros');
   });
 
   it('ne neutralise pas les chevrons : un embedding ne suit pas d’instruction', () => {

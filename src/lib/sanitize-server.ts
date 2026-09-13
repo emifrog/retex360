@@ -42,6 +42,13 @@ const REX_HTML_FIELDS = [
   'elements_defavorables',
   'documentation_operationnelle',
   'description_site',
+  // Rubriques 2, 4 et 6 du plan type RETEX (annexe E, migration 023) : saisies
+  // dans le même éditeur riche que les champs ci-dessus, donc même traitement.
+  // `localisation` et `commune` n'y figurent pas : ce sont des champs de saisie
+  // simple, échappés par React à l'affichage comme l'est déjà `title`.
+  'objectifs',
+  'donnees_sources',
+  'methode_argumentation',
 ] as const;
 
 /**

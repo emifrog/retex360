@@ -129,6 +129,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         elements_favorables: clean.elements_favorables || null,
         elements_defavorables: clean.elements_defavorables || null,
         documentation_operationnelle: clean.documentation_operationnelle || null,
+        // Plans types DGSCGC — annexes D et E (migration 023)
+        intervention_heure: clean.intervention_heure || null,
+        localisation: clean.localisation || null,
+        commune: clean.commune || null,
+        objectifs: clean.objectifs || null,
+        donnees_sources: clean.donnees_sources || null,
+        methode_argumentation: clean.methode_argumentation || null,
         focus_thematiques: clean.focus_thematiques || [],
         key_figures: clean.key_figures || {},
         chronologie: clean.chronologie || [],

@@ -27,6 +27,28 @@ const rexBaseSchema = z.object({
     .min(10, 'Le titre doit contenir au moins 10 caractères')
     .max(500, 'Le titre ne peut pas dépasser 500 caractères'),
   intervention_date: z.string().date('Date invalide'),
+  // Plan type PEX (annexe D), rubrique « date et heure » : facultative, car
+  // beaucoup de signalements ne connaissent pas l'heure exacte.
+  intervention_heure: z
+    .string()
+    // Classes explicites plutôt que `\d` : une heure ne s'écrit qu'en chiffres
+    // arabes, et `\d` accepterait les chiffres d'autres systèmes d'écriture.
+    // Les secondes sont tolérées — Postgres rend un TIME sous la forme HH:MM:SS.
+    .regex(/^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/, 'Heure invalide (format HH:MM)')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  // Rubrique « lieu de l'intervention », commune aux annexes D et E.
+  localisation: z
+    .string()
+    .max(500, 'Le lieu ne peut pas dépasser 500 caractères')
+    .optional()
+    .nullable(),
+  commune: z
+    .string()
+    .max(200, 'La commune ne peut pas dépasser 200 caractères')
+    .optional()
+    .nullable(),
   type: z.enum(REX_TYPES, {
     message: "Type d'intervention invalide",
   }),
@@ -56,6 +78,9 @@ export const rexSignalementSchema = rexBaseSchema.extend({
   elements_defavorables: z.string().optional().nullable(),
   documentation_operationnelle: z.string().optional().nullable(),
   focus_thematiques: z.array(focusThematiqueSchema).optional().nullable(),
+  objectifs: z.string().optional().nullable(),
+  donnees_sources: z.string().optional().nullable(),
+  methode_argumentation: z.string().optional().nullable(),
 });
 
 // ============================================================================
@@ -76,6 +101,10 @@ export const rexPexSchema = rexBaseSchema.extend({
   sitac: z.string().optional().nullable(),
   documentation_operationnelle: z.string().optional().nullable(),
   focus_thematiques: z.array(focusThematiqueSchema).optional().nullable(),
+  // Rubriques du plan type RETEX : hors périmètre du PEX, donc facultatives.
+  objectifs: z.string().optional().nullable(),
+  donnees_sources: z.string().optional().nullable(),
+  methode_argumentation: z.string().optional().nullable(),
 });
 
 // ============================================================================
@@ -91,6 +120,16 @@ export const rexRetexSchema = rexBaseSchema.extend({
   focus_thematiques: z
     .array(focusThematiqueSchema)
     .min(1, 'Au moins un focus thématique est requis pour un RETEX'),
+  // Plan type RETEX (annexe E), rubriques 2, 4 et 6 — ce qui distingue un RETEX
+  // d'un PEX étoffé. Seuils bas : on vérifie que la rubrique est renseignée,
+  // pas qu'elle est bien écrite.
+  objectifs: z.string().min(20, 'Les objectifs du RETEX doivent contenir au moins 20 caractères'),
+  donnees_sources: z
+    .string()
+    .min(20, 'Les données et sources doivent contenir au moins 20 caractères'),
+  methode_argumentation: z
+    .string()
+    .min(20, "L'argumentation de la méthode doit contenir au moins 20 caractères"),
   // Champs recommandés pour RETEX
   difficulties: z.string().optional().nullable(),
   elements_favorables: z.string().optional().nullable(),
@@ -123,6 +162,9 @@ export const rexDraftSchema = rexBaseSchema.extend({
   elements_defavorables: z.string().optional().nullable(),
   documentation_operationnelle: z.string().optional().nullable(),
   focus_thematiques: z.array(focusThematiqueSchema).optional().nullable(),
+  objectifs: z.string().optional().nullable(),
+  donnees_sources: z.string().optional().nullable(),
+  methode_argumentation: z.string().optional().nullable(),
 });
 
 // ============================================================================
@@ -191,6 +233,10 @@ export function getRequiredFieldsForType(type: (typeof PRODUCTION_TYPES)[number]
         'means_deployed',
         'lessons_learned',
         'focus_thematiques',
+        // Plan type RETEX (annexe E), rubriques 2, 4 et 6 (migration 023).
+        'objectifs',
+        'donnees_sources',
+        'methode_argumentation',
       ];
     default:
       return ['title', 'intervention_date', 'type', 'severity', 'description'];

@@ -936,3 +936,61 @@ Trois suites possibles, à trancher :
 > de rendu, soit — si la plateforme ne l'attrape pas — un cache partagé entre
 > tenants. Le seul autre usage du dépôt (`dashboard/insights`) était déjà
 > correct : client service + filtre explicite + `sdis_id` dans la clé.
+
+---
+
+## Phase 17 — Plans types annexes D et E, câblage complet (13 septembre 2026)
+
+> Suite de la migration 023 : sans ce lot, les six colonnes existaient sans que
+> rien ne les écrive ni ne les affiche.
+
+153. ✅ **Types** (`types/database.ts`, `types/index.ts`) : six champs ajoutés
+     aux trois blocs Row / Insert / Update, et les trois rubriques RETEX
+     inscrites dans `PRODUCTION_TYPE_RULES.retex.requiredFields`.
+154. ✅ **Validation** (`validators/rex.ts`) : `objectifs`, `donnees_sources` et
+     `methode_argumentation` exigés du SEUL `rexRetexSchema` ; facultatifs pour
+     signalement, PEX et brouillon — le mémento veut un PEX léger. Heure et lieu
+     au socle commun, facultatifs. `intervention_heure` validée par
+     `^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$` : classes explicites plutôt
+     que `\d`, qui accepterait les chiffres d'autres systèmes d'écriture ; les
+     secondes sont tolérées car Postgres rend un TIME en HH:MM:SS.
+155. ✅ **Routes** création et mise à jour : les six champs écrits. Les trois
+     rubriques RETEX rejoignent `REX_HTML_FIELDS` (même éditeur riche, même
+     nettoyage serveur) ; `localisation` et `commune` non — champs de saisie
+     simple, échappés par React comme l'est déjà `title`.
+156. ✅ **Formulaire** : heure à côté de la date, lieu et commune en paire, et
+     une section « Démarche du RETEX » affichée pour le seul RETEX, chaque
+     rubrique portant sa référence (« Plan type RETEX — Annexe E, rubrique 2 »).
+     ⚠️ **Duplication supprimée au passage** : `isFieldRequired` tenait une
+     TROISIÈME copie des champs requis, à côté de `PRODUCTION_TYPE_RULES` et de
+     `getRequiredFieldsForType`. Elle délègue désormais à cette dernière. Une
+     règle ajoutée d'un côté et pas de l'autre, et le formulaire annonce
+     « complet » sur un dossier que l'API refuse — sans dire ce qui manque.
+157. ✅ **Export PDF** : date et heure dans le même badge, commune en badge,
+     lieu complet et les trois rubriques en sections, placées AVANT l'analyse
+     thématique — on doit savoir pourquoi le RETEX est mené et d'où viennent
+     les données avant d'en lire les conclusions. Colonnes ajoutées au `select`
+     de la route et à la troncature anti-OOM. Une rubrique vide n'affiche pas
+     d'intitulé : une absence ne doit pas passer pour un oubli.
+158. ✅ **IA** — arbitrage explicité et figé par des tests :
+     - `localisation` / `commune` → **analyse ET embedding**. Le lieu situe
+       l'intervention (urbain, zone industrielle, massif) et « que s'est-il
+       passé à Carros ? » est une requête spontanée ; quelques mots pour le
+       meilleur rapport signal/coût de tous les champs.
+     - `objectifs` → **analyse seule**. C'est la consigne la plus utile qu'un
+       analyste puisse recevoir.
+     - `donnees_sources` et `methode_argumentation` → **exclus des deux**. Ils
+       décrivent la MÉTHODE du RETEX, pas l'intervention : les inclure ferait
+       commenter au modèle la façon dont le RETEX a été mené plutôt que ce qui
+       s'est passé, et gonflerait le prompt sans rien apporter.
+159. ✅ Tests : 248 → **259**. Couvrent l'exigence des trois rubriques pour le
+     seul RETEX, leur absence d'exigence pour PEX et signalement, les bornes de
+     l'heure, et la cohérence entre `getRequiredFieldsForType` et les schémas Zod
+     — c'est cette cohérence qui empêche l'interface de mentir sur la complétion.
+
+### État de la conformité
+Chaque rubrique des plans types PEX (annexe D) et RETEX (annexe E) a désormais
+un champ dédié, saisi, stocké, validé selon le niveau de production, et restitué
+dans l'export PDF. La table de correspondance complète figure en tête de la
+migration 023, et les commentaires de colonne citent la rubrique d'origine : la
+conformité se vérifie en base, rubrique par rubrique.

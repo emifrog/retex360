@@ -18,6 +18,32 @@ interface ExportPdfButtonProps {
   rexTitle?: string;
 }
 
+/**
+ * Message lisible pour une réponse en échec.
+ *
+ * Le statut porte l'essentiel ; le corps JSON de la route le précise. Les deux
+ * sont utilisés, avec un repli si le corps n'est pas exploitable — une réponse
+ * 502 d'un proxy, par exemple, ne contient pas le JSON de l'application.
+ */
+async function describeFailure(response: Response): Promise<string> {
+  if (response.status === 401) {
+    return 'Session expirée — reconnectez-vous pour exporter ce REX.';
+  }
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get('Retry-After'));
+    return Number.isFinite(seconds) && seconds > 0
+      ? `Trop d'exports demandés. Réessayez dans ${seconds} seconde${seconds > 1 ? 's' : ''}.`
+      : "Trop d'exports demandés. Réessayez dans un instant.";
+  }
+
+  const serverMessage = await response
+    .json()
+    .then((body: { error?: string }) => body?.error)
+    .catch(() => null);
+
+  return serverMessage || `Export impossible (erreur ${response.status}).`;
+}
+
 export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,10 +51,27 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
     setIsLoading(true);
     try {
       const url = `/api/rex/${rexId}/pdf${anonymize ? '?anonymize=true' : ''}`;
-      const response = await fetch(url);
+      let response = await fetch(url);
+
+      // La route répond 304 à une requête conditionnelle (cache ETag sur
+      // `updated_at`). Le navigateur sert alors normalement la réponse mise en
+      // cache et le code ne voit qu'un 200 — mais si le 304 remonte jusqu'ici,
+      // il n'y a aucun corps à télécharger, et `response.ok` est faux. Une
+      // seule reprise en contournant le cache : le serveur regénère, ce qui est
+      // exactement ce que l'utilisateur a demandé.
+      if (response.status === 304) {
+        response = await fetch(url, { cache: 'reload' });
+      }
 
       if (!response.ok) {
-        throw new Error('Failed to generate PDF');
+        // `!response.ok` recouvrait SIX situations distinctes — session
+        // expirée, quota atteint, REX introuvable, REX trop volumineux, panne
+        // serveur, et jusqu'au 304 du cache ETag, qui n'est même pas une erreur.
+        // Toutes affichaient « Erreur lors de la génération du PDF », ce qui
+        // rendait le diagnostic impossible pour l'utilisateur comme pour nous.
+        //
+        // La route renvoie déjà un motif précis dans `{ error }` : on le lit.
+        throw new Error(await describeFailure(response));
       }
 
       const blob = await response.blob();
@@ -45,7 +88,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
       toast.success(anonymize ? 'PDF anonymisé téléchargé' : 'PDF téléchargé');
     } catch (error) {
       logger.error('Export error:', error);
-      toast.error('Erreur lors de la génération du PDF');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la génération du PDF');
     } finally {
       setIsLoading(false);
     }
