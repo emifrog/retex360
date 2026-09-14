@@ -1,0 +1,397 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: #f87171; text-decoration: none; }
+    a:hover { color: #fca5a5; }
+    input, textarea, button { font: inherit; }
+    input::placeholder, textarea::placeholder { color: #64748b; }
+    .nav:hover { background: rgba(255,255,255,0.04); }
+  </style>
+</helmet>
+
+<div style="width: 1360px; height: 900px; display: flex; background: #0a0a0f; color: #e2e8f0; overflow: hidden">
+
+  <!-- Barre latérale -->
+  <div style="width: 240px; flex-shrink: 0; background: #0f0f14; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 16px 12px; gap: 4px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 8px 8px 20px 8px">
+      <div style="width: 32px; height: 32px; border-radius: 8px; background: {{accent}}; display: flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-9 5 9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg>
+      </div>
+      <span style="font-size: 15px; font-weight: 700; letter-spacing: -0.01em">RETEX360</span>
+    </div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+      <div class="nav" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 13px; background: {{n.bg}}; color: {{n.fg}}; font-weight: {{n.weight}}">
+        <div style="width: 16px; height: 16px; border-radius: 4px; background: {{n.dot}}; flex-shrink: 0"></div>
+        <span style="flex-grow: 1; min-width: 0">{{n.label}}</span>
+        <sc-if value="{{ n.hasBadge }}" hint-placeholder-val="{{ false }}">
+          <span style="min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #f97316; color: #0a0a0f; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{n.badge}}</span>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- Colonne principale -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0">
+
+    <!-- En-tête -->
+    <div style="height: 56px; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; padding: 0 28px">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8">
+        <span>REX</span>
+        <span style="color: #475569">/</span>
+        <span style="color: #e2e8f0">Nouveau</span>
+      </div>
+      <!-- Enregistrement automatique : répond au « brouillon facile à reprendre » -->
+      <div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.22)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <span style="font-size: 12px; color: #22c55e; font-weight: 500">{{savedLabel}}</span>
+      </div>
+    </div>
+
+    <!-- Corps défilant -->
+    <div style="flex-grow: 1; overflow: hidden; padding: 24px 28px 0 28px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em">Nouveau retour d’expérience</h1>
+        <p style="margin: 0; font-size: 13px; color: #94a3b8">Allez à l’essentiel. Un signalement de quelques lignes suffit — il pourra devenir un PEX puis un RETEX plus tard.</p>
+      </div>
+
+      <!-- Niveau de production : c'est lui qui décide de la longueur du formulaire -->
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{levels}}" as="l" hint-placeholder-count="3">
+          <div onClick="{{ l.pick }}" style="cursor: pointer; padding: 14px; border-radius: 10px; border: 1px solid {{l.border}}; background: {{l.bg}}; display: flex; flex-direction: column; gap: 5px">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span style="font-size: 13px; font-weight: 600; color: {{l.fg}}">{{l.name}}</span>
+              <span style="font-size: 11px; color: {{l.countFg}}; font-variant-numeric: tabular-nums">{{l.count}}</span>
+            </div>
+            <span style="font-size: 12px; color: #94a3b8; line-height: 1.45">{{l.blurb}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Rail d'étapes -->
+      <div style="display: flex; align-items: center; gap: 6px">
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+          <div onClick="{{ s.go }}" style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: {{s.bg}}; border: 1px solid {{s.border}}">
+            <span style="width: 18px; height: 18px; flex-shrink: 0; border-radius: 999px; background: {{s.numBg}}; color: {{s.numFg}}; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">
+              <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="{{s.numFg}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </sc-if>
+              <sc-if value="{{ s.todo }}" hint-placeholder-val="{{ true }}">
+                <span>{{s.num}}</span>
+              </sc-if>
+            </span>
+            <span style="font-size: 12.5px; font-weight: 500; color: {{s.fg}}">{{s.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Panneau de l'étape courante -->
+      <div style="background: #14141c; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; flex-grow: 1; overflow: hidden">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 15px; font-weight: 600">{{panel.title}}</span>
+          <span style="font-size: 12.5px; color: #94a3b8">{{panel.hint}}</span>
+        </div>
+
+        <!-- Étape de relecture : la liste de ce qui manque, nommée, cliquable.
+             C'est ce qui remplace le message générique d'échec à la soumission. -->
+        <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 9px; padding: 13px 15px; border-radius: 10px; background: {{review.bannerBg}}; border: 1px solid {{review.bannerBorder}}">
+              <span style="font-size: 13.5px; color: {{review.bannerFg}}; font-weight: 500">{{review.headline}}</span>
+            </div>
+            <sc-for list="{{review.rows}}" as="r" hint-placeholder-count="4">
+              <div onClick="{{ r.go }}" style="cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06)">
+                <span style="width: 7px; height: 7px; border-radius: 999px; background: {{r.dot}}; flex-shrink: 0"></span>
+                <span style="font-size: 13px; color: #cbd5e1; flex-grow: 1; min-width: 0">{{r.label}}</span>
+                <span style="font-size: 12px; color: {{r.stateFg}}; flex-shrink: 0">{{r.state}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+          <sc-for list="{{fields}}" as="f" hint-placeholder-count="4">
+            <div style="display: flex; flex-direction: column; gap: 6px; grid-column: {{f.span}}">
+              <!-- Seul le facultatif est signalé : sur un formulaire où presque
+                   tout est requis, répéter « obligatoire » n'informe personne. -->
+              <label style="font-size: 12.5px; font-weight: 500; color: #cbd5e1; display: flex; align-items: center; gap: 6px">
+                <span>{{f.label}}</span>
+                <sc-if value="{{ f.optional }}" hint-placeholder-val="{{ false }}">
+                  <span style="color: #64748b; font-size: 11px; font-weight: 400">facultatif</span>
+                </sc-if>
+              </label>
+
+              <sc-if value="{{ f.multiline }}" hint-placeholder-val="{{ false }}">
+                <textarea onChange="{{ f.onChange }}" value="{{ f.value }}" placeholder="{{f.placeholder}}" style="height: 92px; resize: none; padding: 9px 12px; border-radius: 8px; border: 1px solid {{f.border}}; background: rgba(255,255,255,0.03); color: #e2e8f0; font-size: 13.5px; line-height: 1.5; outline: none"></textarea>
+              </sc-if>
+              <sc-if value="{{ f.single }}" hint-placeholder-val="{{ true }}">
+                <input onChange="{{ f.onChange }}" value="{{ f.value }}" placeholder="{{f.placeholder}}" style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{f.border}}; background: rgba(255,255,255,0.03); color: #e2e8f0; font-size: 13.5px; outline: none">
+              </sc-if>
+              <sc-if value="{{ f.choice }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; gap: 6px">
+                  <sc-for list="{{f.options}}" as="o" hint-placeholder-count="3">
+                    <div onClick="{{ o.pick }}" style="cursor: pointer; flex-grow: 1; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12.5px; font-weight: 500">{{o.label}}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <!-- L'erreur se lit sous le champ concerné, pas dans un bandeau en haut de page -->
+              <sc-if value="{{ f.hasError }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 11.5px; color: #f87171; display: flex; align-items: center; gap: 5px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                  <span>{{f.error}}</span>
+                </span>
+              </sc-if>
+              <sc-if value="{{ f.hasHelp }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size: 11.5px; color: #94a3b8">{{f.help}}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barre d'actions : progression à gauche, actions à droite -->
+    <div style="flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.08); background: #0f0f14; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 7px; min-width: 0; flex-grow: 1; max-width: 420px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+          <span style="font-size: 12px; color: #94a3b8">{{progressLabel}}</span>
+          <span style="font-size: 12px; color: #cbd5e1; font-weight: 600; font-variant-numeric: tabular-nums">{{progressPct}}</span>
+        </div>
+        <div style="height: 5px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden">
+          <div style="height: 100%; width: {{progressWidth}}; background: {{accent}}; border-radius: 999px"></div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0">
+        <div onClick="{{ prev }}" style="cursor: pointer; height: 36px; padding: 0 16px; display: flex; align-items: center; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 13.5px; font-weight: 500">Précédent</div>
+        <div onClick="{{ next }}" style="cursor: pointer; height: 36px; padding: 0 18px; display: flex; align-items: center; gap: 8px; border-radius: 8px; background: {{accent}}; color: #ffffff; font-size: 13.5px; font-weight: 500">
+          <span>{{nextLabel}}</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#b91c1c","options":["#b91c1c","#ea580c","#0f766e","#1d4ed8"],"section":"Th&#232;me"},"showErrors":{"editor":"boolean","default":false,"section":"&#201;tats"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      level: 'signalement',
+      step: 0,
+      values: {
+        title: 'Feu de hangar agricole — propagation par les combles',
+        date: '02/09/2026',
+        kind: '',
+        severity: 'majeur',
+        description: '',
+        context: '',
+        means: '',
+        lessons: '',
+      },
+    };
+  }
+
+  // Un niveau = un jeu d'étapes ET un jeu de champs requis. C'est la règle
+  // métier Signalement -> PEX -> RETEX, rendue visible dans le formulaire.
+  plan(level) {
+    const essentiel = {
+      title: "L'essentiel",
+      hint: 'Le strict nécessaire pour ouvrir le dossier.',
+      fields: ['title', 'date', 'kind', 'severity'],
+    };
+    const recit = {
+      title: 'Ce qui s’est passé',
+      hint: 'Racontez les faits. Vous pourrez y revenir à tout moment.',
+      fields: ['description'],
+    };
+    const deroule = {
+      title: 'Contexte et moyens',
+      hint: 'Ce qui était engagé, et dans quelles conditions.',
+      fields: ['context', 'means'],
+    };
+    const ensgt = {
+      title: 'Enseignements',
+      hint: 'Ce que le service retient, et ce qu’il change.',
+      fields: ['lessons'],
+    };
+    const relecture = { title: 'Relecture', hint: 'Vérifiez avant de soumettre à validation.', fields: [] };
+    if (level === 'signalement') return [essentiel, recit, relecture];
+    if (level === 'pex') return [essentiel, recit, deroule, relecture];
+    return [essentiel, recit, deroule, ensgt, relecture];
+  }
+
+  required(level) {
+    const base = ['title', 'date', 'kind', 'severity', 'description'];
+    if (level === 'signalement') return base;
+    if (level === 'pex') return base.concat(['context', 'means']);
+    return base.concat(['context', 'means', 'lessons']);
+  }
+
+  meta() {
+    return {
+      title: { label: 'Titre de l’intervention', placeholder: 'Ex. Feu de hangar agricole', span: 'span 2' },
+      date: { label: 'Date', placeholder: 'JJ/MM/AAAA', span: 'span 1' },
+      kind: { label: 'Type d’intervention', placeholder: 'Ex. Incendie industriel', span: 'span 1', help: 'Saisie libre — la liste se complète au fil des REX du SDIS.' },
+      severity: { label: 'Criticité', span: 'span 2', choice: ['Significatif', 'Majeur', 'Critique'] },
+      description: { label: 'Que s’est-il passé ?', placeholder: 'Quelques lignes suffisent pour commencer.', span: 'span 2', multiline: true },
+      context: { label: 'Contexte opérationnel', placeholder: 'Météo, accès, heure, enjeux…', span: 'span 1', multiline: true },
+      means: { label: 'Moyens engagés', placeholder: 'Engins, effectifs, renforts…', span: 'span 1', multiline: true },
+      lessons: { label: 'Enseignements', placeholder: 'Ce qui a fonctionné, ce qui doit changer.', span: 'span 2', multiline: true },
+    };
+  }
+
+  renderVals() {
+    const accent = this.props.accent ?? '#b91c1c';
+    const showErrors = this.props.showErrors ?? false;
+    const { level, step, values } = this.state;
+    const plan = this.plan(level);
+    const current = plan[Math.min(step, plan.length - 1)];
+    const req = this.required(level);
+    const meta = this.meta();
+
+    const filled = req.filter((k) => (values[k] || '').trim().length > 0).length;
+    const pct = Math.round((filled / req.length) * 100);
+
+    const levelDefs = [
+      { id: 'signalement', name: 'Signalement', blurb: 'Remonter un fait vite, sans mise en forme.' },
+      { id: 'pex', name: 'PEX', blurb: 'Ajouter le contexte et les moyens engagés.' },
+      { id: 'retex', name: 'RETEX', blurb: 'Analyse complète, diffusable entre SDIS.' },
+    ];
+
+    return {
+      accent,
+      savedLabel: 'Brouillon enregistré · il y a 8 s',
+      progressLabel: filled + ' champs requis sur ' + req.length,
+      progressPct: pct + ' %',
+      progressWidth: pct + '%',
+      nextLabel: step >= plan.length - 1 ? 'Soumettre' : 'Continuer',
+
+      nav: [
+        { label: 'Tableau de bord', bg: 'transparent', fg: '#94a3b8', weight: '500', dot: 'rgba(255,255,255,0.14)' },
+        { label: 'Recherche', bg: 'transparent', fg: '#94a3b8', weight: '500', dot: 'rgba(255,255,255,0.14)' },
+        { label: 'Liste REX', bg: 'transparent', fg: '#94a3b8', weight: '500', dot: 'rgba(255,255,255,0.14)' },
+        { label: 'Nouveau REX', bg: 'rgba(185,28,28,0.2)', fg: '#f87171', weight: '600', dot: '#f87171' },
+        { label: 'Favoris', bg: 'transparent', fg: '#94a3b8', weight: '500', dot: 'rgba(255,255,255,0.14)' },
+        { label: 'Validation', bg: 'transparent', fg: '#94a3b8', weight: '500', dot: 'rgba(255,255,255,0.14)', hasBadge: true, badge: '3' },
+      ],
+
+      levels: levelDefs.map((d) => {
+        const on = d.id === level;
+        const n = this.required(d.id).length;
+        return {
+          name: d.name,
+          blurb: d.blurb,
+          count: n + ' champs',
+          bg: on ? 'rgba(185,28,28,0.12)' : '#14141c',
+          border: on ? accent : 'rgba(255,255,255,0.08)',
+          fg: on ? '#f87171' : '#e2e8f0',
+          countFg: on ? '#f87171' : '#64748b',
+          pick: () => this.setState({ level: d.id, step: 0 }),
+        };
+      }),
+
+      steps: plan.map((s, i) => {
+        const on = i === step;
+        const done = i < step;
+        return {
+          num: String(i + 1),
+          done,
+          todo: !done,
+          label: s.title,
+          bg: on ? 'rgba(185,28,28,0.12)' : 'transparent',
+          border: on ? 'rgba(185,28,28,0.35)' : 'rgba(255,255,255,0.08)',
+          fg: on ? '#e2e8f0' : done ? '#94a3b8' : '#64748b',
+          numBg: on ? accent : done ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.07)',
+          numFg: on ? '#ffffff' : done ? '#22c55e' : '#64748b',
+          go: () => this.setState({ step: i }),
+        };
+      }),
+
+      panel: { title: current.title, hint: current.hint },
+
+      isReview: current.fields.length === 0,
+      review: {
+        headline:
+          filled === req.length
+            ? 'Tout est renseigné. Ce ' + (level === 'signalement' ? 'signalement' : level.toUpperCase()) + ' peut partir en validation.'
+            : req.length - filled + ' rubrique' + (req.length - filled > 1 ? 's' : '') + ' à compléter avant de soumettre.',
+        bannerBg: filled === req.length ? 'rgba(34,197,94,0.07)' : 'rgba(249,115,22,0.07)',
+        bannerBorder: filled === req.length ? 'rgba(34,197,94,0.25)' : 'rgba(249,115,22,0.25)',
+        bannerFg: filled === req.length ? '#22c55e' : '#f97316',
+        rows: req.map((key) => {
+          const ok = (values[key] || '').trim().length > 0;
+          const stepIndex = plan.findIndex((s) => s.fields.indexOf(key) !== -1);
+          return {
+            label: meta[key].label,
+            dot: ok ? '#22c55e' : '#f97316',
+            state: ok ? 'Renseigné' : 'À compléter',
+            stateFg: ok ? '#94a3b8' : '#f97316',
+            go: () => this.setState({ step: stepIndex === -1 ? 0 : stepIndex }),
+          };
+        }),
+      },
+
+      fields: current.fields.map((key) => {
+        const m = meta[key];
+        const value = values[key] || '';
+        const isReq = req.indexOf(key) !== -1;
+        const empty = value.trim().length === 0;
+        const bad = showErrors && isReq && empty;
+        return {
+          label: m.label,
+          placeholder: m.placeholder || '',
+          value,
+          span: m.span,
+          multiline: !!m.multiline,
+          single: !m.multiline && !m.choice,
+          choice: !!m.choice,
+          optional: !isReq,
+          border: bad ? '#ef4444' : 'rgba(255,255,255,0.1)',
+          hasError: bad,
+          error: 'Ce champ est nécessaire pour soumettre à validation.',
+          hasHelp: !bad && !!m.help,
+          help: m.help || '',
+          onChange: (e) => {
+            const next = Object.assign({}, this.state.values);
+            next[key] = e.target.value;
+            this.setState({ values: next });
+          },
+          options: (m.choice || []).map((label) => {
+            const id = label.toLowerCase();
+            const on = value === id;
+            const tint = id === 'critique' ? '#ef4444' : id === 'majeur' ? '#f97316' : '#eab308';
+            return {
+              label,
+              bg: on ? 'rgba(255,255,255,0.05)' : 'transparent',
+              border: on ? tint : 'rgba(255,255,255,0.1)',
+              fg: on ? tint : '#94a3b8',
+              pick: () => {
+                const next = Object.assign({}, this.state.values);
+                next[key] = id;
+                this.setState({ values: next });
+              },
+            };
+          }),
+        };
+      }),
+
+      prev: () => this.setState({ step: Math.max(0, this.state.step - 1) }),
+      next: () => this.setState({ step: Math.min(plan.length - 1, this.state.step + 1) }),
+    };
+  }
+}
+</script>
+</body>
+</html>

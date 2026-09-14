@@ -1,0 +1,39 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1360, "h": 900, "title": "Nouveau REX — prototype", "is_interactive": true },
+    { "file": "Dashboard.dc.html", "x": 1440, "y": 0, "w": 1360, "h": 900, "title": "Tableau de bord" },
+    { "file": "Liste.dc.html", "x": 0, "y": 1240, "w": 1360, "h": 900, "title": "Liste REX" },
+    { "file": "Fiche.dc.html", "x": 1440, "y": 1240, "w": 1360, "h": 900, "title": "Fiche REX" }
+  ],
+  "annotations": [
+    {
+      "id": "note-saisie",
+      "x": 0,
+      "y": -300,
+      "w": 640,
+      "text": "SAISIE — écran cliquable\n\nLe pari : on ne demande pas à un agent de remplir un formulaire de RETEX complet le soir d'une intervention. Il ouvre un signalement de 5 champs ; le dossier grandit ensuite.\n\nChoisissez le niveau en haut : le nombre d'étapes et de champs requis change avec lui. Tapez dans les champs, la progression suit. Le réglage « showErrors » au-dessus de l’artboard bascule l’affichage des erreurs — sous le champ concerné, pas en bandeau."
+    },
+    {
+      "id": "note-pilotage",
+      "x": 1440,
+      "y": -300,
+      "w": 640,
+      "text": "PILOTAGE\n\nQuatre chiffres qui répondent à une question de chef de service, pas quatre compteurs.\n\nLa nouveauté est à droite : le suivi des prescriptions. Un RETEX validé produit des actions ; sans endroit où les voir vieillir, elles ne sont suivies nulle part. C'est ce que le rapport d'analyse désignait comme le prochain gain de valeur."
+    },
+    {
+      "id": "note-recherche",
+      "x": 0,
+      "y": 965,
+      "w": 640,
+      "text": "RETROUVER\n\nDes rangées plutôt que des cartes : plus dense, balayable d'un coup d'œil.\n\nSurtout, le passage qui a déclenché le résultat est affiché et surligné. Aujourd'hui on voit un titre et on doit ouvrir pour savoir si c'est le bon. Les filtres actifs sont des puces retirables une par une."
+    },
+    {
+      "id": "note-lecture",
+      "x": 1440,
+      "y": 965,
+      "w": 640,
+      "text": "LIRE\n\nL'enseignement est mis en tête, avant le déroulé : c'est ce qu'un lecteur pressé vient chercher.\n\nLe rail de droite garde sous les yeux les chiffres clés et les suites données — avec leur état réel, retard compris. Un REX dont les actions ne sont pas suivies se voit immédiatement."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}
