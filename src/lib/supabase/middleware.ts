@@ -59,7 +59,15 @@ function buildCsp(): string {
     // routes API, côté serveur, où `connect-src` — qui ne régit que le
     // navigateur — n'a aucune prise. L'entrée `openrouter.ai` qui figurait ici
     // n'autorisait donc rien d'utile.
-    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://*.sentry.io https://*.upstash.io",
+    //
+    // `wss:` est indispensable et ne découle PAS de `https:`. La CSP traite les
+    // schémas séparément : une source `https://*.supabase.co` n'autorise pas
+    // `wss://*.supabase.co`. Le temps réel de Supabase passant par WebSocket,
+    // le navigateur refusait la connexion à chaque chargement de page — et
+    // `use-notifications` ne recevait jamais rien. Comme ce hook n'a aucun repli
+    // par interrogation périodique, la pastille de notifications ne bougeait
+    // qu'au rechargement complet, sans qu'aucune erreur ne remonte à l'écran.
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://*.sentry.io https://*.upstash.io",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

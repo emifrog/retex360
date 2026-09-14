@@ -5,6 +5,7 @@ import { RexDetail } from '@/components/rex/rex-detail';
 import { logger } from '@/lib/logger';
 import { signAttachmentUrls, thumbnailPathFor } from '@/lib/storage';
 import { getSubscriptionState } from '@/lib/subscription';
+import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 
 interface RexPageProps {
   params: Promise<{ id: string }>;
@@ -141,7 +142,20 @@ export default async function RexPage({ params }: RexPageProps) {
   );
   const signedUrls = await signAttachmentUrls(pathsToSign);
 
-  const rexWithAttachments = {
+  // Assainissement du HTML riche À LA LECTURE, ici, côté serveur.
+  //
+  // Il se faisait auparavant au rendu, dans `RexDetail`, via `@/lib/sanitize` —
+  // qui s'appuie sur l'export navigateur de DOMPurify. Or Next rend d'abord les
+  // composants clients sur le serveur, où il n'existe pas de `window` : cet
+  // export y est une fabrique sans `addHook`, et le module levait dès son
+  // évaluation. La page répondait donc 500, et n'apparaissait que parce que
+  // React repliait le rendu côté client.
+  //
+  // `sanitizeHtmlServer` s'appuie sur JSDOM et la MÊME configuration que le
+  // write-path : l'assainissement est désormais garanti sur les deux chemins,
+  // par un code qui dispose toujours d'un DOM. `RexDetail` reçoit du HTML déjà
+  // propre et se contente de l'afficher.
+  const rexWithAttachments = sanitizeRexHtmlFields({
     ...rex,
     author,
     sdis,
@@ -153,7 +167,7 @@ export default async function RexPage({ params }: RexPageProps) {
         ? (signedUrls.get(thumbnailPathFor(att.storage_path)) ?? null)
         : null,
     })),
-  };
+  });
 
   return (
     <RexDetail

@@ -30,18 +30,28 @@ export const RexCard = memo(function RexCard({
 
   return (
     <div className="bg-card/80 border border-border hover:border-primary/40 rounded-xl p-5 transition-all group">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
+      {/* Header.
+          Ni le libellé de type ni la rangée de badges ne pouvaient céder de la
+          place : sur un écran étroit, un type long comme « SAUVETAGE
+          DÉBLAIEMENT » poussait le badge « Inter-SDIS » et l'étoile hors de la
+          carte, où le `rounded-xl` les rognait. L'information disparaissait sans
+          que rien ne défile — donc sans que ça se voie.
+          `flex-wrap` fait descendre les badges à la ligne plutôt que les pousser
+          dehors ; `min-w-0` et `truncate` empêchent un type très long de
+          reproduire le problème à lui seul. */}
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className={cn('w-2.5 h-2.5 rounded-full', severity.color)}
+            className={cn('w-2.5 h-2.5 rounded-full shrink-0', severity.color)}
             style={{
               boxShadow: `0 0 10px ${severity.hex}40`,
             }}
           />
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">{rex.type}</span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wide truncate">
+            {rex.type}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Badge variant="outline" className={cn('text-xs', productionType.className)}>
             <ProductionIcon className="w-3 h-3 mr-1" />
             {productionType.label}

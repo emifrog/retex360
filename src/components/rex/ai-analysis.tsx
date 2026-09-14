@@ -104,9 +104,15 @@ export function AiAnalysis({ rexId }: AiAnalysisProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
+          {/* Deux colonnes sur téléphone, quatre à partir de `sm`. En quatre
+              colonnes sur 375 px, chaque onglet dispose d'environ 80 px pour une
+              icône et un libellé comme « Suggestions », que `whitespace-nowrap`
+              empêche de passer à la ligne : le texte débordait.
+              `h-auto` est nécessaire sur mobile — la hauteur `h-9` du composant
+              est prévue pour une seule rangée et écraserait la seconde. */}
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-9 gap-[3px] sm:gap-0 mb-4">
             {analysisConfig.map(({ type, label, icon: Icon }) => (
-              <TabsTrigger key={type} value={type} className="text-xs">
+              <TabsTrigger key={type} value={type} className="text-xs py-1.5">
                 <Icon className="w-3 h-3 mr-1" />
                 {label}
               </TabsTrigger>

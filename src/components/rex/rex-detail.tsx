@@ -22,7 +22,6 @@ import { RessourcesList } from './ressources-list';
 import { Calendar, Eye, Star, Share2, Pencil, CheckCircle, Clock, Building2 } from 'lucide-react';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
-import { sanitizeHtml } from '@/lib/sanitize';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
 import type { Rex, Sdis, Profile, ReadableProfile } from '@/types';
@@ -37,6 +36,22 @@ interface Attachment {
   created_at: string;
 }
 
+/**
+ * CONTRAT : les champs HTML riches de `rex` — `description`, `context`,
+ * `means_deployed`, `difficulties`, `lessons_learned`, `description_site` —
+ * doivent arriver DÉJÀ ASSAINIS. Ils sont injectés tels quels via
+ * `dangerouslySetInnerHTML`.
+ *
+ * L'assainissement se fait côté serveur, dans la page qui monte ce composant
+ * (`sanitizeRexHtmlFields`, appuyé sur JSDOM). Il se faisait auparavant ici même,
+ * au rendu, avec l'export navigateur de DOMPurify : comme Next rend d'abord les
+ * composants clients sur le serveur, où il n'y a pas de `window`, cet export n'y
+ * est qu'une fabrique et le module levait — la page répondait 500 et ne
+ * s'affichait que par repli de React côté client.
+ *
+ * Toute nouvelle page montant `RexDetail` doit donc assainir avant de passer la
+ * prop.
+ */
 interface RexDetailProps {
   rex: Rex & {
     author?: Profile;
@@ -132,8 +147,15 @@ export const RexDetail = memo(function RexDetail({
         />
 
         <CardHeader className="pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-3 flex-1">
+          {/* Titre et actions côte à côte à partir de `sm`, empilés en dessous.
+              La rangée d'actions réclame environ 330 px à elle seule ; la mettre
+              en regard d'un bloc titre `flex-1` sur un écran de 375 px écrasait
+              le titre sans empêcher le débordement pour autant.
+              `min-w-0` sur le bloc titre : sans lui, un mot long (une commune,
+              une référence) empêche l'élément flexible de rétrécir et pousse la
+              carte hors de l'écran. */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3 flex-1 min-w-0">
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2">
                 <Badge
@@ -205,8 +227,11 @@ export const RexDetail = memo(function RexDetail({
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
+            {/* Actions. `flex-wrap` : cinq contrôles dont deux à libellé long,
+                qui doivent pouvoir passer à la ligne plutôt que déborder.
+                `shrink-0` empêche la rangée d'être comprimée par le titre quand
+                les deux sont côte à côte. */}
+            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
               <Button
                 variant="outline"
                 size="icon"
@@ -329,7 +354,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.description) }}
+              dangerouslySetInnerHTML={{ __html: rex.description }}
             />
           </CardContent>
         </Card>
@@ -343,7 +368,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.context) }}
+              dangerouslySetInnerHTML={{ __html: rex.context }}
             />
           </CardContent>
         </Card>
@@ -357,7 +382,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.means_deployed) }}
+              dangerouslySetInnerHTML={{ __html: rex.means_deployed }}
             />
           </CardContent>
         </Card>
@@ -379,7 +404,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.difficulties) }}
+              dangerouslySetInnerHTML={{ __html: rex.difficulties }}
             />
           </CardContent>
         </Card>
@@ -393,7 +418,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.lessons_learned) }}
+              dangerouslySetInnerHTML={{ __html: rex.lessons_learned }}
             />
           </CardContent>
         </Card>
@@ -424,7 +449,7 @@ export const RexDetail = memo(function RexDetail({
           <CardContent>
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(rex.description_site) }}
+              dangerouslySetInnerHTML={{ __html: rex.description_site }}
             />
           </CardContent>
         </Card>

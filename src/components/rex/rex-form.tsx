@@ -863,8 +863,15 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-3 sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg border border-border/50">
+      {/* Actions.
+          `flex-wrap` plutôt qu'une rangée rigide : les trois libellés complets
+          demandent plus de 500 px, un téléphone en offre 375. Sans repli, cette
+          barre débordait horizontalement — et comme elle est `sticky`, elle
+          débordait en permanence pendant toute la saisie.
+          Les libellés sont raccourcis sous `sm` pour que la rangée tienne malgré
+          tout sur une ligne aux largeurs courantes ; en dessous, elle passe à la
+          ligne au lieu de sortir de l'écran. */}
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 sticky bottom-4 bg-background/80 backdrop-blur-sm p-3 sm:p-4 rounded-lg border border-border/50">
         <Button
           type="button"
           variant="outline"
@@ -884,7 +891,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
-          Enregistrer brouillon
+          <span className="sm:hidden">Brouillon</span>
+          <span className="hidden sm:inline">Enregistrer brouillon</span>
         </Button>
         <Button
           type="button"
@@ -897,7 +905,8 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
           ) : (
             <Send className="w-4 h-4 mr-2" />
           )}
-          Soumettre pour validation
+          <span className="sm:hidden">Soumettre</span>
+          <span className="hidden sm:inline">Soumettre pour validation</span>
         </Button>
       </div>
     </form>
