@@ -41,7 +41,7 @@ export function AiInsights() {
         const res = await fetch('/api/dashboard/insights');
         if (res.ok) {
           const data = await res.json();
-          setInsights(data.insights || []);
+          setInsights(Array.isArray(data.insights) ? data.insights : []);
         } else {
           setError(true);
         }

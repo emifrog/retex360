@@ -60,6 +60,11 @@ const config = {
     // L'assainissement passe désormais par `sanitize-server.ts`, couvert par
     // `sanitize-config.test.ts` et `sanitize-server.test.ts`.
     'src/lib/sanitize-config.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    // Empêche une réponse de modèle mal formée d'atteindre le rendu. C'est le
+    // défaut qui a mis le tableau de bord en erreur en production : un JSON
+    // valide mais enveloppé traversait le garde `|| []` du composant et faisait
+    // échouer le `.map`, pour tout le SDIS et pendant la demi-heure de cache.
+    'src/lib/insights-shape.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     'src/lib/file-signature.ts': { statements: 100, branches: 100, functions: 100, lines: 100 },
     // Décide de ce qui quitte l'infrastructure vers le collecteur d'erreurs.
     // Un oubli n'y produit aucun symptôme : la donnée part, et personne ne le

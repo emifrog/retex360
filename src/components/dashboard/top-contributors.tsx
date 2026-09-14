@@ -29,7 +29,7 @@ export function TopContributors() {
         const res = await fetch('/api/dashboard/contributors');
         if (res.ok) {
           const data = await res.json();
-          setContributors(data.contributors || []);
+          setContributors(Array.isArray(data.contributors) ? data.contributors : []);
         }
       } catch (error) {
         logger.error('Contributors fetch error:', error);

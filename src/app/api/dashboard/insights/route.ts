@@ -6,6 +6,7 @@ import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireUser } from '@/lib/api-auth';
 import { truncate, wrapUntrusted, UNTRUSTED_CONTENT_NOTICE } from '@/lib/ai-context';
 import { logger } from '@/lib/logger';
+import { coerceInsights } from '@/lib/insights-shape';
 
 const INSIGHTS_TTL_SECONDS = 1800;
 const INSIGHTS_SAMPLE_SIZE = 50;
@@ -84,12 +85,25 @@ Règles :
         }
       );
 
+      let parsed: unknown;
       try {
-        return JSON.parse(response || '[]');
+        parsed = JSON.parse(response || '[]');
       } catch {
         logger.error('Failed to parse AI insights response:', response);
         return [];
       }
+
+      const insights = coerceInsights(parsed);
+      if (insights.length === 0 && response) {
+        // Tracé : une réponse non exploitable est silencieuse côté utilisateur
+        // (le bloc affiche simplement son état vide) et le resterait une demi-
+        // heure, le temps du cache.
+        logger.warn('AI insights response had an unusable shape, discarded', {
+          sdisId,
+          sample: String(response).slice(0, 300),
+        });
+      }
+      return insights;
     },
     ['dashboard-insights', sdisId],
     {
