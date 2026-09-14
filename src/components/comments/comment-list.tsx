@@ -6,11 +6,11 @@ import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { CommentWithAuthor, Profile } from '@/types';
+import type { CommentWithAuthor, ReadableProfile } from '@/types';
 
 interface CommentListProps {
   rexId: string;
-  currentUser?: Profile | null;
+  currentUser?: ReadableProfile | null;
   canWrite?: boolean;
 }
 

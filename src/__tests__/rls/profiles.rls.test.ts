@@ -1,5 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { createTestDb, asUser, asOwner, writeAffecting, writeThrows } from './harness';
+import { createTestDb, asUser, asOwner, sqlThrows, writeAffecting, writeThrows } from './harness';
 import { SDIS_A, SDIS_B, USER_A, ADMIN_A, USER_B, ADMIN_B, SUPER_ADMIN, DEMO } from './fixtures';
 
 /**
@@ -67,6 +67,57 @@ describe('RLS — table profiles (migration 019)', () => {
     });
   });
 
+  describe('SELECT — email non divulgué (migration 024)', () => {
+    // La policy de la 019 rend la LIGNE de profil d'un auteur de REX partagé
+    // lisible hors de son SDIS, pour afficher son nom. Une policy ne filtre pas
+    // les colonnes : l'email suivait. C'est un privilège de colonne qui le
+    // retient désormais, donc l'erreur vient de Postgres, pas de la RLS.
+    it("un agent ne peut pas lire l'email d'un auteur d'un autre SDIS", async () => {
+      const err = await asUser(db, USER_A, () =>
+        sqlThrows(db, `SELECT email FROM profiles WHERE id = $1`, [USER_B.id])
+      );
+      expect(err).toMatch(/permission denied/i);
+    });
+
+    it("un agent ne peut pas lire l'email d'un collègue de son SDIS", async () => {
+      const err = await asUser(db, USER_A, () =>
+        sqlThrows(db, `SELECT email FROM profiles WHERE id = $1`, [ADMIN_A.id])
+      );
+      expect(err).toMatch(/permission denied/i);
+    });
+
+    it("son propre email non plus — il se lit depuis la session, pas depuis l'annuaire", async () => {
+      const err = await asUser(db, USER_A, () =>
+        sqlThrows(db, `SELECT email FROM profiles WHERE id = $1`, [USER_A.id])
+      );
+      expect(err).toMatch(/permission denied/i);
+    });
+
+    it("`SELECT *` sur l'annuaire est refusé, il faut nommer les colonnes", async () => {
+      // Conséquence assumée du privilège de colonne : le défaut devient la
+      // non-divulgation. Tout code applicatif doit énumérer ce qu'il lit.
+      const err = await asUser(db, USER_A, () => sqlThrows(db, `SELECT * FROM profiles`));
+      expect(err).toMatch(/permission denied/i);
+    });
+
+    it("le nom et le grade d'un auteur partagé restent lisibles", async () => {
+      // L'affichage inter-SDIS que la 019 voulait permettre continue de marcher.
+      const { rows } = await asUser(db, USER_A, () =>
+        db.query<{ full_name: string }>(`SELECT full_name, grade FROM profiles WHERE id = $1`, [
+          USER_B.id,
+        ])
+      );
+      expect(rows[0].full_name).toBe('Agent B');
+    });
+
+    it('le rôle service lit toujours les emails (invitations, export RGPD)', async () => {
+      const { rows } = await asOwner(db, () =>
+        db.query<{ email: string }>(`SELECT email FROM profiles WHERE id = $1`, [USER_B.id])
+      );
+      expect(rows[0].email).toBe('user.b@sdis13.fr');
+    });
+  });
+
   describe('UPDATE — colonnes privilégiées verrouillées', () => {
     it('un agent ne peut pas se promouvoir admin', async () => {
       const err = await asUser(db, USER_A, () =>
@@ -123,6 +174,44 @@ describe('RLS — table profiles (migration 019)', () => {
         ])
       );
       expect(n).toBe(1);
+    });
+  });
+
+  describe("Départ d'un contributeur — pourquoi on anonymise", () => {
+    it("supprimer le profil d'un auteur de REX viole la clé étrangère", async () => {
+      // C'est l'échec que subissait `DELETE /api/profile/delete`, qui comptait
+      // sur une cascade inexistante : `rex.author_id` référence `profiles(id)`
+      // sans `ON DELETE`. Dès qu'un agent avait écrit un REX, la suppression de
+      // son compte répondait 500.
+      //
+      // Ce test fige la contrainte plutôt que la route : il dit pourquoi la
+      // suppression est remplacée par une anonymisation. S'il se met à passer,
+      // c'est qu'une cascade a été ajoutée — et qu'un départ d'agent efface
+      // désormais des REX validés et partagés.
+      const err = await asOwner(db, () =>
+        sqlThrows(db, `DELETE FROM profiles WHERE id = $1`, [USER_A.id])
+      );
+      expect(err).toMatch(/rex_author_id_fkey|violates foreign key/i);
+    });
+
+    it("l'anonymisation sur place, elle, aboutit et laisse les REX en place", async () => {
+      const n = await asOwner(db, () =>
+        writeAffecting(
+          db,
+          `UPDATE profiles
+             SET full_name = 'Compte supprimé', email = $2, grade = NULL, avatar_url = NULL
+           WHERE id = $1 RETURNING id`,
+          [USER_A.id, `compte-supprime+${USER_A.id}@retex360.invalid`]
+        )
+      );
+      expect(n).toBe(1);
+
+      const { rows } = await asOwner(db, () =>
+        db.query<{ count: string }>(`SELECT count(*) AS count FROM rex WHERE author_id = $1`, [
+          USER_A.id,
+        ])
+      );
+      expect(Number(rows[0].count)).toBeGreaterThan(0);
     });
   });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { RexPdfTemplate } from '@/lib/pdf/rex-template';
+import { REX_PDF_COLUMNS } from '@/lib/pdf/rex-columns';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimiters, userKey, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -9,6 +10,27 @@ import { requireUser } from '@/lib/api-auth';
 
 // Limiteur PDF dédié, par utilisateur (opération coûteuse).
 const pdfRateLimiter = rateLimiters.ai; // Reuses AI limiter: 10/min — heavy ops
+
+/**
+ * Requête d'export : ce que le template affiche (`REX_PDF_COLUMNS`, déclaré à
+ * côté du rendu) plus ce dont la route seule a besoin — `id` et `slug` pour le
+ * nom de fichier, `updated_at` pour l'ETag.
+ *
+ * Construire la liste depuis le template évite la divergence silencieuse qui
+ * laissait quatre rubriques vides dans le PDF : elles étaient rendues, mais
+ * jamais chargées.
+ */
+const REX_SELECT = [
+  'id',
+  'slug',
+  'updated_at',
+  ...REX_PDF_COLUMNS,
+  'author:author_id(id, full_name, grade)',
+  'sdis:sdis_id(id, code, name)',
+].join(', ');
+
+/** Ce que la route manipule : le contrat du template, tel qu'il le déclare. */
+type RexPdfRow = Parameters<typeof RexPdfTemplate>[0]['rex'];
 
 // Safety limits to prevent OOM / timeout
 const MAX_CHRONOLOGIE_ITEMS = 200;
@@ -45,34 +67,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Fetch REX + attachments in parallel
     const [rexResult, attachmentsResult] = await Promise.all([
-      supabase
-        .from('rex')
-        .select(
-          `
-          id, title, slug, description, context, means_deployed, difficulties,
-          lessons_learned, type, severity, intervention_date, tags,
-          type_production, focus_thematiques, key_figures, chronologie,
-          prescriptions, message_ambiance, sitac, elements_favorables,
-          elements_defavorables, documentation_operationnelle, updated_at,
-          intervention_heure, localisation, commune,
-          objectifs, donnees_sources, methode_argumentation,
-          author:author_id(id, full_name, grade),
-          sdis:sdis_id(id, code, name)
-        `
-        )
-        .eq('id', id)
-        .single(),
+      supabase.from('rex').select(REX_SELECT).eq('id', id).single(),
       supabase
         .from('rex_attachments')
         .select('id, file_name, file_type, storage_path')
         .eq('rex_id', id),
     ]);
 
-    const { data: rex, error } = rexResult;
+    const { data, error } = rexResult;
 
-    if (error || !rex) {
+    if (error || !data) {
       return NextResponse.json({ error: 'REX non trouvé' }, { status: 404 });
     }
+
+    // Unique conversion de la route, et elle est ici, à la frontière d'entrée :
+    // le client Supabase n'est pas typé par le schéma, et la liste de colonnes
+    // est construite à l'exécution depuis `REX_PDF_COLUMNS` — TypeScript ne peut
+    // rien en déduire. Ce que ce `select` rapporte vraiment est garanti par
+    // cette liste partagée avec le template, et par `pdf-template-columns.test.ts`.
+    //
+    // Elle remplace la conversion qui se trouvait auparavant à l'APPEL du
+    // template : celle-ci affirmait que les données satisfaisaient le contrat du
+    // document, et c'est précisément ce qui masquait les quatre rubriques
+    // manquantes. L'appel de rendu, lui, est désormais vérifié.
+    const rex = data as unknown as RexPdfRow;
 
     // Build signed URLs for image attachments (max 10 images in PDF). The
     // bucket is private; URLs are short-lived since @react-pdf fetches them
@@ -142,11 +160,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const startTime = performance.now();
 
     const pdfBuffer = await renderToBuffer(
-      RexPdfTemplate({
-        rex: rex as unknown as Parameters<typeof RexPdfTemplate>[0]['rex'],
-        anonymize,
-        images: imageAttachments,
-      })
+      RexPdfTemplate({ rex, anonymize, images: imageAttachments })
     );
 
     const duration = Math.round(performance.now() - startTime);

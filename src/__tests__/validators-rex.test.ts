@@ -14,6 +14,7 @@ import {
   getRequiredFieldsForType,
   focusThematiqueSchema,
   rexFilterSchema,
+  rexAuthorStatusSchema,
 } from '@/lib/validators/rex';
 import { PRODUCTION_TYPES } from '@/types';
 
@@ -351,6 +352,36 @@ describe('rexFilterSchema — bornes de la recherche', () => {
       date_to: '2026-12-31',
     });
     expect(r.success).toBe(true);
+  });
+});
+
+describe('rexAuthorStatusSchema', () => {
+  /**
+   * Le statut ne figure dans aucun schéma de REX : il était donc recopié du
+   * corps de la requête sans le moindre contrôle. `POST /api/rex` avec
+   * `{"status":"validated"}` créait un REX validé — le circuit d'approbation
+   * était contournable par une requête. Ce schéma est le garde-fou côté API ; le
+   * verrou de fond est le trigger `rex_guard_write` (migration 024).
+   */
+  it('accepte les deux seuls statuts qu’un auteur pose lui-même', () => {
+    expect(rexAuthorStatusSchema.safeParse('draft').success).toBe(true);
+    expect(rexAuthorStatusSchema.safeParse('pending').success).toBe(true);
+  });
+
+  it('refuse `validated` — la validation est un acte distinct', () => {
+    expect(rexAuthorStatusSchema.safeParse('validated').success).toBe(false);
+  });
+
+  it('refuse `archived`, que le formulaire n’expose pas', () => {
+    expect(rexAuthorStatusSchema.safeParse('archived').success).toBe(false);
+  });
+
+  it('refuse une valeur inconnue ou d’un autre type', () => {
+    expect(rexAuthorStatusSchema.safeParse('VALIDATED').success).toBe(false);
+    expect(rexAuthorStatusSchema.safeParse('').success).toBe(false);
+    expect(rexAuthorStatusSchema.safeParse(null).success).toBe(false);
+    expect(rexAuthorStatusSchema.safeParse(undefined).success).toBe(false);
+    expect(rexAuthorStatusSchema.safeParse(1).success).toBe(false);
   });
 });
 

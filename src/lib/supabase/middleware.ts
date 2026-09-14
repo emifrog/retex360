@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { RECOVERY_COOKIE } from '@/lib/auth/recovery';
 
 // Security headers applied to all responses
 const securityHeaders: Record<string, string> = {
@@ -114,6 +115,17 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/forgot-password') ||
     request.nextUrl.pathname.startsWith('/reset-password');
 
+  // `/reset-password` est le seul parcours où être authentifié est NORMAL :
+  // `/api/auth/callback` vient d'ouvrir une session à partir du lien reçu par
+  // courriel, et c'est justement cette session qui autorise le changement.
+  // La règle « connecté sur une page auth => retour à l'accueil » renvoyait donc
+  // l'utilisateur à l'accueil au moment précis où il arrivait pour agir.
+  //
+  // Le cookie de récupération fait la différence : sans lui, la règle générale
+  // s'applique et une session ordinaire ne donne pas accès à la page.
+  const isRecoveryLanding =
+    request.nextUrl.pathname.startsWith('/reset-password') && request.cookies.has(RECOVERY_COOKIE);
+
   // Toutes les routes sauf auth, api et _next sont protégées
   const isProtectedRoute =
     !isAuthRoute &&
@@ -129,7 +141,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Rediriger vers / si connecté et sur une page auth
-  if (user && isAuthRoute) {
+  if (user && isAuthRoute && !isRecoveryLanding) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);

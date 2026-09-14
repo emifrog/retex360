@@ -19,11 +19,16 @@ export async function GET() {
 
     // Fetch all user data
     const [profileResult, rexResult, commentsResult, favoritesResult] = await Promise.all([
+      // Deux corrections dans cette sélection :
+      //  * `updated_at` n'existe pas sur `profiles` (jamais créée par une
+      //    migration). PostgREST rejetait donc la requête ENTIÈRE en 42703, et
+      //    l'export RGPD partait avec `profile: null` — sans erreur visible,
+      //    puisque le résultat n'est pas contrôlé.
+      //  * `email` n'est plus lisible par `authenticated` (migration 024) ; il
+      //    est repris de la session, qui en est de toute façon la source.
       supabase
         .from('profiles')
-        .select(
-          'id, email, full_name, grade, role, avatar_url, created_at, updated_at, sdis:sdis_id(code, name)'
-        )
+        .select('id, full_name, grade, role, avatar_url, created_at, sdis:sdis_id(code, name)')
         .eq('id', user.id)
         .single(),
       supabase
@@ -45,10 +50,15 @@ export async function GET() {
         .order('created_at', { ascending: false }),
     ]);
 
+    if (profileResult.error) {
+      logger.error('Data export — profile fetch failed:', profileResult.error);
+      return NextResponse.json({ error: "Erreur lors de l'export des données" }, { status: 500 });
+    }
+
     const exportData = {
       export_date: new Date().toISOString(),
       export_format: 'RGPD - Droit à la portabilité (Article 20)',
-      profile: profileResult.data,
+      profile: { ...profileResult.data, email: user.email },
       rex_created: rexResult.data || [],
       comments: commentsResult.data || [],
       favorites: favoritesResult.data || [],

@@ -68,9 +68,13 @@ export default async function RexPage({ params }: RexPageProps) {
       data: { user },
     },
   ] = await Promise.all([
+    // Pas d'`email` ici : la fiche n'affiche que le nom et le grade de l'auteur,
+    // et un REX partagé est consultable hors de son SDIS. La colonne n'est plus
+    // lisible par `authenticated` depuis la migration 024 — la demander ferait
+    // échouer la requête entière.
     supabase
       .from('profiles')
-      .select('id, full_name, grade, email, avatar_url')
+      .select('id, full_name, grade, avatar_url')
       .eq('id', rex.author_id)
       .single(),
     supabase.from('sdis').select('id, code, name, region').eq('id', rex.sdis_id).single(),
@@ -90,7 +94,13 @@ export default async function RexPage({ params }: RexPageProps) {
   const [favoriteResult, profileResult] = user
     ? await Promise.all([
         supabase.from('favorites').select('id').eq('user_id', user.id).eq('rex_id', id).single(),
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        // Colonnes énumérées : `select('*')` échoue depuis la migration 024, qui
+        // retire `email` des privilèges de `authenticated`.
+        supabase
+          .from('profiles')
+          .select('id, sdis_id, full_name, role, grade, avatar_url, created_at')
+          .eq('id', user.id)
+          .single(),
       ])
     : [{ data: null }, { data: null }];
 

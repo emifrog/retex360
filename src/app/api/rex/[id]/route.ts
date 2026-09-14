@@ -5,7 +5,7 @@ import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
-import { validateRexByType } from '@/lib/validators/rex';
+import { rexAuthorStatusSchema, validateRexByType } from '@/lib/validators/rex';
 
 // GET - Get single REX
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -93,8 +93,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const body = await request.json();
 
+    // Statut : validé à part, comme à la création. Absent du corps, la colonne
+    // n'est pas touchée — c'est ce qui permet à un administrateur de corriger un
+    // REX validé sans le faire retomber en brouillon. Présent, il ne peut valoir
+    // que `draft` ou `pending` : la validation et l'archivage ont leurs propres
+    // parcours, et le trigger `rex_guard_write` (024) les refuse de toute façon.
+    const nextStatus =
+      body.status === undefined ? null : rexAuthorStatusSchema.safeParse(body.status);
+    if (nextStatus && !nextStatus.success) {
+      return NextResponse.json(
+        { message: 'Statut invalide', errors: { status: ['draft ou pending'] } },
+        { status: 400 }
+      );
+    }
+
     // Validation Zod (parité avec la création) avant sanitisation/écriture.
-    const isDraft = body.status === 'draft';
+    const isDraft = nextStatus ? nextStatus.data === 'draft' : existingRex.status === 'draft';
     const validation = validateRexByType(body, isDraft);
     if (!validation.success) {
       return NextResponse.json(
@@ -120,7 +134,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         difficulties: clean.difficulties,
         lessons_learned: clean.lessons_learned,
         tags: clean.tags || [],
-        status: clean.status,
+        ...(nextStatus ? { status: nextStatus.data } : {}),
         updated_at: new Date().toISOString(),
         // DGSCGC fields
         type_production: clean.type_production,

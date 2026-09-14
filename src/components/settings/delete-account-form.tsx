@@ -63,9 +63,15 @@ export function DeleteAccountForm() {
           <AlertTriangle className="w-5 h-5" />
           Supprimer mon compte
         </CardTitle>
+        {/* Libellé aligné sur ce qui se passe réellement (cf. la route de
+            suppression) : les données personnelles sont effacées, les REX et
+            commentaires restent, anonymisés. Le texte précédent annonçait la
+            suppression des REX — ce que la route ne faisait pas, et n'aurait pas
+            dû faire : un REX validé et partagé est la mémoire du service. */}
         <CardDescription>
-          Cette action est irréversible. Toutes vos données seront définitivement supprimées :
-          profil, REX créés, commentaires, favoris et notifications.
+          Cette action est irréversible. Vos données personnelles seront effacées : nom, adresse
+          e-mail, grade, avatar, favoris et notifications. Vos REX et commentaires sont conservés
+          pour le service, sans votre nom.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -85,8 +91,13 @@ export function DeleteAccountForm() {
               <AlertDialogDescription asChild>
                 <div className="space-y-3">
                   <p>
-                    Cette action est <strong>irréversible</strong>. Toutes vos données personnelles,
-                    vos REX, commentaires et favoris seront définitivement supprimés.
+                    Cette action est <strong>irréversible</strong>. Votre nom, votre adresse e-mail,
+                    votre grade, votre avatar, vos favoris et vos notifications seront effacés, et
+                    vous ne pourrez plus vous connecter.
+                  </p>
+                  <p>
+                    Vos REX et vos commentaires restent accessibles au service, attribués à un
+                    auteur anonyme.
                   </p>
                   <div className="space-y-2">
                     <Label htmlFor="delete-confirmation">

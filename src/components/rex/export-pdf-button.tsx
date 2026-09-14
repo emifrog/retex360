@@ -85,7 +85,7 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
 
-      toast.success(anonymize ? 'PDF anonymisé téléchargé' : 'PDF téléchargé');
+      toast.success(anonymize ? "PDF sans nom d'auteur téléchargé" : 'PDF téléchargé');
     } catch (error) {
       logger.error('Export error:', error);
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la génération du PDF');
@@ -113,10 +113,22 @@ export function ExportPdfButton({ rexId, rexTitle }: ExportPdfButtonProps) {
           Export standard
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleExport(true)}>
-          <UserX className="w-4 h-4 mr-2" />
-          Export anonymisé
-          <span className="ml-2 text-xs text-muted-foreground">(noms → grades)</span>
+        {/* Libellé aligné sur le traitement réel. « Export anonymisé » laissait
+            entendre un document diffusable en l'état : seuls le nom de l'auteur
+            et les responsables de prescriptions sont remplacés. Les noms cités
+            dans les textes et les personnes visibles sur les photos ne le sont
+            pas — le PDF le rappelle lui-même en tête de document. */}
+        <DropdownMenuItem
+          onClick={() => handleExport(true)}
+          className="flex-col items-start gap-0.5"
+        >
+          <span className="flex items-center">
+            <UserX className="w-4 h-4 mr-2" />
+            Export sans nom d&apos;auteur
+          </span>
+          <span className="text-xs text-muted-foreground pl-6">
+            Masque l&apos;auteur et les responsables — relire avant diffusion
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

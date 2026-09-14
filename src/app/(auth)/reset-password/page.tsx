@@ -38,10 +38,15 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check token validity synchronously during render
-  const accessToken = searchParams.get('access_token');
-  const type = searchParams.get('type');
-  const isValidToken = type === 'recovery' || accessToken !== null || true;
+  // La validité du lien n'est plus devinée depuis l'URL : elle est établie par
+  // `/api/auth/callback`, qui échange réellement le code contre une session
+  // avant de rediriger ici. Cette page n'a plus qu'à afficher l'échec quand le
+  // rappel le signale.
+  //
+  // Le test précédent — `type === 'recovery' || accessToken !== null || true` —
+  // valait `true` en toutes circonstances : l'écran « lien invalide » ne
+  // pouvait jamais s'afficher, et le formulaire était proposé même sans lien.
+  const linkFailed = searchParams.get('error') !== null;
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -109,7 +114,7 @@ function ResetPasswordForm() {
     );
   }
 
-  if (!isValidToken) {
+  if (linkFailed) {
     return (
       <div className="text-center">
         <h1 className="text-2xl font-bold text-foreground mb-2">Lien invalide ou expiré</h1>

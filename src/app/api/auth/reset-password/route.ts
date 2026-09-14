@@ -5,6 +5,7 @@ import { rateLimiters, limitByIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { strongPasswordSchema } from '@/lib/validators/auth';
 import { isPasswordCompromised } from '@/lib/password-breach';
+import { RECOVERY_COOKIE } from '@/lib/auth/recovery';
 
 const resetPasswordSchema = z.object({
   password: strongPasswordSchema,
@@ -33,6 +34,20 @@ export async function POST(request: NextRequest) {
             'Ce mot de passe figure dans une fuite de données connue. Veuillez en choisir un autre.',
         },
         { status: 400 }
+      );
+    }
+
+    // La session doit provenir d'un lien de récupération, pas seulement exister.
+    // Sans ce contrôle, toute session ouverte permettait de changer le mot de
+    // passe sans connaître l'ancien — alors que le changement ordinaire
+    // (`/api/profile/password`) le vérifie, lui.
+    if (!request.cookies.has(RECOVERY_COOKIE)) {
+      return NextResponse.json(
+        {
+          error:
+            'Ce parcours nécessite un lien de récupération valide. Veuillez en demander un nouveau.',
+        },
+        { status: 401 }
       );
     }
 
@@ -72,7 +87,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Marque consommée : le lien ne sert qu'une fois. Un onglet resté ouvert ne
+    // redonne pas accès au parcours.
+    const response = NextResponse.json({ success: true });
+    response.cookies.delete(RECOVERY_COOKIE);
+    return response;
   } catch (error) {
     logger.error('Reset password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

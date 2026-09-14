@@ -13,6 +13,11 @@ import type {
 } from '@/types';
 import { TIMELINE_EVENT_CONFIG, PRESCRIPTION_CATEGORY_CONFIG } from '@/types';
 
+// Les colonnes que ce document affiche sont déclarées dans `rex-columns.ts` et
+// chargées par la route d'export. Toute rubrique ajoutée ici doit y figurer,
+// sinon elle sortira vide : `pdf-template-columns.test.ts` le vérifie.
+export { REX_PDF_COLUMNS } from './rex-columns';
+
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -345,6 +350,24 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     marginTop: 2,
   },
+  anonymizeNotice: {
+    marginBottom: 10,
+    padding: 8,
+    backgroundColor: '#fffbeb',
+    borderLeftWidth: 3,
+    borderLeftColor: '#f59e0b',
+  },
+  anonymizeNoticeTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#92400e',
+    marginBottom: 2,
+  },
+  anonymizeNoticeText: {
+    fontSize: 8,
+    color: '#92400e',
+    lineHeight: 1.4,
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -548,6 +571,15 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
     return rex.author.full_name || '';
   };
 
+  /**
+   * Responsable d'une prescription : c'est une personne nommée, au même titre
+   * que l'auteur. L'export dit « anonymisé » la laissait pourtant en clair.
+   */
+  const getResponsableDisplay = (responsable?: string) => {
+    if (!responsable) return '';
+    return anonymize ? 'Responsable masqué' : responsable;
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -578,6 +610,25 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
         <View style={[styles.productionTypeBadge, productionTypeStyles.badge]}>
           <Text style={styles.productionTypeText}>{productionTypeStyles.label}</Text>
         </View>
+
+        {/* Portée réelle du masquage.
+            L'export dit « anonymisé » ne remplace que deux champs structurés :
+            le nom de l'auteur et le responsable de chaque prescription. Les noms
+            cités dans les textes libres, les visages sur les photos et les
+            indices de contexte (commune, date, unités) restent tels quels — le
+            document ne peut pas le savoir, mais le lecteur doit le savoir.
+            Sans cette mention, le libellé promettait plus que le traitement. */}
+        {anonymize && (
+          <View style={styles.anonymizeNotice}>
+            <Text style={styles.anonymizeNoticeTitle}>Document partiellement anonymisé</Text>
+            <Text style={styles.anonymizeNoticeText}>
+              Masqués : nom de l&apos;auteur (remplacé par son grade) et responsables des
+              prescriptions. NON masqués : noms cités dans les textes, personnes visibles sur les
+              images, lieux, dates et unités engagées. Une relecture est nécessaire avant toute
+              diffusion hors du service.
+            </Text>
+          </View>
+        )}
 
         {/* Title */}
         {rex.numero_rex && (
@@ -746,7 +797,8 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
                         <Text style={styles.prescriptionText}>{prescription.description}</Text>
                         {(prescription.responsable || prescription.echeance) && (
                           <Text style={styles.prescriptionMeta}>
-                            {prescription.responsable && `Responsable: ${prescription.responsable}`}
+                            {prescription.responsable &&
+                              `Responsable: ${getResponsableDisplay(prescription.responsable)}`}
                             {prescription.responsable && prescription.echeance && ' • '}
                             {prescription.echeance &&
                               `Échéance: ${new Date(prescription.echeance).toLocaleDateString('fr-FR')}`}

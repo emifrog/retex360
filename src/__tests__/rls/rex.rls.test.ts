@@ -181,6 +181,147 @@ describe('RLS — table rex', () => {
     });
   });
 
+  describe('INSERT — le statut est contraint (migration 024)', () => {
+    // Le trou d'origine : la policy INSERT de la 019 n'imposait que l'auteur et
+    // le SDIS, et le trigger de garde ne couvrait que l'UPDATE. Un agent créait
+    // donc son REX directement validé, sans passer par personne.
+    it('un agent ne peut pas créer un REX déjà validé', async () => {
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(
+          db,
+          `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity, status, visibility)
+           VALUES ($1, $2, 'Auto-validation', '2026-02-01', 'Incendie', 'majeur', 'validated', 'inter_sdis')
+           RETURNING id`,
+          [SDIS_A, USER_A.id]
+        )
+      );
+      expect(err).toMatch(/statuts draft \/ pending/i);
+    });
+
+    it('un agent ne peut pas se décerner les métadonnées de validation', async () => {
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(
+          db,
+          `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity, numero_rex)
+           VALUES ($1, $2, 'Faux numéro', '2026-02-01', 'Incendie', 'majeur', 'RETEX-06-2026-001')
+           RETURNING id`,
+          [SDIS_A, USER_A.id]
+        )
+      );
+      expect(err).toMatch(/Métadonnées de validation/i);
+    });
+
+    it('la création en brouillon et en attente reste ouverte', async () => {
+      for (const status of ['draft', 'pending']) {
+        const n = await asUser(db, USER_A, () =>
+          writeAffecting(
+            db,
+            `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity, status)
+             VALUES ($1, $2, 'Parcours normal', '2026-02-01', 'Incendie', 'majeur', $3) RETURNING id`,
+            [SDIS_A, USER_A.id, status]
+          )
+        );
+        expect(n).toBe(1);
+      }
+    });
+
+    it('un validateur peut créer un REX validé', async () => {
+      const n = await asUser(db, VALIDATOR_A, () =>
+        writeAffecting(
+          db,
+          `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity, status)
+           VALUES ($1, $2, 'Saisie par le validateur', '2026-02-01', 'Incendie', 'majeur', 'validated')
+           RETURNING id`,
+          [SDIS_A, VALIDATOR_A.id]
+        )
+      );
+      expect(n).toBe(1);
+    });
+  });
+
+  describe('UPDATE — rattachement figé (migration 024)', () => {
+    it('un agent ne peut pas déplacer son REX vers un autre SDIS', async () => {
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(db, `UPDATE rex SET sdis_id = $1 WHERE id = $2 RETURNING id`, [
+          SDIS_B,
+          REX_A_DRAFT,
+        ])
+      );
+      expect(err).toMatch(/SDIS de rattachement/i);
+    });
+
+    it('un agent ne peut pas réattribuer son REX à un autre auteur', async () => {
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(db, `UPDATE rex SET author_id = $1 WHERE id = $2 RETURNING id`, [
+          USER_B.id,
+          REX_A_DRAFT,
+        ])
+      );
+      expect(err).toMatch(/auteur d'un REX/i);
+    });
+  });
+
+  describe('UPDATE — contenu figé après validation (migration 024)', () => {
+    it("l'auteur ne peut plus modifier son REX une fois validé", async () => {
+      // Le contrôle existait dans la route PUT, pas dans la base : une requête
+      // PostgREST directe passait outre, et le REX consulté n'était plus celui
+      // qui avait été approuvé.
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(
+          db,
+          `UPDATE rex SET title = 'Titre réécrit après coup' WHERE id = $1 RETURNING id`,
+          [REX_A_VALIDATED_SDIS]
+        )
+      );
+      expect(err).toMatch(/REX validé/i);
+    });
+
+    it("l'auteur ne peut pas non plus élargir la visibilité d'un REX validé", async () => {
+      const err = await asUser(db, USER_A, () =>
+        writeThrows(db, `UPDATE rex SET visibility = 'public' WHERE id = $1 RETURNING id`, [
+          REX_A_VALIDATED_SDIS,
+        ])
+      );
+      expect(err).toMatch(/REX validé/i);
+    });
+
+    it('un validateur du SDIS peut corriger un REX validé', async () => {
+      const n = await asUser(db, VALIDATOR_A, () =>
+        writeAffecting(
+          db,
+          `UPDATE rex SET title = 'Correction validée' WHERE id = $1 RETURNING id`,
+          [REX_A_VALIDATED_SDIS]
+        )
+      );
+      expect(n).toBe(1);
+    });
+
+    it('le compteur de vues reste incrémentable sur un REX validé', async () => {
+      // Exclusion délibérée du gel : la consultation d'un REX validé écrit
+      // `views_count` sous l'identité du LECTEUR. Sans cette exception, ouvrir
+      // un REX validé lèverait une exception.
+      const n = await asUser(db, USER_A, () =>
+        writeAffecting(
+          db,
+          `UPDATE rex SET views_count = views_count + 1 WHERE id = $1 RETURNING id`,
+          [REX_A_VALIDATED_SDIS]
+        )
+      );
+      expect(n).toBe(1);
+    });
+
+    it('le brouillon de son auteur reste librement modifiable', async () => {
+      const n = await asUser(db, USER_A, () =>
+        writeAffecting(
+          db,
+          `UPDATE rex SET title = 'Brouillon retravaillé' WHERE id = $1 RETURNING id`,
+          [REX_A_DRAFT]
+        )
+      );
+      expect(n).toBe(1);
+    });
+  });
+
   describe('DELETE — frontière de tenant (régression du lot 2)', () => {
     it("un admin d'un AUTRE SDIS ne supprime pas, et l'écriture ne lève PAS d'erreur", async () => {
       // Le scénario exact du lot 2 : ADMIN_B voit ce REX (validé inter-SDIS),

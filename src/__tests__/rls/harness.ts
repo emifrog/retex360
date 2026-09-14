@@ -158,8 +158,8 @@ export async function writeAffecting(
 }
 
 /**
- * Joue une écriture attendue en ÉCHEC et renvoie le message d'erreur (ou null
- * si elle a réussi).
+ * Joue une requête attendue en ÉCHEC et renvoie le message d'erreur (ou null si
+ * elle a réussi).
  *
  * Le savepoint n'est pas décoratif : une erreur SQL avorte la transaction
  * courante, et toute commande suivante échouerait en « current transaction is
@@ -168,7 +168,7 @@ export async function writeAffecting(
  * Suppose une transaction ouverte (les suites mutantes encadrent chaque test
  * d'un BEGIN / ROLLBACK).
  */
-export async function writeThrows(
+export async function sqlThrows(
   db: PGlite,
   sql: string,
   params: unknown[] = []
@@ -183,3 +183,6 @@ export async function writeThrows(
     return (error as Error).message;
   }
 }
+
+/** `sqlThrows` pour une écriture — le cas d'usage historique du harnais. */
+export const writeThrows = sqlThrows;

@@ -344,6 +344,39 @@ export type UpdateTables<T extends keyof Database['public']['Tables']> =
 // Specific types
 export type Sdis = Tables<'sdis'>;
 export type Profile = Tables<'profiles'>;
+
+/**
+ * Profil tel qu'un utilisateur authentifié peut le LIRE.
+ *
+ * `email` en est absent depuis la migration 024 : la colonne ne fait plus partie
+ * des privilèges du rôle `authenticated`. La raison est que la policy SELECT de
+ * `profiles` rend la ligne d'un auteur de REX partagé visible hors de son SDIS —
+ * pour afficher son nom — et qu'une policy filtre des lignes, jamais des
+ * colonnes : l'adresse suivait.
+ *
+ * L'adresse de l'utilisateur courant se lit sur la session
+ * (`supabase.auth.getUser()`) ; les flux d'administration (invitations, exports)
+ * passent par le rôle service, que ces privilèges ne concernent pas.
+ *
+ * C'est donc ce type, et non `Profile`, qu'attendent les composants nourris par
+ * une requête faite avec le client utilisateur.
+ */
+export type ReadableProfile = Omit<Profile, 'email'>;
+
+/**
+ * Profil de l'utilisateur connecté, tel que `getUser()` le compose : ce que
+ * `profiles` accepte de rendre, plus son SDIS et son adresse.
+ *
+ * L'adresse vient de la SESSION (`supabase.auth.getUser()`) et non de la table :
+ * c'en est la source de vérité, et c'est le seul endroit où le client
+ * utilisateur peut encore la lire. Elle est nullable parce que Supabase la
+ * déclare ainsi — un compte sans adresse ne peut pas exister dans cette
+ * application, mais rien dans les types ne le garantit.
+ */
+export type SessionProfile = ReadableProfile & {
+  sdis: Sdis | null;
+  email: string | null;
+};
 export type Rex = Tables<'rex'>;
 export type RexAttachment = Tables<'rex_attachments'>;
 export type Comment = Tables<'comments'>;

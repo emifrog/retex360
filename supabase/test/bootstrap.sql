@@ -79,3 +79,18 @@ CREATE FUNCTION storage.foldername(name text) RETURNS text[] LANGUAGE sql IMMUTA
 $$;
 
 GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
+
+-- ---- Privilèges par défaut -------------------------------------------------
+-- Supabase accorde le DML à `anon` / `authenticated` / `service_role` AVANT que
+-- les migrations ne tournent : les tables naissent accessibles, et c'est la RLS
+-- qui autorise. `ALTER DEFAULT PRIVILEGES` reproduit cet ORDRE, ce qu'un GRANT
+-- global appliqué après les migrations ne fait pas.
+--
+-- L'ordre compte depuis la migration 024, qui RESTREINT un privilège de colonne
+-- (`profiles.email`). Un `GRANT SELECT ON ALL TABLES` joué après elle
+-- l'annulerait en silence, et le test de confidentialité passerait au vert sans
+-- rien prouver.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO anon;

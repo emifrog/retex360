@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
-import type { Rex, Sdis, Profile } from '@/types';
+import type { Rex, Sdis, Profile, ReadableProfile } from '@/types';
 
 interface Attachment {
   id: string;
@@ -45,7 +45,9 @@ interface RexDetailProps {
     attachments?: Attachment[];
   };
   isFavorited: boolean;
-  currentUser: Profile | null;
+  // `ReadableProfile` : l'email n'est plus lisible par le client utilisateur
+  // (migration 024), et aucune de ces vues ne l'affiche.
+  currentUser: ReadableProfile | null;
   canWrite?: boolean;
 }
 

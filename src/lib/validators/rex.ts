@@ -168,6 +168,30 @@ export const rexDraftSchema = rexBaseSchema.extend({
 });
 
 // ============================================================================
+// Statut d'écriture
+// ============================================================================
+
+/**
+ * Statuts qu'un auteur peut poser lui-même, à la création comme à la
+ * modification.
+ *
+ * `validated` en est délibérément absent. La validation est un acte distinct,
+ * réservé aux validateurs (`POST /api/admin/rex/[id]/validate`), et le champ
+ * `status` était jusqu'ici recopié tel quel depuis le corps de la requête :
+ * poster `{"status":"validated"}` suffisait à créer un REX validé sans que
+ * personne ne l'ait lu. Le verrou de fond est en base (trigger
+ * `rex_guard_write`, migration 024) ; ce schéma le double côté API pour
+ * répondre 400 plutôt que de laisser remonter une exception SQL.
+ *
+ * `archived` est également exclu : l'archivage n'est pas exposé par le
+ * formulaire, et rien ne justifie qu'un corps de requête puisse y basculer un
+ * REX au passage d'une modification ordinaire.
+ */
+export const rexAuthorStatusSchema = z.enum(['draft', 'pending']);
+
+export type RexAuthorStatus = z.infer<typeof rexAuthorStatusSchema>;
+
+// ============================================================================
 // Filter Schema
 // ============================================================================
 

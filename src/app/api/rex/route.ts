@@ -4,7 +4,7 @@ import { paginationSchema } from '@/lib/validators/api';
 import { NextResponse } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import { validateRexByType } from '@/lib/validators/rex';
+import { rexAuthorStatusSchema, validateRexByType } from '@/lib/validators/rex';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 import { getSubscriptionState } from '@/lib/subscription';
 
@@ -68,8 +68,19 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    // Le statut est validé à part : il ne figure dans aucun schéma de REX, et
+    // il était donc recopié du corps de la requête sans contrôle — c'est ce qui
+    // permettait de créer un REX directement `validated`.
+    const status = rexAuthorStatusSchema.safeParse(body.status ?? 'draft');
+    if (!status.success) {
+      return NextResponse.json(
+        { message: 'Statut de création invalide', errors: { status: ['draft ou pending'] } },
+        { status: 400 }
+      );
+    }
+
     // Validate input with Zod
-    const isDraft = body.status === 'draft';
+    const isDraft = status.data === 'draft';
     const validation = validateRexByType(body, isDraft);
     if (!validation.success) {
       return NextResponse.json(
@@ -96,7 +107,7 @@ export async function POST(request: Request) {
         difficulties: clean.difficulties,
         lessons_learned: clean.lessons_learned,
         tags: clean.tags || [],
-        status: clean.status || 'draft',
+        status: status.data,
         author_id: user.id,
         sdis_id: profile.sdis_id,
         // DGSCGC fields

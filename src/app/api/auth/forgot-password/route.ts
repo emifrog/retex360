@@ -28,8 +28,13 @@ export async function POST(request: NextRequest) {
     // Get the app URL for the redirect
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
+    // Le lien passe par `/api/auth/callback`, qui échange le code contre une
+    // session avant de rediriger vers le formulaire. Il pointait auparavant
+    // directement sur `/reset-password`, une page qui ne traitait le code nulle
+    // part — et que le middleware renvoyait à l'accueil dès qu'une session
+    // existait.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${appUrl}/reset-password`,
+      redirectTo: `${appUrl}/api/auth/callback?next=/reset-password`,
     });
 
     if (error) {

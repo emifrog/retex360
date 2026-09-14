@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { loginSchema } from '@/lib/validators/auth';
 import { invitationRegisterSchema } from '@/lib/validators/api';
 import { acceptInvitationAndRegister } from '@/lib/invitations';
+import { toOne } from '@/lib/supabase/relations';
+import type { SessionProfile, Sdis } from '@/types';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -82,11 +84,23 @@ export async function getUser() {
 
   if (!user) return null;
 
+  // Colonnes énumérées : `select('*')` échoue depuis la migration 024, qui
+  // retire `email` des privilèges de `authenticated` — PostgREST demanderait
+  // alors une colonne interdite et la requête entière serait rejetée.
+  // L'adresse vient de la session, qui en est la source de vérité.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, sdis:sdis_id(*)')
+    .select('id, sdis_id, full_name, role, grade, avatar_url, created_at, sdis:sdis_id(*)')
     .eq('id', user.id)
     .single();
 
-  return profile;
+  if (!profile) return null;
+
+  // `toOne` : sans types générés, supabase-js infère la relation `sdis` en
+  // tableau alors que PostgREST renvoie un objet (cf. `relations.ts`).
+  return {
+    ...profile,
+    sdis: toOne<Sdis>(profile.sdis),
+    email: user.email ?? null,
+  } as SessionProfile;
 }

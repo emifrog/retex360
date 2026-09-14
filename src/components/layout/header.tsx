@@ -18,10 +18,13 @@ import { logout } from '@/lib/actions/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { MobileSidebar } from './mobile-sidebar';
-import type { Profile, Sdis } from '@/types';
+import type { SessionProfile } from '@/types';
 
 interface HeaderProps {
-  user?: (Profile & { sdis: Sdis }) | null;
+  // `SessionProfile` : l'adresse affichée dans le menu du compte vient de la
+  // session, `profiles.email` n'étant plus lisible par le client utilisateur
+  // (migration 024).
+  user?: SessionProfile | null;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   canWrite?: boolean;
