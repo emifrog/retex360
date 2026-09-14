@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, X, LayoutGrid, List } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,12 +34,21 @@ export interface FilterState {
 export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: RexFiltersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
-  const [showFilters, setShowFilters] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 768; // Show filters by default on desktop (md breakpoint)
-    }
-    return false;
-  });
+  /**
+   * `null` = l'utilisateur n'a pas encore tranché ; c'est alors le CSS qui
+   * décide (panneau ouvert à partir de `md`, replié en dessous). Un clic fixe
+   * le choix à `true` ou `false` et l'emporte sur les deux tailles.
+   *
+   * L'état était auparavant initialisé par `typeof window !== 'undefined'
+   * && window.innerWidth >= 768`. C'est exactement la branche serveur/client
+   * que React interdit dans un rendu : le serveur rendait le panneau fermé, le
+   * navigateur l'ouvrait sur un écran large, et l'hydratation échouait — React
+   * jetait puis reconstruisait tout le sous-arbre de la liste des REX à chaque
+   * chargement. Déporter la décision dans le CSS supprime la divergence sans
+   * réintroduire de scintillement.
+   */
+  const [showFilters, setShowFilters] = useState<boolean | null>(null);
+  const filtersOpen = showFilters ?? true;
   const [sdisList, setSdisList] = useState<{ id: string; code: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -84,8 +94,14 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
         </div>
         <Button
           variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? 'border-primary text-primary' : ''}
+          onClick={() => setShowFilters(!filtersOpen)}
+          className={
+            showFilters === null
+              ? 'md:border-primary md:text-primary'
+              : showFilters
+                ? 'border-primary text-primary'
+                : ''
+          }
         >
           <Filter className="w-4 h-4 mr-2" />
           Filtres
@@ -113,117 +129,121 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
         </div>
       </div>
 
-      {/* Filter Panel */}
-      {showFilters && (
-        <div className="bg-card/80 border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium">Filtres avancés</h3>
-            {activeFiltersCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="text-xs text-muted-foreground"
-              >
-                <X className="w-3 h-3 mr-1" />
-                Effacer tout
-              </Button>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Select
-              value={filters.type_production || ''}
-              onValueChange={(value) => handleFilterChange('type_production', value)}
+      {/* Filter Panel — toujours rendu, sa visibilité est décidée par le CSS
+          tant que l'utilisateur n'a pas cliqué (cf. `showFilters`). */}
+      <div
+        className={cn(
+          'bg-card/80 border border-border rounded-xl p-4',
+          showFilters === null ? 'hidden md:block' : showFilters ? 'block' : 'hidden'
+        )}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium">Filtres avancés</h3>
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-xs text-muted-foreground"
             >
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Type de production" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                {PRODUCTION_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {PRODUCTION_TYPE_RULES[type].shortLabel}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.type || ''}
-              onValueChange={(value) => handleFilterChange('type', value)}
-            >
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Type d'intervention" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                {REX_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.severity || ''}
-              onValueChange={(value) => handleFilterChange('severity', value)}
-            >
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Criticité" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes criticités</SelectItem>
-                {SEVERITIES.map((severity) => (
-                  <SelectItem key={severity} value={severity}>
-                    {severity.charAt(0).toUpperCase() + severity.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.status || ''}
-              onValueChange={(value) => handleFilterChange('status', value)}
-            >
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous statuts</SelectItem>
-                {STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status === 'draft'
-                      ? 'Brouillon'
-                      : status === 'pending'
-                        ? 'En attente'
-                        : status === 'validated'
-                          ? 'Validé'
-                          : 'Archivé'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.sdis || ''}
-              onValueChange={(value) => handleFilterChange('sdis', value)}
-            >
-              <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="SDIS" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les SDIS</SelectItem>
-                {sdisList.map((sdis) => (
-                  <SelectItem key={sdis.id} value={sdis.code}>
-                    SDIS {sdis.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <X className="w-3 h-3 mr-1" />
+              Effacer tout
+            </Button>
+          )}
         </div>
-      )}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Select
+            value={filters.type_production || ''}
+            onValueChange={(value) => handleFilterChange('type_production', value)}
+          >
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="Type de production" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les types</SelectItem>
+              {PRODUCTION_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {PRODUCTION_TYPE_RULES[type].shortLabel}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.type || ''}
+            onValueChange={(value) => handleFilterChange('type', value)}
+          >
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="Type d'intervention" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les types</SelectItem>
+              {REX_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.severity || ''}
+            onValueChange={(value) => handleFilterChange('severity', value)}
+          >
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="Criticité" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes criticités</SelectItem>
+              {SEVERITIES.map((severity) => (
+                <SelectItem key={severity} value={severity}>
+                  {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.status || ''}
+            onValueChange={(value) => handleFilterChange('status', value)}
+          >
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous statuts</SelectItem>
+              {STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status === 'draft'
+                    ? 'Brouillon'
+                    : status === 'pending'
+                      ? 'En attente'
+                      : status === 'validated'
+                        ? 'Validé'
+                        : 'Archivé'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.sdis || ''}
+            onValueChange={(value) => handleFilterChange('sdis', value)}
+          >
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="SDIS" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les SDIS</SelectItem>
+              {sdisList.map((sdis) => (
+                <SelectItem key={sdis.id} value={sdis.code}>
+                  SDIS {sdis.code}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
     </div>
   );
 }

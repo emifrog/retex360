@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ValidationList } from '@/components/admin/validation-list';
+import { logger } from '@/lib/logger';
 
 export default async function ValidationPage() {
   const supabase = await createClient();
@@ -23,18 +24,26 @@ export default async function ValidationPage() {
     redirect('/');
   }
 
-  // Fetch pending REX
-  const { data: pendingRex } = await supabase
+  // Fetch pending REX.
+  // Pas d'`email` dans la jointure : la colonne n'est plus lisible par le rôle
+  // applicatif (migration 024). PostgREST rejette la requête ENTIÈRE dès qu'une
+  // colonne interdite y figure — la file de validation revenait donc vide, sans
+  // erreur à l'écran, ce qui est le pire des deux mondes pour un valideur.
+  const { data: pendingRex, error } = await supabase
     .from('rex')
     .select(
       `
       *,
-      author:profiles!author_id(id, full_name, grade, email),
+      author:profiles!author_id(id, full_name, grade),
       sdis:sdis!sdis_id(id, code, name)
     `
     )
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
+
+  if (error) {
+    logger.error('Validation queue fetch failed:', error);
+  }
 
   return (
     <div className="space-y-6">
