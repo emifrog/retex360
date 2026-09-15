@@ -215,17 +215,43 @@ describe('RLS — table profiles (migration 019)', () => {
     });
   });
 
-  describe('Compte démo en lecture seule (migration 014)', () => {
-    it('le compte démo ne peut pas créer de REX', async () => {
-      const err = await asUser(db, DEMO, () =>
-        writeThrows(
+  describe('Compte démo — verrou levé (migration 025)', () => {
+    /**
+     * La 014 avait rendu ce compte incapable d'écrire, par des policies
+     * RESTRICTIVE ciblant son adresse : ses identifiants figuraient dans le
+     * README, et seul un verrou en base protégeait réellement le contenu
+     * partagé du vandalisme.
+     *
+     * La 025 lève ce verrou, le compte devenant le compte de travail du projet.
+     * Ce test garde la trace du changement : ce qui protège désormais le contenu
+     * partagé est le SECRET DU MOT DE PASSE, et rien d'autre. S'il est republié
+     * quelque part, il faut réappliquer la 014.
+     */
+    it('le compte démo peut créer un REX depuis la levée du verrou', async () => {
+      const n = await asUser(db, DEMO, () =>
+        writeAffecting(
           db,
           `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity)
-           VALUES ($1, $2, 'Vandalisme', '2026-02-01', 'Incendie', 'majeur') RETURNING id`,
+           VALUES ($1, $2, 'REX de démonstration', '2026-02-01', 'Incendie', 'majeur') RETURNING id`,
           [SDIS_A, DEMO.id]
         )
       );
-      expect(err).toMatch(/row-level security/i);
+      expect(n).toBe(1);
+    });
+
+    it('il reste soumis aux mêmes règles que les autres : pas d’auto-validation', async () => {
+      // Le verrou levé ne lui donne aucun privilège : les gardes de la 024
+      // s'appliquent à lui comme à tout le monde.
+      const err = await asUser(db, DEMO, () =>
+        writeThrows(
+          db,
+          `INSERT INTO rex (sdis_id, author_id, title, intervention_date, type, severity, status)
+           VALUES ($1, $2, 'Auto-validation', '2026-02-01', 'Incendie', 'majeur', 'validated')
+           RETURNING id`,
+          [SDIS_A, DEMO.id]
+        )
+      );
+      expect(err).toMatch(/statuts draft \/ pending/i);
     });
 
     it('le compte démo lit normalement', async () => {
