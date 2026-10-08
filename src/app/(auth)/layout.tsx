@@ -73,7 +73,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Footer */}
         <div className="text-sm text-white/60 space-y-1">
-          <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
+          <p>© 2026 RETEX360 Platform • Sécurisé et conforme RGPD</p>
           <div className="flex gap-2 text-xs text-white/40">
             <a
               href={LEGAL_LINKS.mentionsLegales}
@@ -166,7 +166,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Mobile Footer */}
       <div className="lg:hidden p-4 text-center text-xs text-muted-foreground border-t bg-background space-y-1">
-        <p>© 2025 RETEX360 Platform • Sécurisé et conforme RGPD</p>
+        <p>© 2026 RETEX360 Platform • Sécurisé et conforme RGPD</p>
         <div className="flex justify-center gap-2 text-[10px] text-muted-foreground/60">
           <a
             href={LEGAL_LINKS.mentionsLegales}

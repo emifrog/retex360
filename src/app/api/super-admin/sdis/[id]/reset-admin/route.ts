@@ -43,13 +43,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: link, error: linkError } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,
-      options: { redirectTo: `${appUrl}/reset-password` },
     });
-    if (linkError || !link?.properties?.action_link) {
+    if (linkError || !link?.properties?.hashed_token) {
       logger.error('Reset link generation error:', linkError);
       return NextResponse.json({ error: 'Erreur lors de la génération du lien' }, { status: 500 });
     }
-    const resetUrl = link.properties.action_link;
+
+    // Le lien est construit ici plutôt que repris de `action_link`, pour deux
+    // raisons qui se cumulaient.
+    //
+    // 1. Il pointait directement sur `/reset-password`. Or depuis la reprise du
+    //    parcours de récupération, `POST /api/auth/reset-password` exige le
+    //    cookie posé par `/api/auth/callback` : un lien qui court-circuite le
+    //    rappel ne peut plus aboutir. L'administrateur recevait un lien valide
+    //    en apparence, qui échouait en 401 au moment d'enregistrer.
+    //
+    // 2. Un lien généré par l'API d'administration n'a pas de vérificateur PKCE
+    //    — aucun navigateur n'a initié la demande. Supabase renverrait donc ses
+    //    jetons dans le FRAGMENT de l'URL (`#access_token=…`), que le serveur ne
+    //    reçoit jamais : rediriger `action_link` vers le rappel ne suffisait pas.
+    //
+    // `token_hash` voyage en paramètre de requête, et le rappel le vérifie côté
+    // serveur par `verifyOtp` — c'est le schéma recommandé en rendu serveur.
+    const resetUrl =
+      `${appUrl}/api/auth/callback` +
+      `?token_hash=${encodeURIComponent(link.properties.hashed_token)}` +
+      `&type=recovery&next=/reset-password`;
 
     let emailSent = false;
     if (isEmailConfigured()) {
