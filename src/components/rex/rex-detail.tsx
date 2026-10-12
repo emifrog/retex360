@@ -311,7 +311,12 @@ export const RexDetail = memo(function RexDetail({
             </div>
           )}
 
-          {/* Completion Indicator */}
+          {/* Indicateur de complétion.
+              Détaillé tant que le REX se construit : l'auteur a besoin de la
+              liste de ce qui manque. Compact une fois validé : sur un REX
+              approuvé, seize cases vertes et deux barres pleines n'apprennent
+              rien au lecteur, et elles repoussaient l'enseignement — ce qu'il
+              vient chercher — sous la ligne de flottaison. */}
           <CompletionIndicator
             typeProduction={rex.type_production || 'retex'}
             data={{
@@ -332,7 +337,8 @@ export const RexDetail = memo(function RexDetail({
               focus_thematiques:
                 (rex.focus_thematiques as unknown as import('@/types').FocusThematique[]) || [],
             }}
-            variant="detailed"
+            variant={rex.status === 'validated' ? 'compact' : 'detailed'}
+            className={rex.status === 'validated' ? 'justify-end' : undefined}
           />
         </CardContent>
       </Card>

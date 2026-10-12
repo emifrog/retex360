@@ -3,28 +3,35 @@
 import { FileText, Building2, Clock, Sparkles, Loader2 } from 'lucide-react';
 import { useDashboardStats, type DashboardStats } from '@/lib/hooks/use-dashboard-data';
 
+// Une seule rangée, quatre chiffres qui répondent chacun à une question.
+// La seconde rangée de tuiles (contributeurs, commentaires, favoris sur 7 jours)
+// a été retirée : elle répétait « en attente » et affichait trois zéros en
+// ouverture de page. Un compteur à zéro n'informe pas, il fait vide.
 const statsConfig = [
   {
     key: 'totalRex' as keyof DashboardStats,
-    label: 'RETEX Total',
+    label: 'REX',
     icon: FileText,
     color: '#3b82f6',
   },
   {
-    key: 'sdisCount' as keyof DashboardStats,
-    label: 'SDIS Participants',
+    // `activeSdis`, pas `sdisCount` : ce dernier est la taille de la table de
+    // référence — 97, tous les SDIS de France — et se lisait comme un nombre
+    // de clients.
+    key: 'activeSdis' as keyof DashboardStats,
+    label: 'SDIS contributeurs',
     icon: Building2,
     color: '#22c55e',
   },
   {
     key: 'pendingValidation' as keyof DashboardStats,
-    label: 'En attente validation',
+    label: 'En attente de validation',
     icon: Clock,
     color: '#f97316',
   },
   {
-    key: 'validatedThisMonth' as keyof DashboardStats,
-    label: 'Validés ce mois',
+    key: 'validatedLastYear' as keyof DashboardStats,
+    label: 'Validés sur 12 mois',
     icon: Sparkles,
     color: '#a855f7',
   },

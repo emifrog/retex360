@@ -55,9 +55,9 @@ export async function RecentRex() {
   if (recentRex.length === 0) {
     return (
       <div className="bg-card border border-border rounded-xl p-8 text-center">
-        <p className="text-muted-foreground">Aucun RETEX disponible</p>
+        <p className="text-muted-foreground">Aucun REX disponible</p>
         <Link href="/rex/new" className="text-primary hover:underline text-sm mt-2 inline-block">
-          Créer le premier RETEX →
+          Créer le premier REX →
         </Link>
       </div>
     );

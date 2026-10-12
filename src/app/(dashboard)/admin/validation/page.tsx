@@ -48,7 +48,7 @@ export default async function ValidationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Validation des RETEX</h1>
+        <h1 className="text-2xl font-bold">Validation des REX</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Examinez et validez les retours d&apos;expérience en attente
         </p>

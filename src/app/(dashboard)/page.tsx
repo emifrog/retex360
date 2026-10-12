@@ -1,20 +1,18 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
+import Link from 'next/link';
 import { StatsCards } from '@/components/dashboard/stats-cards';
-import { KpiCards } from '@/components/dashboard/kpi-cards';
 import { ChartsContainer, RexByTypeChartContainer } from '@/components/dashboard/charts';
 import { RecentRex } from '@/components/dashboard/recent-rex';
 import { AiInsights } from '@/components/dashboard/ai-insights';
 import { TopContributors } from '@/components/dashboard/top-contributors';
 import { ExportStatsButton } from '@/components/dashboard/export-stats-button';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Tableau de bord',
-  description: "Vue d'ensemble des RETEX, statistiques et analyses pour votre SDIS.",
+  description: "Vue d'ensemble des REX, statistiques et analyses pour votre SDIS.",
 };
 
 function SectionSkeleton({ height = 'h-48' }: { height?: string }) {
@@ -30,11 +28,30 @@ function SectionSkeleton({ height = 'h-48' }: { height?: string }) {
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <StatsCards />
+      {/* En-tête : l'action principale est ici, visible sans défiler. Elle
+          vivait dans un bloc « Actions rapides » tout en bas de la colonne
+          droite — à deux mille pixels du haut, là où personne ne la cherche.
+          La liste des REX place déjà « Nouveau REX » à cet endroit. */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Tableau de bord</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Activité des retours d&apos;expérience de votre SDIS
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ExportStatsButton />
+          <Link href="/rex/new">
+            <Button className="bg-gradient-to-r from-primary to-red-800 hover:from-primary/90 hover:to-red-800/90">
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Nouveau REX
+            </Button>
+          </Link>
+        </div>
+      </div>
 
-      {/* KPIs */}
-      <KpiCards />
+      {/* Indicateurs — une seule rangée */}
+      <StatsCards />
 
       {/* Charts Row */}
       <ChartsContainer />
@@ -45,7 +62,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              RETEX Récents
+              REX récents
             </h2>
             <Link href="/rex">
               <Button variant="ghost" size="sm" className="text-xs">
@@ -60,30 +77,9 @@ export default function DashboardPage() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* REX by Type Chart */}
           <RexByTypeChartContainer />
-
-          {/* AI Insights */}
           <AiInsights />
-
-          {/* Top Contributors */}
           <TopContributors />
-
-          {/* Quick Actions */}
-          <div className="bg-card/80 border border-border rounded-xl p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-              Actions rapides
-            </h3>
-            <div className="space-y-2">
-              <Link href="/rex/new" className="block">
-                <Button className="w-full bg-gradient-to-r from-primary to-red-800 hover:from-primary/90 hover:to-red-800/90">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Créer un RETEX
-                </Button>
-              </Link>
-              <ExportStatsButton />
-            </div>
-          </div>
         </div>
       </div>
     </div>

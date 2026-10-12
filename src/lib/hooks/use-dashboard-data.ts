@@ -39,13 +39,16 @@ async function fetchWithCache<T>(url: string): Promise<T | null> {
   return promise;
 }
 
-// ---- Stats hook (shared between StatsCards and KpiCards) ----
+// ---- Stats hook (StatsCards, widget latéral) ----
 
 export interface DashboardStats {
   totalRex: number;
   sdisCount: number;
+  /** SDIS ayant au moins un REX visible — le vrai « participants ». */
+  activeSdis: number;
   pendingValidation: number;
   validatedThisMonth: number;
+  validatedLastYear: number;
   activeContributors: number;
   commentsThisWeek: number;
   favoritesThisWeek: number;

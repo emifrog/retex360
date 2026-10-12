@@ -20,16 +20,19 @@ const monthNames = [
 ];
 
 const typeColors: Record<string, string> = {
-  'Incendie urbain': '#ef4444',
-  'Incendie industriel': '#f97316',
-  FDF: '#eab308',
-  SAV: '#3b82f6',
-  NRBC: '#a855f7',
-  AVP: '#22c55e',
-  'Sauvetage déblaiement': '#06b6d4',
+  // Palette FROIDE, délibérément : les rouges, oranges et jaunes sont réservés à
+  // la gravité, affichée dans le graphique voisin. Un même orange signifiait
+  // « Majeur » d'un côté et « Incendie industriel » de l'autre.
+  'Incendie urbain': '#3b82f6',
+  'Incendie industriel': '#6366f1',
+  FDF: '#a855f7',
+  SAV: '#06b6d4',
+  NRBC: '#d946ef',
+  AVP: '#0ea5e9',
+  'Sauvetage déblaiement': '#14b8a6',
   'Secours en montagne': '#8b5cf6',
-  'Secours nautique': '#14b8a6',
-  Autre: '#6b7280',
+  'Secours nautique': '#0d9488',
+  Autre: '#64748b',
 };
 
 const severityColors: Record<string, string> = {

@@ -20,14 +20,14 @@ export function SidebarAiInsight({ collapsed }: SidebarAiInsightProps) {
         const stats = await res.json();
 
         if (stats.totalRex === 0) {
-          setInsight('Créez votre premier RETEX pour activer les insights IA');
+          setInsight('Créez votre premier REX pour activer les insights IA');
         } else if (stats.pendingValidation > 0) {
           setInsight(
-            `${stats.pendingValidation} REX en attente de validation — ${stats.totalRex} REX au total sur ${stats.sdisCount} SDIS`
+            `${stats.pendingValidation} REX en attente de validation — ${stats.totalRex} REX au total, ${stats.activeSdis} SDIS contributeur${stats.activeSdis > 1 ? 's' : ''}`
           );
         } else {
           setInsight(
-            `${stats.totalRex} REX partagés par ${stats.sdisCount} SDIS — ${stats.activeContributors} contributeurs actifs ce mois`
+            `${stats.totalRex} REX partagés par ${stats.activeSdis} SDIS — ${stats.activeContributors} contributeurs actifs ce mois`
           );
         }
       } catch (error) {

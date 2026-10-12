@@ -22,12 +22,12 @@ export async function generateMetadata({ params }: RexPageProps): Promise<Metada
     .single();
 
   if (!rex) {
-    return { title: 'RETEX non trouvé' };
+    return { title: 'REX non trouvé' };
   }
 
   const description = rex.description
     ? rex.description.replace(/<[^>]*>/g, '').slice(0, 160)
-    : `RETEX ${rex.type} du ${new Date(rex.intervention_date).toLocaleDateString('fr-FR')}`;
+    : `REX ${rex.type} du ${new Date(rex.intervention_date).toLocaleDateString('fr-FR')}`;
 
   return {
     title: rex.title,

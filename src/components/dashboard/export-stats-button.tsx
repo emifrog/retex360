@@ -34,7 +34,7 @@ export function ExportStatsButton() {
   return (
     <Button
       variant="outline"
-      className="w-full bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20"
+      className="bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20"
       onClick={handleExport}
       disabled={isExporting}
     >

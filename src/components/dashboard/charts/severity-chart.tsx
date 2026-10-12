@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CHART_AXIS, CHART_TOOLTIP } from './chart-theme';
 
 interface SeverityData {
   name: string;
@@ -32,34 +33,34 @@ export function SeverityChart({ data = DEFAULT_DATA }: SeverityChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[150px] sm:h-[180px] min-w-0">
+        <div className="h-[150px] sm:h-[180px] min-w-0 text-foreground">
           <ResponsiveContainer width="100%" height="100%" minWidth={1}>
             <BarChart
               data={data}
               layout="vertical"
               margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+              barCategoryGap="28%"
             >
               <XAxis type="number" hide />
+              {/* `width` 96 : « Significatif » en 12 px dépasse les 80 px
+                  précédents et se faisait rogner par la gauche. */}
               <YAxis
                 type="category"
                 dataKey="name"
-                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                tick={CHART_AXIS.tick}
                 axisLine={false}
                 tickLine={false}
-                width={80}
+                width={96}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
+                cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }}
+                contentStyle={CHART_TOOLTIP.content}
                 formatter={(value: number) => [
                   `${value} REX (${((value / total) * 100).toFixed(1)}%)`,
                   '',
                 ]}
               />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={28}>
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}

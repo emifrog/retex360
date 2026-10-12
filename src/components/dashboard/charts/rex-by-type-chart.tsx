@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CHART_TOOLTIP } from './chart-theme';
 
 interface RexByTypeData {
   name: string;
@@ -16,11 +17,11 @@ interface RexByTypeChartProps {
 }
 
 const DEFAULT_DATA: RexByTypeData[] = [
-  { name: 'Incendie', value: 342, color: '#ef4444' },
-  { name: 'SAV', value: 256, color: '#3b82f6' },
-  { name: 'NRBC', value: 89, color: '#a855f7' },
-  { name: 'FDF', value: 178, color: '#f97316' },
-  { name: 'Sauvetage', value: 145, color: '#22c55e' },
+  { name: 'Incendie', value: 342, color: '#3b82f6' },
+  { name: 'SAV', value: 256, color: '#06b6d4' },
+  { name: 'NRBC', value: 89, color: '#d946ef' },
+  { name: 'FDF', value: 178, color: '#a855f7' },
+  { name: 'Sauvetage', value: 145, color: '#14b8a6' },
   { name: 'Autre', value: 237, color: '#6b7280' },
 ];
 
@@ -52,11 +53,7 @@ export function RexByTypeChart({ data = DEFAULT_DATA }: RexByTypeChartProps) {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
+                contentStyle={CHART_TOOLTIP.content}
                 formatter={(value: number) => [`${value} REX`, '']}
               />
               <Legend

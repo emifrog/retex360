@@ -96,7 +96,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           Recherche avancée
         </h1>
         <p className="text-muted-foreground mt-1">
-          Recherchez parmi tous les RETEX avec des filtres avancés
+          Recherchez parmi tous les REX avec des filtres avancés
         </p>
       </div>
 

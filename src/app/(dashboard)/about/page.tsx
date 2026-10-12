@@ -27,7 +27,7 @@ export const metadata = {
 const features = [
   {
     icon: FileText,
-    title: 'Gestion des RETEX',
+    title: 'Gestion des REX',
     description:
       "Créez, éditez et partagez vos retours d'expérience avec un éditeur riche et des pièces jointes.",
     color: 'text-blue-500',
@@ -37,7 +37,7 @@ const features = [
     icon: Search,
     title: 'Recherche avancée',
     description:
-      'Trouvez rapidement les RETEX pertinents grâce aux filtres par type, SDIS, sévérité et tags.',
+      'Trouvez rapidement les REX pertinents grâce aux filtres par type, SDIS, sévérité et tags.',
     color: 'text-green-500',
     bgColor: 'bg-green-500/10',
   },
@@ -52,7 +52,7 @@ const features = [
   {
     icon: Bell,
     title: 'Notifications temps réel',
-    description: 'Restez informé des nouveaux RETEX, commentaires et validations instantanément.',
+    description: 'Restez informé des nouveaux REX, commentaires et validations instantanément.',
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
   },
@@ -60,7 +60,7 @@ const features = [
     icon: Brain,
     title: 'Intelligence Artificielle',
     description:
-      'Analyse automatique des RETEX pour identifier les patterns et générer des recommandations.',
+      'Analyse automatique des REX pour identifier les patterns et générer des recommandations.',
     color: 'text-pink-500',
     bgColor: 'bg-pink-500/10',
   },

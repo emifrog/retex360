@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { RexList } from '@/components/rex/rex-list';
 
 export const metadata: Metadata = {
-  title: 'Liste des RETEX',
+  title: 'Liste des REX',
   description: "Consultez et recherchez les retours d'expérience partagés par les SDIS.",
 };
 import { Button } from '@/components/ui/button';
