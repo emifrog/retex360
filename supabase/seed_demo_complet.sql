@@ -10,7 +10,8 @@
 --
 -- PRÉREQUIS :
 --   1. Créer l'utilisateur dans Supabase Dashboard > Authentication > Users :
---        Email : demo@retex360.fr   Mot de passe : Demo2025!   (Auto Confirm ✓)
+--        Email : demo@retex360.fr   Mot de passe : fort, propre à votre instance,
+--        et publié nulle part (Auto Confirm ✓)
 --   2. Exécuter d'abord les migrations 001 → 013.
 --   3. Exécuter CE script dans le SQL Editor (rôle service — bypass RLS).
 --

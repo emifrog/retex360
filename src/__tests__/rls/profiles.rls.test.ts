@@ -119,13 +119,20 @@ describe('RLS — table profiles (migration 019)', () => {
   });
 
   describe('UPDATE — colonnes privilégiées verrouillées', () => {
+    // Deux barrières se suivent. Depuis la migration 026, `authenticated` n'a
+    // plus le droit d'écrire que `full_name`, `grade` et `avatar_url` : le refus
+    // vient donc d'abord du privilège de colonne. Le trigger de la 019 reste en
+    // place derrière, pour toute écriture qui porterait un JWT utilisateur par
+    // un autre chemin.
+    const REFUS_COLONNE_PRIVILEGIEE = /permission denied|Modification non autorisée/i;
+
     it('un agent ne peut pas se promouvoir admin', async () => {
       const err = await asUser(db, USER_A, () =>
         writeThrows(db, `UPDATE profiles SET role = 'admin' WHERE id = $1 RETURNING id`, [
           USER_A.id,
         ])
       );
-      expect(err).toMatch(/Modification non autorisée des champs role \/ sdis_id/i);
+      expect(err).toMatch(REFUS_COLONNE_PRIVILEGIEE);
     });
 
     it('un agent ne peut pas changer de SDIS', async () => {
@@ -135,7 +142,7 @@ describe('RLS — table profiles (migration 019)', () => {
           USER_A.id,
         ])
       );
-      expect(err).toMatch(/Modification non autorisée des champs role \/ sdis_id/i);
+      expect(err).toMatch(REFUS_COLONNE_PRIVILEGIEE);
     });
 
     it('un admin ne peut pas non plus changer un rôle avec son propre JWT', async () => {
@@ -153,7 +160,7 @@ describe('RLS — table profiles (migration 019)', () => {
         db.query<{ role: string }>(`SELECT role FROM profiles WHERE id = $1`, [USER_A.id])
       );
       expect(stillUser.rows[0].role).toBe('user');
-      expect(err === null || /Modification non autorisée/i.test(err)).toBe(true);
+      expect(err === null || REFUS_COLONNE_PRIVILEGIEE.test(err)).toBe(true);
     });
 
     it('les champs non privilégiés restent modifiables', async () => {

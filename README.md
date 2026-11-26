@@ -622,7 +622,7 @@ avec un jeu de données qui couvre toutes les fonctionnalités phares.
 | Champ | Valeur |
 |-------|--------|
 | **Email** | `demo@retex360.fr` |
-| **Mot de passe** | `Demo2025!` |
+| **Mot de passe** | Communiqué sur demande — jamais publié dans ce dépôt |
 | **Rôle** | Utilisateur (lecture seule) |
 | **SDIS** | 06 — Alpes-Maritimes |
 
@@ -636,7 +636,8 @@ sous le compte démo :
 - **commentaires + mention `@`**, **favoris** et **notifications** non lues.
 
 ### Mise en place
-1. **Authentication > Users > Add user** : `demo@retex360.fr` / `Demo2025!` (Auto Confirm ✓).
+1. **Authentication > Users > Add user** : `demo@retex360.fr`, avec un mot de passe fort propre à
+   votre instance (Auto Confirm ✓). Ne le publiez nulle part : ce dépôt est public.
 2. Exécuter les migrations `001` → `013` (voir section Installation).
 3. Exécuter [`supabase/seed_demo_complet.sql`](supabase/seed_demo_complet.sql).
 4. *(Recommandé si les identifiants sont publics)* Exécuter la migration

@@ -8,7 +8,6 @@ import {
   REX_TYPES,
   SEVERITIES,
   VISIBILITIES,
-  type ProductionType,
   type FocusThematique,
   type KeyFigures,
   type TimelineEvent,
@@ -43,6 +42,7 @@ import { Loader2, Save, Send, X, Plus, ChevronDown, ChevronUp, Info } from 'luci
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, VISIBILITY_LABELS } from '@/lib/constants';
 import { getRequiredFieldsForType } from '@/lib/validators/rex';
+import { rexFormDefaults, type RexFormData } from '@/lib/rex-form-data';
 
 // Lazy-load TiptapEditor (@tiptap ~150KB)
 const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.TiptapEditor), {
@@ -53,39 +53,6 @@ const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.Tipta
     </div>
   ),
 });
-
-interface RexFormData {
-  title: string;
-  intervention_date: string;
-  intervention_heure: string;
-  localisation: string;
-  commune: string;
-  type: string;
-  severity: string;
-  visibility: string;
-  type_production: ProductionType;
-  description: string;
-  context: string;
-  means_deployed: string;
-  difficulties: string;
-  lessons_learned: string;
-  message_ambiance: string;
-  sitac: string;
-  elements_favorables: string;
-  elements_defavorables: string;
-  documentation_operationnelle: string;
-  objectifs: string;
-  donnees_sources: string;
-  methode_argumentation: string;
-  focus_thematiques: FocusThematique[];
-  key_figures: KeyFigures;
-  chronologie: TimelineEvent[];
-  prescriptions: Prescription[];
-  temoignages: Temoignage[];
-  description_site: string;
-  ressources_complementaires: RessourceComplementaire[];
-  tags: string[];
-}
 
 interface RexFormProps {
   initialData?: Partial<RexFormData>;
@@ -118,38 +85,9 @@ export function RexForm({ initialData, rexId, mode = 'create' }: RexFormProps) {
     watch,
     formState: { errors },
   } = useForm<RexFormData>({
-    defaultValues: {
-      title: initialData?.title || '',
-      intervention_date: initialData?.intervention_date || '',
-      intervention_heure: initialData?.intervention_heure || '',
-      localisation: initialData?.localisation || '',
-      commune: initialData?.commune || '',
-      type: initialData?.type || '',
-      severity: initialData?.severity || '',
-      visibility: initialData?.visibility || 'sdis',
-      type_production: initialData?.type_production || 'retex',
-      description: initialData?.description || '',
-      context: initialData?.context || '',
-      means_deployed: initialData?.means_deployed || '',
-      difficulties: initialData?.difficulties || '',
-      lessons_learned: initialData?.lessons_learned || '',
-      message_ambiance: initialData?.message_ambiance || '',
-      sitac: initialData?.sitac || '',
-      elements_favorables: initialData?.elements_favorables || '',
-      elements_defavorables: initialData?.elements_defavorables || '',
-      documentation_operationnelle: initialData?.documentation_operationnelle || '',
-      objectifs: initialData?.objectifs || '',
-      donnees_sources: initialData?.donnees_sources || '',
-      methode_argumentation: initialData?.methode_argumentation || '',
-      focus_thematiques: initialData?.focus_thematiques || [],
-      key_figures: initialData?.key_figures || {},
-      chronologie: initialData?.chronologie || [],
-      prescriptions: initialData?.prescriptions || [],
-      temoignages: initialData?.temoignages || [],
-      description_site: initialData?.description_site || '',
-      ressources_complementaires: initialData?.ressources_complementaires || [],
-      tags: initialData?.tags || [],
-    },
+    // Liste unique des champs, partagée avec la page d'édition : voir
+    // `rex-form-data.ts` pour ce qu'a coûté d'en tenir deux.
+    defaultValues: rexFormDefaults(initialData),
   });
 
   const typeProduction = watch('type_production');

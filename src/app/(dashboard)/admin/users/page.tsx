@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Users, Download } from 'lucide-react';
 import { UsersTable } from '@/components/admin/users-table';
@@ -33,8 +33,21 @@ export default async function AdminUsersPage() {
 
   const isSuperAdmin = currentProfile.role === 'super_admin';
 
-  // Fetch users based on role
-  let query = supabase
+  // Un admin sans SDIS n'a rien à administrer — et le filtre ci-dessous ne doit
+  // jamais s'appliquer à une valeur vide.
+  if (!isSuperAdmin && !currentProfile.sdis_id) {
+    redirect('/');
+  }
+
+  // Liste des utilisateurs, AVEC leur adresse : lue par le rôle service, après
+  // le contrôle de rôle ci-dessus. Le client utilisateur ne peut plus lire
+  // `profiles.email` (migration 024), et la sélectionner faisait rejeter la
+  // requête entière : le tableau s'affichait vide.
+  //
+  // Le rôle service ignore la RLS : le cloisonnement par SDIS repose donc
+  // entièrement sur le filtre explicite appliqué plus bas pour un admin.
+  const admin = createAdminClient();
+  let query = admin
     .from('profiles')
     .select(
       `

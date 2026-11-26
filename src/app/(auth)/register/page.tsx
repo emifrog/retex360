@@ -12,6 +12,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { readInvitationCheck, type InvitationCheck } from '@/lib/invitation-status';
 
 const CARD_CLASS = 'border-border/50 bg-card/80 backdrop-blur';
 
@@ -21,10 +22,6 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrateur',
   super_admin: 'Super administrateur',
 };
-
-type Invitation =
-  | { valid: true; email: string; role: string; sdis: { code: string; name: string } | null }
-  | { valid: false };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -79,23 +76,51 @@ function InvitationUnavailable({ expired }: { expired: boolean }) {
   );
 }
 
+/**
+ * Le serveur n'a pas pu vérifier l'invitation (limiteur de débit, panne). À ne
+ * pas confondre avec une invitation refusée : le lien est peut-être bon, et
+ * l'invité doit réessayer, pas en redemander un.
+ */
+function InvitationCheckUnavailable() {
+  return (
+    <Card className={CARD_CLASS}>
+      <CardContent className="pt-6 space-y-3 text-center">
+        <p
+          role="alert"
+          className="text-sm text-foreground bg-muted/50 p-3 rounded-md border border-border"
+        >
+          La vérification de votre invitation est momentanément indisponible. Votre lien reste
+          valable : réessayez dans une minute.
+        </p>
+      </CardContent>
+      <CardFooter className="flex justify-center">
+        <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+          Réessayer
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 function RegisterForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [invitation, setInvitation] = useState<Invitation | null>(null); // null = chargement
+  const [invitation, setInvitation] = useState<InvitationCheck | null>(null); // null = chargement
 
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
     fetch(`/api/auth/invitation?token=${encodeURIComponent(token)}`)
-      .then((r) => r.json())
-      .then((d: Invitation) => {
-        if (!cancelled) setInvitation(d);
+      // Le STATUT compte autant que le corps : un 429 ou un 500 n'a pas de
+      // champ `valid`, et était lu comme une invitation invalide.
+      .then(async (r) => readInvitationCheck(r.status, await r.json().catch(() => null)))
+      .then((check) => {
+        if (!cancelled) setInvitation(check);
       })
       .catch(() => {
-        if (!cancelled) setInvitation({ valid: false });
+        if (!cancelled) setInvitation({ state: 'unavailable' });
       });
     return () => {
       cancelled = true;
@@ -113,7 +138,8 @@ function RegisterForm() {
 
   if (!token) return <InvitationUnavailable expired={false} />;
   if (invitation === null) return <LoadingCard />;
-  if (!invitation.valid) return <InvitationUnavailable expired />;
+  if (invitation.state === 'unavailable') return <InvitationCheckUnavailable />;
+  if (invitation.state === 'invalid') return <InvitationUnavailable expired />;
 
   return (
     <Card className={CARD_CLASS}>

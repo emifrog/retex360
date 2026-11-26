@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { requireRole } from '@/lib/api-auth';
+import { isUuid } from '@/lib/supabase/filters';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,23 +19,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const limited = await limitByUser(rateLimiters.api, auth.user.id);
     if (limited) return limited;
 
-    // Update REX status back to draft + récupère la ligne pour confirmer le rejet réel
-    // (no-op silencieux sinon : REX inexistant, déjà traité, ou RLS inter-SDIS).
-    const { data: rex, error } = await supabase
-      .from('rex')
-      .update({
-        status: 'draft',
-        rejection_reason: reason,
-      })
-      .eq('id', rexId)
-      .eq('status', 'pending')
-      .select('author_id, title')
-      .maybeSingle();
+    if (!isUuid(rexId)) {
+      return NextResponse.json({ error: 'REX introuvable ou déjà traité' }, { status: 409 });
+    }
+
+    // Le rejet passe par la fonction `reject_rex` (migration 026), et non par
+    // un UPDATE direct. Un UPDATE ne peut pas aboutir ici : il repasse le REX
+    // en brouillon, or un brouillon n'est lisible que par son auteur, et
+    // Postgres refuse une modification dont le résultat n'est plus lisible par
+    // celui qui la fait (« new row violates row-level security policy »). Le
+    // rejet échouait donc pour TOUS les validateurs.
+    //
+    // La fonction vérifie elle-même le droit de l'appelant (validateur du SDIS
+    // du REX, SDIS non en lecture seule) : l'autorisation reste dans la base.
+    // Elle ne renvoie aucune ligne si le REX est introuvable, déjà traité, ou
+    // hors du périmètre de l'appelant.
+    const { data, error } = await supabase.rpc('reject_rex', {
+      target_rex: rexId,
+      reason,
+    });
 
     if (error) {
       logger.error('Reject error:', error);
       return NextResponse.json({ error: 'Erreur lors du rejet' }, { status: 500 });
     }
+
+    const rex = (data as { author_id: string; title: string }[] | null)?.[0];
 
     if (!rex) {
       return NextResponse.json({ error: 'REX introuvable ou déjà traité' }, { status: 409 });

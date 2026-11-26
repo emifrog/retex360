@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { roleUpdateSchema } from '@/lib/validators/api';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import { requireRole } from '@/lib/api-auth';
+import { canChangeRole, requireRole } from '@/lib/api-auth';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -26,8 +26,6 @@ export async function PUT(request: NextRequest) {
     const limited = await limitByUser(rateLimiters.api, auth.user.id);
     if (limited) return limited;
 
-    const isSuperAdmin = currentProfile.role === 'super_admin';
-
     // Get target user
     const { data: targetUser } = await supabase
       .from('profiles')
@@ -39,25 +37,16 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Admin can only modify users from their SDIS
-    if (!isSuperAdmin && targetUser.sdis_id !== currentProfile.sdis_id) {
-      return NextResponse.json({ error: 'Non autorisé pour cet utilisateur' }, { status: 403 });
-    }
-
-    // Only super_admin can create super_admin
-    if (role === 'super_admin' && !isSuperAdmin) {
-      return NextResponse.json(
-        { error: 'Seul un super admin peut créer un super admin' },
-        { status: 403 }
-      );
-    }
-
-    // Cannot demote yourself
-    if (userId === user.id) {
-      return NextResponse.json(
-        { error: 'Vous ne pouvez pas modifier votre propre rôle' },
-        { status: 400 }
-      );
+    // Règles regroupées dans `canChangeRole` : périmètre du SDIS, protection du
+    // rôle super_admin dans les deux sens (ni le donner, ni le retirer sans
+    // l'être soi-même), et interdiction de modifier son propre rôle.
+    const decision = canChangeRole(
+      { id: user.id, role: currentProfile.role, sdis_id: currentProfile.sdis_id },
+      targetUser,
+      role
+    );
+    if (!decision.ok) {
+      return NextResponse.json({ error: decision.error }, { status: decision.status });
     }
 
     // Update role via admin client: the RLS policy on `profiles` only allows

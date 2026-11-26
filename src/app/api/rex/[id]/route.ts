@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 import { isSdisAdmin, requireUser } from '@/lib/api-auth';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
+import { removeAttachmentObjects } from '@/lib/storage';
+import { purgeablePaths } from '@/lib/attachment-paths';
+import { canDeleteRex } from '@/lib/rex-permissions';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 import { rexAuthorStatusSchema, validateRexByType } from '@/lib/validators/rex';
 
@@ -196,7 +198,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     // Get existing REX
     const { data: existingRex } = await supabase
       .from('rex')
-      .select('author_id, sdis_id')
+      .select('author_id, sdis_id, status')
       .eq('id', id)
       .single();
 
@@ -211,18 +213,29 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .eq('id', user.id)
       .single();
 
-    const isAuthor = existingRex.author_id === user.id;
-    const isAdmin = isSdisAdmin(profile, existingRex.sdis_id);
-
-    if (!isAuthor && !isAdmin) {
-      return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
+    // Miroir de la policy DELETE (migration 026) : l'auteur supprime ses
+    // brouillons et REX en attente ; un REX validé ne l'est que par un admin du
+    // SDIS. Le cas « auteur d'un REX validé » reçoit son propre message, pour
+    // qu'il sache à qui s'adresser plutôt que de lire un refus sans explication.
+    const viewer = profile ? { id: user.id, role: profile.role, sdis_id: profile.sdis_id } : null;
+    if (!canDeleteRex(viewer, existingRex)) {
+      const isAuthorOfValidated =
+        existingRex.author_id === user.id && existingRex.status === 'validated';
+      return NextResponse.json(
+        {
+          message: isAuthorOfValidated
+            ? 'Un REX validé ne peut être supprimé que par un administrateur de votre SDIS.'
+            : 'Non autorisé',
+        },
+        { status: 403 }
+      );
     }
 
     // Collect the storage keys BEFORE the delete: `rex_attachments.rex_id` is
     // ON DELETE CASCADE, so the rows disappear with the REX.
     const { data: attachments } = await supabase
       .from('rex_attachments')
-      .select('storage_path')
+      .select('storage_path, uploaded_by')
       .eq('rex_id', id);
 
     // Delete the row FIRST, and only purge storage once the database confirms
@@ -249,8 +262,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       // Service-role removal (uploaders may differ from the deleter) + clean up
       // thumbnails. Best-effort: the REX is already gone, a leftover object is
       // recoverable waste, whereas deleting too early is irreversible.
-      const paths = attachments.flatMap((a) => [a.storage_path, thumbnailPathFor(a.storage_path)]);
-      await removeAttachmentObjects(paths);
+      //
+      // `purgeablePaths` ne retient que les objets situés dans le dossier du
+      // déposant de chaque ligne : le rôle service ignore toute règle d'accès,
+      // et une ligne pointant vers le fichier d'un autre le ferait effacer.
+      await removeAttachmentObjects(purgeablePaths(attachments));
     }
 
     return NextResponse.json({ message: 'REX supprimé' });

@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { RexForm } from '@/components/rex/rex-form';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { getSubscriptionState } from '@/lib/subscription';
+import { rexToFormData } from '@/lib/rex-form-data';
 
 interface EditRexPageProps {
   params: Promise<{ id: string }>;
@@ -53,31 +54,11 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
     if (!sub.canWrite) redirect(`/rex/${id}`);
   }
 
-  // Transform data for form (include all DGSCGC fields to prevent data loss)
-  const initialData = {
-    title: rex.title,
-    intervention_date: rex.intervention_date,
-    type: rex.type,
-    severity: rex.severity as 'critique' | 'majeur' | 'significatif',
-    visibility: rex.visibility as 'sdis' | 'inter_sdis' | 'public',
-    description: rex.description || '',
-    context: rex.context || '',
-    means_deployed: rex.means_deployed || '',
-    difficulties: rex.difficulties || '',
-    lessons_learned: rex.lessons_learned || '',
-    tags: rex.tags || [],
-    // DGSCGC fields
-    type_production: rex.type_production || 'retex',
-    message_ambiance: rex.message_ambiance || '',
-    sitac: rex.sitac || '',
-    elements_favorables: rex.elements_favorables || '',
-    elements_defavorables: rex.elements_defavorables || '',
-    documentation_operationnelle: rex.documentation_operationnelle || '',
-    focus_thematiques: rex.focus_thematiques || [],
-    key_figures: rex.key_figures || {},
-    chronologie: rex.chronologie || [],
-    prescriptions: rex.prescriptions || [],
-  };
+  // Tous les champs du formulaire, dérivés de sa propre liste. Cette reprise
+  // était écrite à la main et avait neuf rubriques de retard : les champs
+  // absents arrivaient vides dans le formulaire, et l'enregistrement écrivait
+  // ce vide en base (lieu, heure, témoignages, démarche du RETEX…).
+  const initialData = rexToFormData(rex);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

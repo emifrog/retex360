@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
 import { updateSession } from '@/lib/supabase/middleware';
+import { createRedis, LIMITER_TIMEOUT_MS, reportLimiterFailure } from '@/lib/upstash';
 
 /**
  * Garde-fou anti-flood, par IP, appliqué avant tout travail.
@@ -23,15 +23,16 @@ let globalRateLimiter: Ratelimit | null = null;
 function getGlobalRateLimiter(): Ratelimit | null {
   if (globalRateLimiter) return globalRateLimiter;
 
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  // Client borné (une reprise, délai d'une seconde) : ce limiteur précède TOUT
+  // appel d'API, sa panne ne doit pas se payer en secondes sur chacun d'eux.
+  const redis = createRedis();
+  if (redis) {
     globalRateLimiter = new Ratelimit({
-      redis: new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      }),
+      redis,
       limiter: Ratelimit.slidingWindow(GLOBAL_LIMIT_PER_MINUTE, '1 m'),
       analytics: true,
       prefix: 'retex360_global',
+      timeout: LIMITER_TIMEOUT_MS,
     });
   }
 
@@ -53,7 +54,13 @@ export async function middleware(request: NextRequest) {
     if (limiter) {
       try {
         const ip = getIp(request);
-        const { success, reset } = await limiter.limit(ip);
+        const { success, reset, reason } = await limiter.limit(ip);
+
+        // Redis n'a pas répondu à temps : la requête passe (les quotas par
+        // utilisateur des routes restent en place), mais on le fait savoir.
+        if (reason === 'timeout') {
+          reportLimiterFailure('middleware', new Error('Délai dépassé'));
+        }
 
         if (!success) {
           const retryAfter = Math.ceil((reset - Date.now()) / 1000);
@@ -67,9 +74,10 @@ export async function middleware(request: NextRequest) {
             }
           );
         }
-      } catch {
+      } catch (error) {
         // If Redis is unreachable, allow the request through
         // Per-route rate limiters will still catch abuse
+        reportLimiterFailure('middleware', error);
       }
     }
   }

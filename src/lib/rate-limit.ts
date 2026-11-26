@@ -1,5 +1,10 @@
 import { Ratelimit, type Duration } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import {
+  createRedis,
+  isUpstashConfigured,
+  LIMITER_TIMEOUT_MS,
+  reportLimiterFailure,
+} from '@/lib/upstash';
 
 // In-memory fallback for development (no Redis required)
 const inMemoryStore = new Map<string, { count: number; resetTime: number }>();
@@ -43,9 +48,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // `next build` runs with NODE_ENV=production but without runtime secrets — don't
 // fail the build, only fail fast on a real production server.
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-const hasUpstash = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-);
+const hasUpstash = isUpstashConfigured();
 
 // Fail fast in a running production server if no distributed store is
 // configured. The in-memory fallback is per-instance and therefore useless in
@@ -76,31 +79,50 @@ function createRateLimiter(
     : 60000; // Default 1 minute
 
   // Use Upstash Redis when configured (required in production, see boot guard).
-  if (hasUpstash) {
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-
+  const redis = hasUpstash ? createRedis() : null;
+  if (redis) {
     const upstashLimiter = new Ratelimit({
       redis,
       limiter: Ratelimit.slidingWindow(requests, window),
       analytics: true,
       prefix: 'retex360_ratelimit',
+      // Borne la durée d'un appel : au-delà, la bibliothèque rend la main avec
+      // `reason: 'timeout'` au lieu de faire attendre la requête.
+      timeout: LIMITER_TIMEOUT_MS,
     });
 
-    // Wrap with fallback in case Redis is unreachable
+    // Redis n'a pas compté : soit il a levé, soit il n'a pas répondu à temps.
+    // Les deux cas mènent au même repli, et sont SIGNALÉS — un repli silencieux
+    // a laissé la production tourner des semaines sur ce chemin sans que
+    // personne ne le sache.
     const fallback = createInMemoryRateLimiter(requests, windowMs);
+    const degraded = (identifier: string, error: unknown): Promise<RateLimitResult> => {
+      reportLimiterFailure('route', error);
+      if (failClosed) {
+        // Deny rather than degrade to an ineffective per-instance store.
+        return Promise.resolve({
+          success: false,
+          limit: requests,
+          remaining: 0,
+          reset: Date.now() + windowMs,
+        });
+      }
+      return fallback.limit(identifier);
+    };
+
     return {
       async limit(identifier: string): Promise<RateLimitResult> {
         try {
-          return await upstashLimiter.limit(identifier);
-        } catch {
-          if (failClosed) {
-            // Deny rather than degrade to an ineffective per-instance store.
-            return { success: false, limit: requests, remaining: 0, reset: Date.now() + windowMs };
+          const result = await upstashLimiter.limit(identifier);
+          // Sur dépassement du délai la bibliothèque répond `success: true` :
+          // laissé tel quel, un limiteur `failClosed` laisserait tout passer
+          // précisément quand il ne peut plus compter.
+          if (result.reason === 'timeout') {
+            return degraded(identifier, new Error('Délai dépassé'));
           }
-          return fallback.limit(identifier);
+          return result;
+        } catch (error) {
+          return degraded(identifier, error);
         }
       },
     };
