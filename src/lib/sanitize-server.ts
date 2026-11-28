@@ -1,6 +1,7 @@
 import createDOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import { SANITIZE_CONFIG, registerSafeLinkHook } from './sanitize-config';
+import { REX_HTML_FIELDS } from './rex-rich-fields';
 
 /**
  * Server-side HTML sanitizer for the write path.
@@ -19,37 +20,10 @@ export function sanitizeHtmlServer(dirty: string): string {
   return purify.sanitize(dirty, SANITIZE_CONFIG);
 }
 
-/**
- * Strips ALL HTML, returning plain text. Use for fields that are plain text by
- * design (e.g. comments): even though they are rendered as React text nodes
- * today, stripping markup at the write path keeps the stored value safe for any
- * future consumer.
- */
-export function sanitizePlainText(dirty: string): string {
-  return purify.sanitize(dirty, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-}
-
-// Rich-text (HTML) fields produced by the Tiptap editor on a REX payload.
-const REX_HTML_FIELDS = [
-  'description',
-  'context',
-  'means_deployed',
-  'difficulties',
-  'lessons_learned',
-  'message_ambiance',
-  'sitac',
-  'elements_favorables',
-  'elements_defavorables',
-  'documentation_operationnelle',
-  'description_site',
-  // Rubriques 2, 4 et 6 du plan type RETEX (annexe E, migration 023) : saisies
-  // dans le même éditeur riche que les champs ci-dessus, donc même traitement.
-  // `localisation` et `commune` n'y figurent pas : ce sont des champs de saisie
-  // simple, échappés par React à l'affichage comme l'est déjà `title`.
-  'objectifs',
-  'donnees_sources',
-  'methode_argumentation',
-] as const;
+// Pas d'assainisseur « texte brut » ici, et c'est voulu. Il en existait un pour
+// les commentaires : passer du texte par un analyseur HTML l'abîmait (« < »
+// stocké « &lt; », passage entre chevrons supprimé). Un champ de texte brut se
+// stocke tel quel et s'échappe à l'affichage — voir `normalizeCommentText`.
 
 /**
  * Returns a copy of a REX body with every HTML rich-text field sanitized.

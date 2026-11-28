@@ -125,9 +125,15 @@ export function DomainsManager({ domains, isSuperAdmin, sdisList }: Props) {
               </Select>
             </div>
           )}
-          <Button type="submit" disabled={isPending} variant="outline" className="w-full">
+          <Button
+            aria-busy={isPending}
+            type="submit"
+            disabled={isPending}
+            variant="outline"
+            className="w-full"
+          >
             {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-label="Ajout en cours" />
             ) : (
               <>
                 <Plus className="w-4 h-4 mr-1" />
@@ -152,7 +158,12 @@ export function DomainsManager({ domains, isSuperAdmin, sdisList }: Props) {
                   )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-destructive h-8 w-8">
+                      <Button
+                        aria-label={`Supprimer le domaine ${d.domain}`}
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive h-8 w-8"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>

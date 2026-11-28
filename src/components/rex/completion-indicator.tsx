@@ -139,11 +139,17 @@ export function CompletionIndicator({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={cn('flex items-center gap-2', className)}>
-              <Progress value={requiredPercent} className="h-2 w-24" />
+              <Progress
+                value={requiredPercent}
+                className="h-2 w-24"
+                aria-label="Rubriques requises renseignées"
+              />
               <span
                 className={cn(
                   'text-xs font-medium',
-                  requiredPercent === 100 ? 'text-green-500' : 'text-muted-foreground'
+                  requiredPercent === 100
+                    ? 'text-green-800 dark:text-green-400'
+                    : 'text-muted-foreground'
                 )}
               >
                 {requiredPercent}%
@@ -181,8 +187,8 @@ export function CompletionIndicator({
           variant="outline"
           className={cn(
             requiredPercent === 100
-              ? 'bg-green-500/10 text-green-500 border-green-500/30'
-              : 'bg-orange-500/10 text-orange-500 border-orange-500/30'
+              ? 'bg-green-500/10 text-green-800 dark:text-green-400 border-green-500/30'
+              : 'bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-500/30'
           )}
         >
           {totalPercent}% complet
@@ -197,13 +203,17 @@ export function CompletionIndicator({
             <span
               className={cn(
                 'font-medium',
-                requiredPercent === 100 ? 'text-green-500' : 'text-foreground'
+                requiredPercent === 100 ? 'text-green-800 dark:text-green-400' : 'text-foreground'
               )}
             >
               {completedRequired}/{requiredFields.length}
             </span>
           </div>
-          <Progress value={requiredPercent} className="h-2" />
+          <Progress
+            value={requiredPercent}
+            className="h-2"
+            aria-label="Rubriques requises renseignées"
+          />
         </div>
 
         {recommendedFields.length > 0 && (
@@ -215,6 +225,7 @@ export function CompletionIndicator({
               </span>
             </div>
             <Progress
+              aria-label="Rubriques recommandées renseignées"
               value={
                 recommendedFields.length > 0
                   ? (completedRecommended / recommendedFields.length) * 100

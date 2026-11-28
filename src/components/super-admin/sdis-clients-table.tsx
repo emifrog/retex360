@@ -301,7 +301,12 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            aria-label={`Actions pour ${row.name}`}
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -491,7 +496,13 @@ export function SdisClientsTable({ rows, availableSdis }: Props) {
                 </p>
                 <div className="flex gap-2">
                   <Input readOnly value={resetResult.url} className="font-mono text-xs" />
-                  <Button type="button" variant="outline" size="icon" onClick={copyReset}>
+                  <Button
+                    aria-label={copied ? 'Lien copié' : 'Copier le lien'}
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={copyReset}
+                  >
                     {copied ? (
                       <Check className="w-4 h-4 text-green-600" />
                     ) : (

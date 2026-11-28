@@ -4,7 +4,7 @@ import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { requireUser } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { commentSchema } from '@/lib/validators/api';
-import { sanitizePlainText } from '@/lib/sanitize-server';
+import { buildCommentThreads, normalizeCommentText } from '@/lib/comments';
 
 // GET - Fetch comments for a REX
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -41,18 +41,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Organize comments into threads (parent comments with replies)
-    const parentComments = comments?.filter((c) => !c.parent_id) || [];
-    const replies = comments?.filter((c) => c.parent_id) || [];
-
-    const threaded = parentComments.map((parent) => ({
-      ...parent,
-      replies: replies
-        .filter((r) => r.parent_id === parent.id)
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-    }));
-
-    return NextResponse.json({ data: threaded });
+    // Fils de discussion : chaque réponse rejoint le fil de premier niveau,
+    // quelle que soit sa profondeur (voir `buildCommentThreads`).
+    return NextResponse.json({ data: buildCommentThreads(comments ?? []) });
   } catch (error) {
     logger.error('Comments error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -83,8 +74,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
-    // Strip any HTML (comments are plain text) and dedupe mentions, excluding self.
-    const content = sanitizePlainText(validated.data.content).trim();
+    // Texte brut, tel que saisi (voir `normalizeCommentText`) ; mentions
+    // dédoublonnées, hors soi-même.
+    const content = normalizeCommentText(validated.data.content);
     if (!content) {
       return NextResponse.json({ error: 'Contenu requis' }, { status: 400 });
     }

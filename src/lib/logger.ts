@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/nextjs';
 
 const isDev = process.env.NODE_ENV === 'development';
+// Ce module est aussi importé par des composants clients.
+const isServer = typeof window === 'undefined';
 
 type LogLevel = 'info' | 'warn' | 'error';
 
@@ -38,6 +40,48 @@ function formatLog(entry: LogEntry): string {
   return parts.join(' ');
 }
 
+/**
+ * Rend une donnée sérialisable : une `Error` devient son nom, son message et sa
+ * pile (`JSON.stringify` en ferait `{}`, et la cause disparaîtrait du journal),
+ * une référence circulaire est remplacée au lieu de faire lever l'écriture.
+ */
+function serializable(value: unknown, seen: WeakSet<object> = new WeakSet()): unknown {
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+  if (typeof value === 'bigint') return value.toString();
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return '[référence circulaire]';
+  seen.add(value);
+  if (Array.isArray(value)) return value.map((item) => serializable(item, seen));
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, serializable(item, seen)])
+  );
+}
+
+/**
+ * Ligne de journal de production : un objet JSON par ligne, que la console de
+ * l'hébergeur sait filtrer par champ (niveau, identifiant de corrélation, REX).
+ */
+function productionLine(entry: LogEntry): string {
+  try {
+    return JSON.stringify({
+      level: entry.level,
+      timestamp: entry.timestamp,
+      ...(entry.correlationId ? { correlationId: entry.correlationId } : {}),
+      message: entry.message,
+      ...(entry.data !== undefined ? { data: serializable(entry.data) } : {}),
+    });
+  } catch {
+    // Un journal ne doit jamais faire échouer ce qu'il observe.
+    return JSON.stringify({
+      level: entry.level,
+      timestamp: entry.timestamp,
+      message: entry.message,
+    });
+  }
+}
+
 function log(level: LogLevel, message: string, data?: unknown, correlationId?: string) {
   const entry: LogEntry = {
     level,
@@ -50,11 +94,24 @@ function log(level: LogLevel, message: string, data?: unknown, correlationId?: s
   const formatted = formatLog(entry);
 
   switch (level) {
+    // `info` et `warn` n'écrivaient rien hors développement : le coût des
+    // appels au modèle, la durée des PDF et les refus de droits n'apparaissaient
+    // dans aucun journal de production.
+    //
+    // Sur le serveur, tout est écrit. Dans le navigateur, une information reste
+    // muette hors développement : elle n'irait que dans la console de
+    // l'utilisateur, où personne ne la lit.
     case 'info':
       if (isDev) console.log(formatted, data ?? '');
+      else if (isServer) console.log(productionLine(entry));
       break;
     case 'warn':
       if (isDev) console.warn(formatted, data ?? '');
+      else
+        console.warn(
+          isServer ? productionLine(entry) : formatted,
+          ...(isServer ? [] : [data ?? ''])
+        );
       // Send warnings to Sentry as breadcrumbs in production
       if (!isDev) {
         Sentry.addBreadcrumb({

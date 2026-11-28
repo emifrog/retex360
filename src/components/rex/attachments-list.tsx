@@ -143,7 +143,10 @@ export function AttachmentsList({ attachments }: AttachmentsListProps) {
                     disabled={downloading === attachment.id}
                   >
                     {downloading === attachment.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2
+                        className="w-4 h-4 animate-spin"
+                        aria-label="Téléchargement en cours"
+                      />
                     ) : (
                       <>
                         <Download className="w-4 h-4 mr-1" />

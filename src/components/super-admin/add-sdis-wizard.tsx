@@ -220,7 +220,13 @@ export function AddSdisWizard({ availableSdis }: Props) {
               </p>
               <div className="flex gap-2">
                 <Input readOnly value={result.url} className="font-mono text-xs" />
-                <Button type="button" variant="outline" size="icon" onClick={copyLink}>
+                <Button
+                  aria-label={copied ? 'Lien copié' : 'Copier le lien'}
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={copyLink}
+                >
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : (
@@ -385,6 +391,7 @@ export function AddSdisWizard({ availableSdis }: Props) {
                         }}
                       />
                       <Button
+                        aria-label="Retirer ce domaine"
                         type="button"
                         variant="ghost"
                         size="icon"

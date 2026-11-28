@@ -234,11 +234,18 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-2">
                     <div
-                      className={cn('w-2.5 h-2.5 rounded-full', severity?.color)}
+                      aria-hidden="true"
+                      className={cn('w-2.5 h-2.5 rounded-full shrink-0', severity?.color)}
                       style={{
                         boxShadow: `0 0 8px ${severity?.hex || '#eab308'}50`,
                       }}
                     />
+                    {/* La gravité en toutes lettres, pas seulement en couleur. */}
+                    {severity && (
+                      <span className={cn('text-xs font-medium shrink-0', severity.textColor)}>
+                        {severity.label}
+                      </span>
+                    )}
                     <span className="text-xs text-muted-foreground uppercase font-medium">
                       {rex.type}
                     </span>
@@ -247,9 +254,9 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                       className={cn(
                         'text-xs',
                         rex.status === 'validated' &&
-                          'bg-green-500/10 text-green-500 border-green-500/30',
+                          'bg-green-500/10 text-green-800 dark:text-green-400 border-green-500/30',
                         rex.status === 'pending' &&
-                          'bg-orange-500/10 text-orange-500 border-orange-500/30'
+                          'bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-500/30'
                       )}
                     >
                       {status?.label}
@@ -257,10 +264,10 @@ export async function SearchResults({ searchParams }: SearchResultsProps) {
                     {isInterSdis && (
                       <Badge
                         variant="outline"
-                        className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10"
+                        className="text-xs border-blue-500/30 text-blue-800 dark:text-blue-400 bg-blue-500/10"
                       >
-                        <Users className="w-3 h-3 mr-1" />
-                        Inter-SDIS
+                        <Users className="w-3 h-3 mr-1" aria-hidden="true" />
+                        Plusieurs SDIS engagés
                       </Badge>
                     )}
                   </div>

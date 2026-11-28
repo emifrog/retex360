@@ -90,6 +90,7 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
                 </Badge>
               </div>
               <Button
+                aria-label="Supprimer cette ressource"
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -102,12 +103,17 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Type de document</Label>
+                <Label
+                  htmlFor={`ressource-${index}-type`}
+                  className="text-xs text-muted-foreground"
+                >
+                  Type de document
+                </Label>
                 <Select
                   value={ressource.type}
                   onValueChange={(v) => updateRessource(index, 'type', v)}
                 >
-                  <SelectTrigger className="bg-background/50">
+                  <SelectTrigger id={`ressource-${index}-type`} className="bg-background/50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -121,10 +127,14 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor={`ressource-${index}-titre`}
+                  className="text-xs text-muted-foreground"
+                >
                   Titre <span className="text-destructive">*</span>
                 </Label>
                 <Input
+                  id={`ressource-${index}-titre`}
                   placeholder="Ex : GDO Feux de forêt 2023..."
                   value={ressource.titre}
                   onChange={(e) => updateRessource(index, 'titre', e.target.value)}
@@ -134,9 +144,15 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">URL ou référence</Label>
+              <Label
+                htmlFor={`ressource-${index}-reference`}
+                className="text-xs text-muted-foreground"
+              >
+                URL ou référence
+              </Label>
               <div className="flex gap-2">
                 <Input
+                  id={`ressource-${index}-reference`}
                   placeholder="https://... ou référence documentaire"
                   value={ressource.url_ou_reference}
                   onChange={(e) => updateRessource(index, 'url_ou_reference', e.target.value)}
@@ -144,6 +160,7 @@ export function RessourcesEditor({ value, onChange }: RessourcesEditorProps) {
                 />
                 {ressource.url_ou_reference.startsWith('http') && (
                   <Button
+                    aria-label="Ouvrir le lien dans un nouvel onglet"
                     type="button"
                     variant="outline"
                     size="icon"

@@ -14,7 +14,7 @@ interface Contributor {
 }
 
 const rankColors: Record<number, string> = {
-  1: 'text-yellow-500 border-yellow-500/50',
+  1: 'text-yellow-800 dark:text-yellow-400 border-yellow-500/50',
   2: 'text-gray-400 border-gray-400/50',
   3: 'text-orange-600 border-orange-600/50',
 };

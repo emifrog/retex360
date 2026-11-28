@@ -34,7 +34,7 @@ export default async function NewRexPage() {
       </div>
 
       {/* Form */}
-      <RexForm />
+      <RexForm userId={user.id} />
     </div>
   );
 }

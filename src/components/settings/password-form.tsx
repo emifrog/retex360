@@ -90,6 +90,9 @@ export function PasswordForm() {
                 placeholder="••••••••"
               />
               <button
+                aria-label={
+                  showCurrent ? 'Masquer le mot de passe actuel' : 'Afficher le mot de passe actuel'
+                }
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -114,6 +117,9 @@ export function PasswordForm() {
                 placeholder="••••••••"
               />
               <button
+                aria-label={
+                  showNew ? 'Masquer le nouveau mot de passe' : 'Afficher le nouveau mot de passe'
+                }
                 type="button"
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -139,6 +145,7 @@ export function PasswordForm() {
                 placeholder="••••••••"
               />
               <button
+                aria-label={showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'}
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"

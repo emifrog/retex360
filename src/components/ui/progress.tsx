@@ -12,6 +12,9 @@ const Progress = React.forwardRef<
   <ProgressPrimitive.Root
     ref={ref}
     className={cn('relative h-4 w-full overflow-hidden rounded-full bg-secondary', className)}
+    // `value` doit aussi atteindre la racine : sans elle, Radix annonce une
+    // progression « indéterminée » et ne pose pas `aria-valuenow`.
+    value={value}
     {...props}
   >
     <ProgressPrimitive.Indicator

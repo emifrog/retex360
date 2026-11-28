@@ -75,22 +75,22 @@ const roleConfig = {
   user: {
     label: 'Utilisateur',
     icon: User,
-    color: 'bg-gray-500/10 text-gray-500 border-gray-500/30',
+    color: 'bg-gray-500/10 text-gray-800 dark:text-gray-400 border-gray-500/30',
   },
   validator: {
     label: 'Validateur',
     icon: ShieldCheck,
-    color: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+    color: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/30',
   },
   admin: {
     label: 'Admin',
     icon: Shield,
-    color: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
+    color: 'bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-500/30',
   },
   super_admin: {
     label: 'Super Admin',
     icon: ShieldAlert,
-    color: 'bg-red-500/10 text-red-500 border-red-500/30',
+    color: 'bg-red-500/10 text-red-800 dark:text-red-400 border-red-500/30',
   },
 };
 
@@ -181,19 +181,23 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <p className="text-2xl font-bold text-gray-500">{stats.users}</p>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-400">{stats.users}</p>
             <p className="text-sm text-muted-foreground">Utilisateurs</p>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <p className="text-2xl font-bold text-blue-500">{stats.validators}</p>
+            <p className="text-2xl font-bold text-blue-800 dark:text-blue-400">
+              {stats.validators}
+            </p>
             <p className="text-sm text-muted-foreground">Validateurs</p>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <p className="text-2xl font-bold text-orange-500">{stats.admins}</p>
+            <p className="text-2xl font-bold text-orange-800 dark:text-orange-400">
+              {stats.admins}
+            </p>
             <p className="text-sm text-muted-foreground">Administrateurs</p>
           </CardContent>
         </Card>
@@ -317,7 +321,12 @@ export function UsersTable({ users, currentUserId, isSuperAdmin, sdisList }: Use
                       {user.id !== currentUserId && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button
+                              aria-label={`Actions pour ${user.full_name}`}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>

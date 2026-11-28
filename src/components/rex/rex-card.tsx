@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG, STATUS_CONFIG } from '@/lib/constants';
+import { VisibilityBadge } from './visibility-badge';
 import type { Rex, Sdis, Profile, KeyFigures } from '@/types';
 
 interface RexCardProps {
@@ -26,7 +27,10 @@ export const RexCard = memo(function RexCard({
   const productionType = PRODUCTION_TYPE_CONFIG[rex.type_production || 'retex'];
   const ProductionIcon = productionType.icon;
   const keyFigures = (rex.key_figures as unknown as KeyFigures) || {};
-  const isInterSdis = (keyFigures.sdis_impliques?.length ?? 0) > 0;
+  // Plusieurs SDIS ENGAGÉS sur l'intervention — une donnée opérationnelle, sans
+  // rapport avec le partage du REX. Le badge s'appelait « Inter-SDIS », comme
+  // la visibilité du même nom : on le lisait comme « partagé à tous les SDIS ».
+  const hasSeveralSdisEngaged = (keyFigures.sdis_impliques?.length ?? 0) > 0;
 
   return (
     <div className="bg-card/80 border border-border hover:border-primary/40 rounded-xl p-5 transition-all group">
@@ -42,11 +46,17 @@ export const RexCard = memo(function RexCard({
       <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
+            aria-hidden="true"
             className={cn('w-2.5 h-2.5 rounded-full shrink-0', severity.color)}
             style={{
               boxShadow: `0 0 10px ${severity.hex}40`,
             }}
           />
+          {/* La gravité en toutes lettres : la pastille seule ne dit rien à qui
+              ne distingue pas le rouge de l'orange, ni à un lecteur d'écran. */}
+          <span className={cn('text-xs font-medium shrink-0', severity.textColor)}>
+            {severity.label}
+          </span>
           <span className="text-xs text-muted-foreground uppercase tracking-wide truncate">
             {rex.type}
           </span>
@@ -59,13 +69,11 @@ export const RexCard = memo(function RexCard({
           <Badge variant="outline" className={cn('text-xs', status.className)}>
             {status.label}
           </Badge>
-          {isInterSdis && (
-            <Badge
-              variant="outline"
-              className="text-xs border-blue-500/30 text-blue-500 bg-blue-500/10"
-            >
-              <Users className="w-3 h-3 mr-1" />
-              Inter-SDIS
+          <VisibilityBadge visibility={rex.visibility} compact className="text-xs" />
+          {hasSeveralSdisEngaged && (
+            <Badge variant="outline" className="text-xs bg-muted/50">
+              <Users className="w-3 h-3 mr-1" aria-hidden="true" />
+              Plusieurs SDIS engagés
             </Badge>
           )}
           {onFavorite && (

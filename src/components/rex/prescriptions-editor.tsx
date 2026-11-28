@@ -168,14 +168,22 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Catégorie */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Catégorie</Label>
+                            <Label
+                              htmlFor={`prescription-${prescription.id}-categorie`}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Catégorie
+                            </Label>
                             <Select
                               value={prescription.categorie}
                               onValueChange={(val) =>
                                 updatePrescription(prescription.id, 'categorie', val)
                               }
                             >
-                              <SelectTrigger className="h-9">
+                              <SelectTrigger
+                                id={`prescription-${prescription.id}-categorie`}
+                                className="h-9"
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -198,14 +206,22 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
 
                           {/* Statut */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Statut</Label>
+                            <Label
+                              htmlFor={`prescription-${prescription.id}-statut`}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Statut
+                            </Label>
                             <Select
                               value={prescription.statut || 'a_faire'}
                               onValueChange={(val) =>
                                 updatePrescription(prescription.id, 'statut', val)
                               }
                             >
-                              <SelectTrigger className="h-9">
+                              <SelectTrigger
+                                id={`prescription-${prescription.id}-statut`}
+                                className="h-9"
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -234,8 +250,14 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
 
                         {/* Description */}
                         <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Description</Label>
+                          <Label
+                            htmlFor={`prescription-${prescription.id}-description`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            Description
+                          </Label>
                           <Textarea
+                            id={`prescription-${prescription.id}-description`}
                             value={prescription.description}
                             onChange={(e) =>
                               updatePrescription(prescription.id, 'description', e.target.value)
@@ -249,11 +271,15 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Responsable */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Label
+                              htmlFor={`prescription-${prescription.id}-responsable`}
+                              className="text-xs text-muted-foreground flex items-center gap-1"
+                            >
                               <User className="w-3 h-3" />
                               Responsable (optionnel)
                             </Label>
                             <Input
+                              id={`prescription-${prescription.id}-responsable`}
                               value={prescription.responsable || ''}
                               onChange={(e) =>
                                 updatePrescription(prescription.id, 'responsable', e.target.value)
@@ -265,11 +291,15 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
 
                           {/* Échéance */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Label
+                              htmlFor={`prescription-${prescription.id}-echeance`}
+                              className="text-xs text-muted-foreground flex items-center gap-1"
+                            >
                               <Calendar className="w-3 h-3" />
                               Échéance (optionnel)
                             </Label>
                             <Input
+                              id={`prescription-${prescription.id}-echeance`}
                               type="date"
                               value={prescription.echeance || ''}
                               onChange={(e) =>
@@ -283,6 +313,7 @@ export function PrescriptionsEditor({ value, onChange, className }: Prescription
 
                       {/* Delete button */}
                       <Button
+                        aria-label="Supprimer cette prescription"
                         type="button"
                         variant="ghost"
                         size="icon"

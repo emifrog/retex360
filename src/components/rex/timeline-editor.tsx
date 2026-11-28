@@ -154,8 +154,14 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {/* Heure */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Heure</Label>
+                            <Label
+                              htmlFor={`evenement-${event.id}-heure`}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Heure
+                            </Label>
                             <Input
+                              id={`evenement-${event.id}-heure`}
                               type="time"
                               value={event.heure}
                               onChange={(e) => updateEvent(event.id, 'heure', e.target.value)}
@@ -165,12 +171,17 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
 
                           {/* Type */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Type</Label>
+                            <Label
+                              htmlFor={`evenement-${event.id}-type`}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Type
+                            </Label>
                             <Select
                               value={event.type}
                               onValueChange={(val) => updateEvent(event.id, 'type', val)}
                             >
-                              <SelectTrigger className="h-9">
+                              <SelectTrigger id={`evenement-${event.id}-type`} className="h-9">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -193,8 +204,14 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
 
                           {/* Titre */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Titre</Label>
+                            <Label
+                              htmlFor={`evenement-${event.id}-titre`}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Titre
+                            </Label>
                             <Input
+                              id={`evenement-${event.id}-titre`}
                               value={event.titre}
                               onChange={(e) => updateEvent(event.id, 'titre', e.target.value)}
                               placeholder="Ex: Arrivée premier engin"
@@ -205,10 +222,14 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
 
                         {/* Description */}
                         <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">
+                          <Label
+                            htmlFor={`evenement-${event.id}-description`}
+                            className="text-xs text-muted-foreground"
+                          >
                             Description (optionnel)
                           </Label>
                           <Textarea
+                            id={`evenement-${event.id}-description`}
                             value={event.description || ''}
                             onChange={(e) => updateEvent(event.id, 'description', e.target.value)}
                             placeholder="Détails complémentaires..."
@@ -221,6 +242,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                       {/* Actions */}
                       <div className="flex flex-col gap-1">
                         <Button
+                          aria-label="Monter cet évènement"
                           type="button"
                           variant="ghost"
                           size="icon"
@@ -231,6 +253,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                           <ChevronDown className="w-4 h-4 rotate-180" />
                         </Button>
                         <Button
+                          aria-label="Descendre cet évènement"
                           type="button"
                           variant="ghost"
                           size="icon"
@@ -241,6 +264,7 @@ export function TimelineEditor({ value, onChange, className }: TimelineEditorPro
                           <ChevronDown className="w-4 h-4" />
                         </Button>
                         <Button
+                          aria-label="Supprimer cet évènement"
                           type="button"
                           variant="ghost"
                           size="icon"

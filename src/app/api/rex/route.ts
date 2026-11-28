@@ -1,12 +1,14 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/supabase/filters';
 import { paginationSchema } from '@/lib/validators/api';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { rexAuthorStatusSchema, validateRexByType } from '@/lib/validators/rex';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 import { getSubscriptionState } from '@/lib/subscription';
+import { isSubmission } from '@/lib/rex-submission';
+import { notifyValidatorsOfSubmission } from '@/lib/notifications';
 
 // POST - Create new REX
 export async function POST(request: Request) {
@@ -165,6 +167,19 @@ export async function POST(request: Request) {
           linked: linked?.length ?? 0,
         });
       }
+    }
+
+    // REX créé directement « en attente » : les validateurs du SDIS sont
+    // avertis, après l'envoi de la réponse.
+    if (isSubmission(null, status.data)) {
+      after(() =>
+        notifyValidatorsOfSubmission({
+          rexId: rex.id,
+          title: rex.title,
+          sdisId: profile.sdis_id,
+          authorId: user.id,
+        })
+      );
     }
 
     return NextResponse.json(rex, { status: 201 });

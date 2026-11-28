@@ -64,7 +64,7 @@ export function AiInsights() {
         </h2>
         <Badge
           variant="outline"
-          className="ml-auto text-[9px] px-1.5 py-0 bg-purple-500/10 text-purple-500 border-purple-500/30"
+          className="ml-auto text-[9px] px-1.5 py-0 bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/30"
         >
           Mistral AI
         </Badge>
@@ -102,7 +102,7 @@ export function AiInsights() {
                   {insight.priority === 'high' && (
                     <Badge
                       variant="outline"
-                      className="bg-red-500/20 text-red-500 border-red-500/30 text-[9px] px-1.5 py-0"
+                      className="bg-red-500/20 text-red-800 dark:text-red-400 border-red-500/30 text-[9px] px-1.5 py-0"
                     >
                       PRIORITAIRE
                     </Badge>

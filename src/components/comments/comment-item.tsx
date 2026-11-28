@@ -15,6 +15,7 @@ import { CommentForm } from './comment-form';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { CommentWithAuthor } from '@/types';
+import { splitMentions } from '@/lib/comments';
 
 interface CommentItemProps {
   comment: CommentWithAuthor;
@@ -22,37 +23,25 @@ interface CommentItemProps {
   onReply: (parentId: string, content: string, mentions?: string[]) => Promise<void>;
   onEdit: (commentId: string, content: string) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
+  /** Admin du SDIS du REX ou super-admin : peut supprimer le commentaire d'un autre. */
+  canModerate?: boolean;
+  /** Abonnement en lecture seule : ni réponse, ni modification, ni suppression. */
+  canWrite?: boolean;
   depth?: number;
 }
 
-// Render content with highlighted mentions
+// Le contenu est du texte : React l'échappe. Seules les mentions reçoivent un
+// habillage, et leur découpage vient de `splitMentions`.
 function renderContentWithMentions(content: string): React.ReactNode {
-  const mentionPattern = /@(\w+(?:_\w+)*)/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = mentionPattern.exec(content)) !== null) {
-    // Add text before the mention
-    if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
-    }
-    // Add the mention with styling
-    const mentionName = match[1].replace(/_/g, ' ');
-    parts.push(
-      <span key={match.index} className="text-primary font-medium">
-        @{mentionName}
+  return splitMentions(content).map((part, index) =>
+    part.kind === 'mention' ? (
+      <span key={index} className="font-medium text-[var(--link)]">
+        {part.text}
       </span>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Add remaining text
-  if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : content;
+    ) : (
+      part.text
+    )
+  );
 }
 
 export function CommentItem({
@@ -61,6 +50,8 @@ export function CommentItem({
   onReply,
   onEdit,
   onDelete,
+  canModerate = false,
+  canWrite = true,
   depth = 0,
 }: CommentItemProps) {
   const [isReplying, setIsReplying] = useState(false);
@@ -115,7 +106,7 @@ export function CommentItem({
             ) : comment.author?.role === 'validator' ? (
               <Badge
                 variant="outline"
-                className="h-5 text-xs bg-green-500/10 text-green-500 border-green-500/30"
+                className="h-5 text-xs bg-green-500/10 text-green-800 dark:text-green-400 border-green-500/30"
               >
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Validateur
@@ -139,6 +130,8 @@ export function CommentItem({
               onSubmit={handleEdit}
               onCancel={() => setIsEditing(false)}
               placeholder="Modifier votre commentaire..."
+              label="Modifier votre commentaire"
+              initialContent={comment.content}
               userInitials={authorInitials}
             />
           ) : (
@@ -148,7 +141,7 @@ export function CommentItem({
           )}
 
           {/* Actions */}
-          {!isEditing && (
+          {!isEditing && canWrite && (
             <div className="flex items-center gap-2 mt-2">
               <Button
                 variant="ghost"
@@ -160,24 +153,34 @@ export function CommentItem({
                 Répondre
               </Button>
 
-              {isAuthor && (
+              {/* L'auteur modifie et supprime ; l'admin du SDIS supprime
+                  seulement (modération). La route et la base l'autorisaient
+                  déjà, mais le menu n'était montré qu'à l'auteur. */}
+              {(isAuthor || canModerate) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Actions sur le commentaire de ${comment.author?.full_name || 'cet utilisateur'}`}
+                      className="h-7 w-7 p-0 text-muted-foreground"
+                    >
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                      <Pencil className="w-4 h-4 mr-2" />
-                      Modifier
-                    </DropdownMenuItem>
+                    {isAuthor && (
+                      <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Modifier
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="text-destructive"
                       onClick={() => onDelete(comment.id)}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
+                      {isAuthor ? 'Supprimer' : 'Supprimer (modération)'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -194,6 +197,7 @@ export function CommentItem({
                 onSubmit={handleReply}
                 onCancel={() => setIsReplying(false)}
                 placeholder="Écrire une réponse..."
+                label={`Répondre à ${comment.author?.full_name || 'ce commentaire'}`}
               />
             </div>
           )}
@@ -211,7 +215,11 @@ export function CommentItem({
               onReply={onReply}
               onEdit={onEdit}
               onDelete={onDelete}
-              depth={depth + 1}
+              canModerate={canModerate}
+              canWrite={canWrite}
+              // Un seul niveau de retrait : toutes les réponses d'un fil sont
+              // au même plan, quelle que soit celle à laquelle elles répondent.
+              depth={1}
             />
           ))}
         </div>

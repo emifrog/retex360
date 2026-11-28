@@ -114,12 +114,19 @@ export default async function RexPage({ params }: RexPageProps) {
       ? true
       : (await getSubscriptionState(currentUserProfile?.sdis_id)).canWrite;
 
-  // Fire-and-forget: increment view count (no await needed)
-  supabase
-    .from('rex')
-    .update({ views_count: (rex.views_count || 0) + 1 })
-    .eq('id', id)
-    .then();
+  // Compteur de vues, sans attendre la réponse.
+  //
+  // Par la fonction `increment_rex_views` (migration 027), et non par un UPDATE
+  // direct : la policy de modification de `rex` n'autorise que l'auteur et les
+  // validateurs, si bien que la consultation d'un lecteur ordinaire ne touchait
+  // aucune ligne, sans erreur. Seules leurs propres visites étaient comptées.
+  // La fonction incrémente en base (pas de « valeur lue + 1 ») et ne compte que
+  // les REX validés.
+  if (rex.status === 'validated') {
+    supabase.rpc('increment_rex_views', { target_rex: id }).then(({ error: viewError }) => {
+      if (viewError) logger.warn('Compteur de vues non incrémenté', { rexId: id, viewError });
+    });
+  }
 
   // Transform attachments with short-lived signed URLs (bucket is private).
   // Access is already gated: `attachments` was fetched via the RLS-bound client,

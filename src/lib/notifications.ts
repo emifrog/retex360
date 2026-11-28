@@ -1,174 +1,69 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { submissionNotifications } from '@/lib/rex-submission';
 
-export type NotificationType = 'mention' | 'comment' | 'validation' | 'new_rex' | 'rejection';
-
-interface CreateNotificationParams {
-  userId: string;
-  type: NotificationType;
+/**
+ * Avertit les validateurs et les admins du SDIS qu'un REX attend leur décision.
+ *
+ * Aucune route ne le faisait : la file d'attente ne se découvrait que par le
+ * badge du menu. Ce module contenait bien des fonctions de notification, mais
+ * aucune n'était appelée — et elles écrivaient avec le client de l'utilisateur,
+ * à qui la base interdit de créer une notification pour un autre (migration
+ * 015). Elles ont été retirées.
+ *
+ * Client de service, pour deux raisons : lire les profils du SDIS avec leur
+ * rôle, et écrire une notification destinée à autrui. L'appelant a déjà établi
+ * que l'auteur vient de soumettre CE REX, dans SON SDIS.
+ *
+ * Ne lève jamais : un REX soumis reste soumis même si l'avertissement échoue.
+ * L'échec est journalisé.
+ */
+export async function notifyValidatorsOfSubmission(args: {
+  rexId: string;
   title: string;
-  content?: string;
-  link?: string;
-}
+  sdisId: string;
+  authorId: string;
+}): Promise<void> {
+  try {
+    const admin = createAdminClient();
 
-/**
- * Create a notification for a user
- */
-export async function createNotification({
-  userId,
-  type,
-  title,
-  content,
-  link,
-}: CreateNotificationParams) {
-  const supabase = await createClient();
+    const { data: profiles, error: profilesError } = await admin
+      .from('profiles')
+      .select('id, role, full_name, grade')
+      .eq('sdis_id', args.sdisId);
 
-  const { error } = await supabase.from('notifications').insert({
-    user_id: userId,
-    type,
-    title,
-    content,
-    link,
-  });
+    if (profilesError) {
+      logger.error('Soumission : lecture des validateurs impossible', profilesError);
+      return;
+    }
 
-  if (error) {
-    logger.error('Error creating notification:', error);
-    return { success: false, error };
-  }
+    const author = (profiles ?? []).find((p) => p.id === args.authorId);
+    const authorName = author
+      ? [author.grade, author.full_name].filter(Boolean).join(' ') || null
+      : null;
 
-  return { success: true };
-}
+    const rows = submissionNotifications({
+      rexId: args.rexId,
+      title: args.title,
+      authorId: args.authorId,
+      authorName,
+      recipients: profiles ?? [],
+    });
 
-/**
- * Notify user when their REX is validated
- */
-export async function notifyRexValidated(rexId: string, rexTitle: string, authorId: string) {
-  return createNotification({
-    userId: authorId,
-    type: 'validation',
-    title: 'Votre RETEX a été validé',
-    content: rexTitle,
-    link: `/rex/${rexId}`,
-  });
-}
+    if (rows.length === 0) {
+      // Un REX soumis que personne ne peut valider : à voir dans les journaux.
+      logger.warn('Soumission sans validateur à avertir', {
+        rexId: args.rexId,
+        sdisId: args.sdisId,
+      });
+      return;
+    }
 
-/**
- * Notify user when their REX is rejected
- */
-export async function notifyRexRejected(
-  rexId: string,
-  rexTitle: string,
-  authorId: string,
-  reason?: string
-) {
-  return createNotification({
-    userId: authorId,
-    type: 'rejection',
-    title: 'Votre RETEX a été refusé',
-    content: reason || rexTitle,
-    link: `/rex/${rexId}`,
-  });
-}
-
-/**
- * Notify user when someone comments on their REX
- */
-export async function notifyNewComment(
-  rexId: string,
-  rexTitle: string,
-  authorId: string,
-  commenterName: string
-) {
-  return createNotification({
-    userId: authorId,
-    type: 'comment',
-    title: `${commenterName} a commenté votre RETEX`,
-    content: rexTitle,
-    link: `/rex/${rexId}#comments`,
-  });
-}
-
-/**
- * Notify user when they are mentioned in a comment
- */
-export async function notifyMention(
-  rexId: string,
-  mentionedUserId: string,
-  mentionerName: string,
-  commentExcerpt: string
-) {
-  return createNotification({
-    userId: mentionedUserId,
-    type: 'mention',
-    title: `${mentionerName} vous a mentionné`,
-    content: commentExcerpt.slice(0, 100) + (commentExcerpt.length > 100 ? '...' : ''),
-    link: `/rex/${rexId}#comments`,
-  });
-}
-
-/**
- * Notify validators when a new REX is submitted for validation
- */
-export async function notifyNewRexForValidation(rexId: string, rexTitle: string, sdisId: string) {
-  const supabase = await createClient();
-
-  // Get all validators and admins for this SDIS
-  const { data: validators } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('sdis_id', sdisId)
-    .in('role', ['validator', 'admin', 'super_admin']);
-
-  if (!validators || validators.length === 0) return;
-
-  // Create notifications for all validators
-  const notifications = validators.map((v) => ({
-    user_id: v.id,
-    type: 'new_rex' as NotificationType,
-    title: 'Nouveau RETEX à valider',
-    content: rexTitle,
-    link: `/rex/${rexId}`,
-  }));
-
-  const { error } = await supabase.from('notifications').insert(notifications);
-
-  if (error) {
-    logger.error('Error creating validation notifications:', error);
-  }
-}
-
-/**
- * Notify SDIS members when a new REX is published
- */
-export async function notifyNewRexPublished(
-  rexId: string,
-  rexTitle: string,
-  sdisId: string,
-  authorId: string
-) {
-  const supabase = await createClient();
-
-  // Get all users from the same SDIS (except the author)
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('sdis_id', sdisId)
-    .neq('id', authorId);
-
-  if (!users || users.length === 0) return;
-
-  // Create notifications for all users
-  const notifications = users.map((u) => ({
-    user_id: u.id,
-    type: 'new_rex' as NotificationType,
-    title: 'Nouveau RETEX publié',
-    content: rexTitle,
-    link: `/rex/${rexId}`,
-  }));
-
-  const { error } = await supabase.from('notifications').insert(notifications);
-
-  if (error) {
-    logger.error('Error creating new rex notifications:', error);
+    const { error } = await admin.from('notifications').insert(rows);
+    if (error) {
+      logger.error('Soumission : notifications non créées', error);
+    }
+  } catch (error) {
+    logger.error('Soumission : notification des validateurs en échec', error);
   }
 }

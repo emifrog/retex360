@@ -87,6 +87,8 @@ export function Sidebar({
     >
       {/* Toggle Button */}
       <Button
+        aria-label={collapsed ? 'Déployer le menu' : 'Réduire le menu'}
+        aria-expanded={!collapsed}
         variant="ghost"
         size="icon"
         onClick={() => setCollapsed(!collapsed)}
@@ -187,7 +189,7 @@ export function Sidebar({
                     <item.icon className="w-5 h-5 flex-shrink-0" />
                     {!collapsed && item.name}
                     {!collapsed && item.badge && pendingCount > 0 && (
-                      <span className="ml-auto bg-orange-500/20 text-orange-500 text-xs px-2 py-0.5 rounded-full border border-orange-500/30">
+                      <span className="ml-auto bg-orange-500/20 text-orange-800 dark:text-orange-400 text-xs px-2 py-0.5 rounded-full border border-orange-500/30">
                         {pendingCount}
                       </span>
                     )}

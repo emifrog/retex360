@@ -12,6 +12,15 @@ import type {
   Prescription,
 } from '@/types';
 import { TIMELINE_EVENT_CONFIG, PRESCRIPTION_CATEGORY_CONFIG } from '@/types';
+import { focusEntries, type FocusPartKey } from '@/lib/rex-detail-sections';
+
+// Teinte du libellé de chaque rubrique d'un focus thématique.
+const FOCUS_PART_COLORS: Partial<Record<FocusPartKey, string>> = {
+  points_forts: '#059669',
+  points_amelioration: '#dc2626',
+  axes_amelioration: '#dc2626',
+  propositions: '#2563eb',
+};
 
 // Les colonnes que ce document affiche sont déclarées dans `rex-columns.ts` et
 // chargées par la route d'export. Toute rubrique ajoutée ici doit y figurer,
@@ -926,36 +935,22 @@ export function RexPdfTemplate({ rex, anonymize = false, images = [] }: RexPdfTe
             {focusThematiques.map((focus, index) => (
               <View key={index} style={styles.focusSection}>
                 <Text style={styles.focusTheme}>{focus.theme}</Text>
-                {focus.constats && (
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold' }]}>Constats :</Text>
-                    <Text style={styles.focusContent}>{focus.constats}</Text>
-                  </View>
-                )}
-                {focus.points_forts && (
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#059669' }]}>
-                      Points forts :
+                {/* `focusEntries` : les rubriques réellement saisies. Seuls les
+                    quatre champs de l'annexe F étaient lus ici, que le formulaire
+                    ne permet pas de remplir — un focus ne montrait que son titre. */}
+                {focusEntries(focus).map((entry) => (
+                  <View key={entry.key} style={{ marginBottom: 6 }}>
+                    <Text
+                      style={[
+                        styles.focusContent,
+                        { fontWeight: 'bold', color: FOCUS_PART_COLORS[entry.key] ?? '#1f2937' },
+                      ]}
+                    >
+                      {entry.label} :
                     </Text>
-                    <Text style={styles.focusContent}>{focus.points_forts}</Text>
+                    <Text style={styles.focusContent}>{entry.text}</Text>
                   </View>
-                )}
-                {focus.points_amelioration && (
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#dc2626' }]}>
-                      Points d&apos;amélioration :
-                    </Text>
-                    <Text style={styles.focusContent}>{focus.points_amelioration}</Text>
-                  </View>
-                )}
-                {focus.propositions && (
-                  <View>
-                    <Text style={[styles.focusContent, { fontWeight: 'bold', color: '#2563eb' }]}>
-                      Propositions :
-                    </Text>
-                    <Text style={styles.focusContent}>{focus.propositions}</Text>
-                  </View>
-                )}
+                ))}
               </View>
             ))}
           </View>

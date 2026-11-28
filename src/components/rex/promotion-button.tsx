@@ -197,7 +197,12 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Complétion requise</span>
               <span
-                className={cn('font-medium', canPromote ? 'text-green-500' : 'text-orange-500')}
+                className={cn(
+                  'font-medium',
+                  canPromote
+                    ? 'text-green-800 dark:text-green-400'
+                    : 'text-orange-800 dark:text-orange-400'
+                )}
               >
                 {completedCount}/{totalCount} champs
               </span>
@@ -235,7 +240,7 @@ export function PromotionButton({ rexId, currentType, rexData, disabled }: Promo
                 {completed && (
                   <Badge
                     variant="outline"
-                    className="ml-auto text-xs bg-green-500/10 text-green-500 border-green-500/30"
+                    className="ml-auto text-xs bg-green-500/10 text-green-800 dark:text-green-400 border-green-500/30"
                   >
                     Complété
                   </Badge>

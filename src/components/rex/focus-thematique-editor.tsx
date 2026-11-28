@@ -105,10 +105,10 @@ export function FocusThematiqueEditor({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-base font-semibold">
+          <div className="flex items-center gap-2 leading-none text-base font-semibold">
             Focus thématiques
             {required && <span className="text-destructive ml-1">*</span>}
-          </Label>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Analysez les différents aspects de l&apos;intervention selon les thèmes du mémento
             DGSCGC
@@ -196,7 +196,13 @@ export function FocusThematiqueEditor({
 
                       <div className="flex items-center gap-2">
                         <CollapsibleTrigger asChild>
-                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            aria-label={isExpanded ? 'Replier ce focus' : 'Déplier ce focus'}
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             {isExpanded ? (
                               <ChevronUp className="w-4 h-4" />
                             ) : (
@@ -208,6 +214,7 @@ export function FocusThematiqueEditor({
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
+                              aria-label="Supprimer ce focus"
                               type="button"
                               variant="ghost"
                               size="icon"

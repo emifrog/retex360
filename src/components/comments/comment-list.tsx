@@ -7,16 +7,22 @@ import { CommentItem } from './comment-item';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CommentWithAuthor, ReadableProfile } from '@/types';
+import { appendReply, canModerateComments, countComments } from '@/lib/comments';
 
 interface CommentListProps {
   rexId: string;
   currentUser?: ReadableProfile | null;
   canWrite?: boolean;
+  /** SDIS du REX : décide qui peut modérer. */
+  rexSdisId?: string | null;
 }
 
-export function CommentList({ rexId, currentUser, canWrite = true }: CommentListProps) {
+export function CommentList({ rexId, currentUser, canWrite = true, rexSdisId }: CommentListProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Une erreur de chargement s'affichait comme « Aucun commentaire ».
+  const [loadFailed, setLoadFailed] = useState(false);
+  const canModerate = canModerateComments(currentUser, rexSdisId);
 
   const userInitials =
     currentUser?.full_name
@@ -33,9 +39,13 @@ export function CommentList({ rexId, currentUser, canWrite = true }: CommentList
       if (response.ok) {
         const data = await response.json();
         setComments(data.data || []);
+        setLoadFailed(false);
+      } else {
+        setLoadFailed(true);
       }
     } catch (error) {
       logger.error('Fetch comments error:', error);
+      setLoadFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -78,16 +88,14 @@ export function CommentList({ rexId, currentUser, canWrite = true }: CommentList
       }
 
       const data = await response.json();
+      // `appendReply` retrouve le fil même quand on répond à une réponse :
+      // seule la réponse directe à un commentaire de premier niveau s'affichait.
       setComments(
-        comments.map((comment) => {
-          if (comment.id === parentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), data.data],
-            };
-          }
-          return comment;
-        })
+        appendReply(
+          comments.map((c) => ({ ...c, replies: c.replies ?? [] })),
+          parentId,
+          data.data as CommentWithAuthor
+        )
       );
       toast.success('Réponse ajoutée');
     } catch {
@@ -157,7 +165,7 @@ export function CommentList({ rexId, currentUser, canWrite = true }: CommentList
       {/* Header */}
       <div className="flex items-center gap-2">
         <MessageSquare className="w-5 h-5 text-muted-foreground" />
-        <h3 className="font-semibold">Commentaires ({comments.length})</h3>
+        <h3 className="font-semibold">Commentaires ({countComments(comments)})</h3>
       </div>
 
       {/* Add Comment Form */}
@@ -188,13 +196,34 @@ export function CommentList({ rexId, currentUser, canWrite = true }: CommentList
               onReply={handleReply}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              canModerate={canModerate}
+              canWrite={Boolean(currentUser) && canWrite}
             />
           ))}
         </div>
       )}
 
+      {/* Échec du chargement — distinct de l'absence de commentaires. */}
+      {!isLoading && loadFailed && (
+        <div role="alert" className="text-center py-8 space-y-3">
+          <p className="text-sm text-foreground">
+            Les commentaires n&apos;ont pas pu être chargés.
+          </p>
+          <button
+            type="button"
+            className="text-sm font-medium underline underline-offset-2"
+            onClick={() => {
+              setIsLoading(true);
+              fetchComments();
+            }}
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!isLoading && comments.length === 0 && (
+      {!isLoading && !loadFailed && comments.length === 0 && (
         <div className="text-center py-8">
           <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">

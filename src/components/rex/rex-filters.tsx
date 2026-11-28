@@ -111,6 +111,8 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
         </Button>
         <div className="flex border border-border rounded-lg overflow-hidden">
           <Button
+            aria-label="Affichage en grille"
+            aria-pressed={view === 'grid'}
             variant="ghost"
             size="icon"
             className={view === 'grid' ? 'bg-muted' : ''}
@@ -119,6 +121,8 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             <LayoutGrid className="w-4 h-4" />
           </Button>
           <Button
+            aria-label="Affichage en liste"
+            aria-pressed={view === 'list'}
             variant="ghost"
             size="icon"
             className={view === 'list' ? 'bg-muted' : ''}
@@ -156,7 +160,7 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             value={filters.type_production || ''}
             onValueChange={(value) => handleFilterChange('type_production', value)}
           >
-            <SelectTrigger className="bg-background/50">
+            <SelectTrigger className="bg-background/50" aria-label="Filtrer par type de production">
               <SelectValue placeholder="Type de production" />
             </SelectTrigger>
             <SelectContent>
@@ -173,7 +177,10 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             value={filters.type || ''}
             onValueChange={(value) => handleFilterChange('type', value)}
           >
-            <SelectTrigger className="bg-background/50">
+            <SelectTrigger
+              className="bg-background/50"
+              aria-label="Filtrer par type d'intervention"
+            >
               <SelectValue placeholder="Type d'intervention" />
             </SelectTrigger>
             <SelectContent>
@@ -190,7 +197,7 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             value={filters.severity || ''}
             onValueChange={(value) => handleFilterChange('severity', value)}
           >
-            <SelectTrigger className="bg-background/50">
+            <SelectTrigger className="bg-background/50" aria-label="Filtrer par criticité">
               <SelectValue placeholder="Criticité" />
             </SelectTrigger>
             <SelectContent>
@@ -207,7 +214,7 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             value={filters.status || ''}
             onValueChange={(value) => handleFilterChange('status', value)}
           >
-            <SelectTrigger className="bg-background/50">
+            <SelectTrigger className="bg-background/50" aria-label="Filtrer par statut">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
             <SelectContent>
@@ -230,7 +237,7 @@ export function RexFilters({ onSearch, onFilterChange, onViewChange, view }: Rex
             value={filters.sdis || ''}
             onValueChange={(value) => handleFilterChange('sdis', value)}
           >
-            <SelectTrigger className="bg-background/50">
+            <SelectTrigger className="bg-background/50" aria-label="Filtrer par SDIS">
               <SelectValue placeholder="SDIS" />
             </SelectTrigger>
             <SelectContent>
