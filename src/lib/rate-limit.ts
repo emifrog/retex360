@@ -17,11 +17,12 @@ interface RateLimitResult {
 }
 
 // Simple in-memory rate limiter for development
-function createInMemoryRateLimiter(requests: number, windowMs: number) {
+function createInMemoryRateLimiter(name: string, requests: number, windowMs: number) {
   return {
     async limit(identifier: string): Promise<RateLimitResult> {
       const now = Date.now();
-      const key = identifier;
+      // Le nom du limiteur fait partie de la clé : voir `createRateLimiter`.
+      const key = `${name}:${identifier}`;
       const record = inMemoryStore.get(key);
 
       if (!record || now > record.resetTime) {
@@ -65,7 +66,16 @@ if (isProduction && !isBuildPhase && !hasUpstash) {
 // `failClosed`: when Redis is unreachable at request time, deny the request
 // instead of degrading to the (serverless-ineffective) in-memory store. Use for
 // sensitive limiters such as auth brute-force and costly AI calls.
+//
+// `name` cloisonne les compteurs. Chaque limiteur DOIT avoir le sien : la clé de
+// comptage est `préfixe:identifiant:fenêtre`, sans rien qui dise quel limiteur
+// compte. Avec un préfixe commun, tous les limiteurs d'une même fenêtre
+// partageaient donc le compteur d'un même utilisateur — et le plus strict se
+// déclenchait sur l'usage ordinaire de l'API. Dix appels de navigation, comptés
+// par `api` (60/min), suffisaient à faire refuser la première analyse IA
+// (10/min), le premier envoi de photo (10/min) ou un export (5/min).
 function createRateLimiter(
+  name: string,
   requests: number,
   window: Duration,
   { failClosed = false }: { failClosed?: boolean } = {}
@@ -85,7 +95,7 @@ function createRateLimiter(
       redis,
       limiter: Ratelimit.slidingWindow(requests, window),
       analytics: true,
-      prefix: 'retex360_ratelimit',
+      prefix: `retex360_ratelimit:${name}`,
       // Borne la durée d'un appel : au-delà, la bibliothèque rend la main avec
       // `reason: 'timeout'` au lieu de faire attendre la requête.
       timeout: LIMITER_TIMEOUT_MS,
@@ -95,7 +105,7 @@ function createRateLimiter(
     // Les deux cas mènent au même repli, et sont SIGNALÉS — un repli silencieux
     // a laissé la production tourner des semaines sur ce chemin sans que
     // personne ne le sache.
-    const fallback = createInMemoryRateLimiter(requests, windowMs);
+    const fallback = createInMemoryRateLimiter(name, requests, windowMs);
     const degraded = (identifier: string, error: unknown): Promise<RateLimitResult> => {
       reportLimiterFailure('route', error);
       if (failClosed) {
@@ -129,32 +139,32 @@ function createRateLimiter(
   }
 
   // Development only: in-memory fallback (production is guarded above).
-  return createInMemoryRateLimiter(requests, windowMs);
+  return createInMemoryRateLimiter(name, requests, windowMs);
 }
 
 // Pre-configured rate limiters for different use cases
 export const rateLimiters = {
   // Auth: 5 attempts per minute (strict for login/register) — fail-closed to
   // keep brute-force protection effective even during a Redis outage.
-  auth: createRateLimiter(5, '1 m', { failClosed: true }),
+  auth: createRateLimiter('auth', 5, '1 m', { failClosed: true }),
 
   // Upload: 10 uploads per minute
-  upload: createRateLimiter(10, '1 m'),
+  upload: createRateLimiter('upload', 10, '1 m'),
 
   // API: 60 requests per minute (general API calls)
-  api: createRateLimiter(60, '1 m'),
+  api: createRateLimiter('api', 60, '1 m'),
 
   // Search: 30 searches per minute
-  search: createRateLimiter(30, '1 m'),
+  search: createRateLimiter('search', 30, '1 m'),
 
   // Exports: 5 per minute. A data export streams the whole corpus a user is
   // entitled to (CSV dashboard, RGPD profile dump) — far heavier than a regular
   // API call, and the natural lever for bulk exfiltration by a legitimate account.
-  export: createRateLimiter(5, '1 m'),
+  export: createRateLimiter('export', 5, '1 m'),
 
   // AI: 10 requests per minute (expensive operations) — fail-closed to bound
   // cost even during a Redis outage.
-  ai: createRateLimiter(10, '1 m', { failClosed: true }),
+  ai: createRateLimiter('ai', 10, '1 m', { failClosed: true }),
 };
 
 export type RateLimiter = (typeof rateLimiters)[keyof typeof rateLimiters];

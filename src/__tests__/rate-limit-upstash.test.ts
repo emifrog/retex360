@@ -52,6 +52,15 @@ describe('limiteurs avec Upstash configuré', () => {
     resetLimiterFailureReport();
   });
 
+  it('chaque limiteur a son propre espace de clés Redis', () => {
+    // La bibliothèque compose la clé `préfixe:identifiant:fenêtre`. Avec un
+    // préfixe commun, deux limiteurs de même fenêtre partagent le compteur
+    // d'un même utilisateur, quel que soit leur plafond.
+    const prefixes = ratelimitOptions.map((options) => options.prefix);
+    expect(prefixes.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(prefixes).size).toBe(prefixes.length);
+  });
+
   describe('une panne ne doit pas coûter des secondes', () => {
     it('le client Redis ne réessaie pas plus d’une fois', () => {
       expect(redisOptions.length).toBeGreaterThan(0);
