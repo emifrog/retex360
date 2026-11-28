@@ -29,6 +29,39 @@ const { rateLimiters, getClientIp, userKey, ipKey, limitByUser, limitByIp } =
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 describe('Rate limiting', () => {
+  describe('cloisonnement entre limiteurs', () => {
+    // Tous les limiteurs étaient indexés par le seul identifiant (`u:<id>`). La
+    // navigation ordinaire, comptée par `api` (60/min), faisait donc monter le
+    // compteur que lisaient aussi `ai` (10/min), `upload` (10/min), `export`
+    // (5/min) et `auth` (5/min) : après une dizaine d'appels, l'analyse IA et
+    // l'envoi de photos répondaient « Trop de requêtes » dès leur premier appel.
+    it("l'usage ordinaire de l'API n'entame pas le quota de l'IA", async () => {
+      const user = `u:cloisonnement-ia-${Date.now()}`;
+      for (let i = 0; i < 12; i++) await rateLimiters.api.limit(user);
+
+      const result = await rateLimiters.ai.limit(user);
+      expect(result.success).toBe(true);
+      expect(result.remaining).toBe(9);
+    });
+
+    it("ni celui de l'envoi de fichiers, des exports ou du changement de mot de passe", async () => {
+      const user = `u:cloisonnement-autres-${Date.now()}`;
+      for (let i = 0; i < 12; i++) await rateLimiters.api.limit(user);
+
+      expect((await rateLimiters.upload.limit(user)).success).toBe(true);
+      expect((await rateLimiters.export.limit(user)).success).toBe(true);
+      expect((await rateLimiters.auth.limit(user)).success).toBe(true);
+    });
+
+    it('chaque limiteur applique toujours son propre plafond', async () => {
+      const user = `u:plafond-ia-${Date.now()}`;
+      for (let i = 0; i < 10; i++) {
+        expect((await rateLimiters.ai.limit(user)).success).toBe(true);
+      }
+      expect((await rateLimiters.ai.limit(user)).success).toBe(false);
+    });
+  });
+
   describe('getClientIp', () => {
     function mockRequest(headers: Record<string, string> = {}): Request {
       return {
