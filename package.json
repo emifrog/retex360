@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/check-built-css.cjs",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",

@@ -31,6 +31,22 @@ const supabaseHost = hostnameOf(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  experimental: {
+    // Pas de cache disque Turbopack pour `next build` (actif par défaut depuis
+    // Next 16.3, dans `.next/cache/turbopack`, que l'hébergeur restaure d'un
+    // déploiement à l'autre).
+    //
+    // Le 28 novembre 2026, il a fait servir en production une feuille de styles
+    // compilée depuis une ancienne version de `globals.css` : classes
+    // utilitaires à jour, mais ni les jetons ajoutés ni les règles du texte
+    // riche. Compilation réussie, CI verte, rien à l'écran pour le signaler.
+    // Constaté deux fois sur quatre compilations avec cache, jamais sans.
+    //
+    // Coût : quelques secondes de compilation. `scripts/check-built-css.cjs`
+    // (script `postbuild`) vérifie de son côté que la feuille produite reflète
+    // bien `globals.css`. Le cache de `next dev` n'est pas concerné.
+    turbopackFileSystemCacheForBuild: false,
+  },
   async redirects() {
     return [
       {
