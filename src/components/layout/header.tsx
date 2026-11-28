@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions/auth';
+import { browserDraftStorage, clearAllLocalDrafts } from '@/lib/rex-draft-storage';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { MobileSidebar } from './mobile-sidebar';
@@ -111,7 +112,9 @@ export function Header({
         {user?.sdis && (
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-md">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-green-500 font-medium">{user.sdis.code} Connecté</span>
+            <span className="text-xs text-green-800 dark:text-green-400 font-medium">
+              {user.sdis.code} Connecté
+            </span>
           </div>
         )}
 
@@ -124,7 +127,11 @@ export function Header({
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button
+              aria-label="Menu du compte"
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full"
+            >
               <Avatar className="h-10 w-10 border-2 border-primary">
                 <AvatarImage src={user?.avatar_url || undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-sm font-semibold">
@@ -153,7 +160,12 @@ export function Header({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => logout()}
+              onClick={() => {
+                // Poste partagé : les saisies de REX conservées sur l'appareil
+                // ne doivent pas survivre à la session de leur auteur.
+                clearAllLocalDrafts(browserDraftStorage());
+                logout();
+              }}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Déconnexion

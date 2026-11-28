@@ -7,6 +7,7 @@ import { rateLimiters, userKey, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { signAttachmentUrls } from '@/lib/storage';
 import { requireUser } from '@/lib/api-auth';
+import { loadPdfImages } from '@/lib/pdf/images';
 
 // Limiteur PDF dédié, par utilisateur (opération coûteuse).
 const pdfRateLimiter = rateLimiters.ai; // Reuses AI limiter: 10/min — heavy ops
@@ -99,20 +100,38 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const imageAtts = (attachmentsResult.data || [])
       .filter((att) => att.file_type?.startsWith('image/'))
       .slice(0, 10);
-    const signedImageUrls = await signAttachmentUrls(
-      imageAtts.map((att) => att.storage_path),
-      600
-    );
-    const imageAttachments = imageAtts
-      .map((att) => ({ name: att.file_name, url: signedImageUrls.get(att.storage_path) }))
-      .filter((att): att is { name: string; url: string } => Boolean(att.url));
 
-    // ETag based on REX updated_at — avoid regenerating identical PDFs
-    const etag = `"pdf-${id}-${rex.updated_at || ''}-${anonymize}"`;
+    // ETag : date de modification du REX, plus les photos jointes — en ajouter
+    // ou en retirer une ne change pas `updated_at`, et le navigateur aurait
+    // resservi l'ancien PDF.
+    const imageKey = imageAtts.map((att) => att.id.slice(0, 8)).join('.');
+    const etag = `"pdf-${id}-${rex.updated_at || ''}-${anonymize}-${imageKey}"`;
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch === etag) {
       return new Response(null, { status: 304 });
     }
+
+    // Photos : téléchargées puis converties en JPEG, APRÈS le contrôle de
+    // l'ETag pour ne rien télécharger quand le PDF est déjà chez le lecteur.
+    // Elles sont stockées en WebP, que le moteur de rendu n'accepte pas : il les
+    // écartait sans message, et aucun PDF n'en contenait (voir `pdf/images.ts`).
+    const signedImageUrls = await signAttachmentUrls(
+      imageAtts.map((att) => att.storage_path),
+      600
+    );
+    const imageAttachments = await loadPdfImages(
+      imageAtts
+        .map((att) => ({ name: att.file_name, url: signedImageUrls.get(att.storage_path) }))
+        .filter((att): att is { name: string; url: string } => Boolean(att.url)),
+      {
+        onError: (name, error) =>
+          log.warn('Photo écartée du PDF', {
+            rexId: id,
+            name,
+            reason: error instanceof Error ? error.message : String(error),
+          }),
+      }
+    );
 
     // Check total size to prevent OOM
     const estimatedSize = JSON.stringify(rex).length;

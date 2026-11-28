@@ -5,7 +5,7 @@ import { toOne } from '@/lib/supabase/relations';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { commentSchema } from '@/lib/validators/api';
-import { sanitizePlainText } from '@/lib/sanitize-server';
+import { normalizeCommentText } from '@/lib/comments';
 
 // PUT - Update a comment
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
     }
 
-    const content = sanitizePlainText(validated.data.content).trim();
+    const content = normalizeCommentText(validated.data.content);
     if (!content) {
       return NextResponse.json({ error: 'Contenu requis' }, { status: 400 });
     }

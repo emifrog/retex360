@@ -67,6 +67,8 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #b91c1c;
+  /* Couleur des liens dans un texte : 6,5:1 sur fond blanc. */
+  --link: #b91c1c;
   
   /* Severity colors */
   --severity-critical: #dc2626;
@@ -128,7 +130,11 @@
   --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: #b91c1c;
+  /* Indicateur de focus. Le rouge de marque (#b91c1c) ne donne que 2,8:1 sur ce
+     fond, pour 3:1 exigé ; à demi-opacité, comme il était dessiné, 1,5:1. */
+  --ring: #f87171;
+  /* Le rouge de marque ne donne que 2,8:1 sur fond sombre : nuance claire pour les liens. */
+  --link: #f87171;
   
   /* Severity colors - Dark */
   --severity-critical: #ef4444;
@@ -158,7 +164,7 @@
   --sidebar-accent: rgba(185, 28, 28, 0.2);
   --sidebar-accent-foreground: #f87171;
   --sidebar-border: rgba(255, 255, 255, 0.05);
-  --sidebar-ring: #b91c1c;
+  --sidebar-ring: #f87171;
   
   /* Dark mode specific */
   --card-alpha: rgba(20, 20, 28, 0.8);
@@ -179,5 +185,144 @@
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/*
+ * Thème sombre : le rouge de marque (#b91c1c) sert de couleur de TEXTE à des
+ * dizaines d'endroits — titres de rubrique, libellés, liens. Sur fond sombre il
+ * ne donne que 2,8:1, pour 4,5:1 exigé. Il reste la couleur des fonds (boutons)
+ * et le texte passe à la nuance claire déjà retenue pour les liens.
+ */
+@layer utilities {
+  .dark .text-primary {
+    color: var(--link);
+  }
+}
+
+/*
+ * Texte riche : contenu de l'éditeur Tiptap, à la saisie comme sur la fiche.
+ *
+ * Ces zones portaient la classe `prose`, qui vient du module
+ * `@tailwindcss/typography` — jamais installé. Comme Tailwind remet à zéro les
+ * puces et les tailles de titres, une liste ou un titre saisis s'affichaient
+ * comme du texte ordinaire : les boutons de l'éditeur semblaient sans effet.
+ *
+ * Les couleurs viennent des jetons du thème, donc suivent le clair et le sombre.
+ * Dans `components` pour qu'une classe utilitaire posée sur l'élément l'emporte.
+ */
+@layer components {
+  .rich-text {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--foreground);
+    overflow-wrap: anywhere;
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text > :last-child {
+    margin-bottom: 0;
+  }
+  .rich-text p {
+    margin: 0.75em 0;
+  }
+  .rich-text h1,
+  .rich-text h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1.5em 0 0.5em;
+  }
+  .rich-text h3,
+  .rich-text h4,
+  .rich-text h5,
+  .rich-text h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1.25em 0 0.5em;
+  }
+  .rich-text ul,
+  .rich-text ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+  }
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text ul ul {
+    list-style: circle;
+  }
+  .rich-text li {
+    margin: 0.25em 0;
+  }
+  .rich-text li > p {
+    margin: 0;
+  }
+  .rich-text strong,
+  .rich-text b {
+    font-weight: 600;
+  }
+  .rich-text blockquote {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 3px solid var(--border);
+    color: var(--muted-foreground);
+  }
+  .rich-text a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .rich-text code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+    background: var(--muted);
+  }
+  .rich-text pre {
+    margin: 1em 0;
+    padding: 0.75em 1em;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    overflow-x: auto;
+  }
+  .rich-text pre code {
+    padding: 0;
+    background: none;
+  }
+  .rich-text hr {
+    margin: 1.5em 0;
+    border-color: var(--border);
+  }
+  .rich-text img {
+    max-width: 100%;
+    height: auto;
+  }
+  .rich-text table {
+    width: 100%;
+    margin: 1em 0;
+    border-collapse: collapse;
+  }
+  .rich-text th,
+  .rich-text td {
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+
+  /* Texte d'invite de l'éditeur vide. L'extension Placeholder de Tiptap ne fait
+     que poser l'attribut : sans cette règle, rien ne s'affichait. */
+  .rich-text p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--muted-foreground);
   }
 }

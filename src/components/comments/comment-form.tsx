@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2, AtSign } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
+import { extractMentionIds, mentionQueryAt, mentionToken } from '@/lib/comments';
 
 interface User {
   id: string;
@@ -20,6 +21,10 @@ interface CommentFormProps {
   onCancel?: () => void;
   placeholder?: string;
   userInitials?: string;
+  /** Texte de départ : le commentaire en cours de modification. */
+  initialContent?: string;
+  /** Nom accessible du champ, qui n'a pas de libellé visible. */
+  label?: string;
 }
 
 export function CommentForm({
@@ -27,8 +32,12 @@ export function CommentForm({
   onCancel,
   placeholder = 'Ajouter un commentaire... (utilisez @ pour mentionner)',
   userInitials = 'U',
+  initialContent = '',
+  label = 'Votre commentaire',
 }: CommentFormProps) {
-  const [content, setContent] = useState('');
+  // Partait toujours de vide : « Modifier » ouvrait un champ blanc, et il
+  // fallait retaper le commentaire entier pour en corriger un mot.
+  const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -78,13 +87,12 @@ export function CommentForm({
     setContent(value);
     setCursorPosition(position);
 
-    // Check for @ mention trigger
-    const textBeforeCursor = value.slice(0, position);
-    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    // Mention en cours de saisie avant le curseur.
+    const mention = mentionQueryAt(value.slice(0, position));
 
-    if (mentionMatch) {
+    if (mention) {
       setShowMentions(true);
-      setMentionSearch(mentionMatch[1]);
+      setMentionSearch(mention.query);
       setMentionIndex(0);
     } else {
       setShowMentions(false);
@@ -95,13 +103,12 @@ export function CommentForm({
   const insertMention = (user: User) => {
     const textBeforeCursor = content.slice(0, cursorPosition);
     const textAfterCursor = content.slice(cursorPosition);
-    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    const mention = mentionQueryAt(textBeforeCursor);
 
-    if (mentionMatch) {
-      const newTextBefore = textBeforeCursor.slice(0, -mentionMatch[0].length);
-      const mention = `@${user.full_name.replace(/\s+/g, '_')} `;
-      setContent(newTextBefore + mention + textAfterCursor);
-      mentionMapRef.current.set(user.full_name, user.id);
+    if (mention) {
+      const newTextBefore = textBeforeCursor.slice(0, -mention.token.length);
+      setContent(newTextBefore + mentionToken(user.full_name) + ' ' + textAfterCursor);
+      mentionMapRef.current.set(user.full_name.trim().replace(/\s+/g, ' '), user.id);
     }
 
     setShowMentions(false);
@@ -126,29 +133,12 @@ export function CommentForm({
     }
   };
 
-  // Extract mentioned user IDs from content
-  const extractMentions = (text: string): string[] => {
-    const mentionPattern = /@(\w+(?:_\w+)*)/g;
-    const mentions: string[] = [];
-    let match;
-
-    while ((match = mentionPattern.exec(text)) !== null) {
-      const mentionName = match[1].replace(/_/g, ' ');
-      const id = mentionMapRef.current.get(mentionName);
-      if (id && !mentions.includes(id)) {
-        mentions.push(id);
-      }
-    }
-
-    return mentions;
-  };
-
   const handleSubmit = async () => {
     if (!content.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const mentions = extractMentions(content);
+      const mentions = extractMentionIds(content, mentionMapRef.current);
       await onSubmit(content, mentions);
       setContent('');
     } finally {
@@ -169,12 +159,14 @@ export function CommentForm({
             onChange={handleContentChange}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
+            aria-label={label}
             className="min-h-[80px] bg-background/50 resize-none pr-10"
           />
           <Button
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Mentionner une personne"
             className="absolute right-2 top-2 h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={() => {
               const newContent = content + '@';
@@ -230,7 +222,7 @@ export function CommentForm({
             disabled={!content.trim() || isSubmitting}
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-label="Envoi en cours" />
             ) : (
               <>
                 <Send className="w-4 h-4 mr-1" />

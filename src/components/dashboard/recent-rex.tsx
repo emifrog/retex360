@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { SEVERITY_CONFIG } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/server';
 
 const severityColors = {
@@ -74,7 +75,8 @@ export async function RecentRex() {
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div
-                className={cn('w-2.5 h-2.5 rounded-full', severityColors[rex.severity])}
+                aria-hidden="true"
+                className={cn('w-2.5 h-2.5 rounded-full shrink-0', severityColors[rex.severity])}
                 style={{
                   boxShadow: `0 0 10px ${
                     rex.severity === 'critique'
@@ -85,13 +87,18 @@ export async function RecentRex() {
                   }40`,
                 }}
               />
+              {/* La gravité en toutes lettres : la pastille seule ne dit rien à
+                  qui ne distingue pas le rouge de l'orange, ni à un lecteur d'écran. */}
+              <span className={cn('text-xs font-medium', SEVERITY_CONFIG[rex.severity]?.textColor)}>
+                {SEVERITY_CONFIG[rex.severity]?.label}
+              </span>
               <span className="text-xs text-muted-foreground uppercase">{rex.type}</span>
             </div>
             <div className="flex items-center gap-2">
               {rex.status === 'validated' && (
                 <Badge
                   variant="outline"
-                  className="bg-green-500/10 text-green-500 border-green-500/30 text-xs"
+                  className="bg-green-500/10 text-green-800 dark:text-green-400 border-green-500/30 text-xs"
                 >
                   ✓ Validé
                 </Badge>
@@ -99,7 +106,7 @@ export async function RecentRex() {
               {rex.status === 'pending' && (
                 <Badge
                   variant="outline"
-                  className="bg-orange-500/10 text-orange-500 border-orange-500/30 text-xs"
+                  className="bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-500/30 text-xs"
                 >
                   En attente
                 </Badge>

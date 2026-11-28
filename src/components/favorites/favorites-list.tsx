@@ -195,7 +195,7 @@ export function FavoritesList({ favorites: initialFavorites }: FavoritesListProp
                       disabled={removingId === favorite.id}
                     >
                       {removingId === favorite.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" aria-label="Retrait en cours" />
                       ) : (
                         <>
                           <Trash2 className="w-4 h-4 mr-1" />

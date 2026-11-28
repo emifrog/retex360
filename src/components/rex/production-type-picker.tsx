@@ -52,7 +52,7 @@ export function ProductionTypePicker({
               onClick={() => onChange(type)}
               className={cn(
                 'relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200',
-                'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50',
+                'hover:shadow-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
                 isSelected
                   ? cn('border-primary bg-primary/5 dark:bg-primary/10', 'ring-2 ring-primary/20')
                   : cn(

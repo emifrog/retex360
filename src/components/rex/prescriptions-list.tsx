@@ -131,8 +131,9 @@ export function PrescriptionsList({ prescriptions, className }: PrescriptionsLis
                         <StatusIcon
                           className={cn(
                             'w-4 h-4 mt-0.5 shrink-0',
-                            prescription.statut === 'fait' && 'text-green-500',
-                            prescription.statut === 'en_cours' && 'text-amber-500',
+                            prescription.statut === 'fait' && 'text-green-800 dark:text-green-400',
+                            prescription.statut === 'en_cours' &&
+                              'text-amber-800 dark:text-amber-400',
                             (!prescription.statut || prescription.statut === 'a_faire') &&
                               'text-gray-400'
                           )}

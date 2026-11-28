@@ -217,7 +217,13 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
               </p>
               <div className="flex gap-2">
                 <Input readOnly value={inviteResult.url} className="font-mono text-xs" />
-                <Button type="button" variant="outline" size="icon" onClick={copyLink}>
+                <Button
+                  aria-label={copied ? 'Lien copié' : 'Copier le lien'}
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={copyLink}
+                >
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : (
@@ -287,7 +293,12 @@ export function InvitationsManager({ invitations, isSuperAdmin, sdisList }: Prop
                           {pending && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive">
+                                <Button
+                                  aria-label={`Révoquer l’invitation de ${inv.email}`}
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive"
+                                >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>

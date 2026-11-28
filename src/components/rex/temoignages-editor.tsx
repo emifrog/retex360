@@ -77,6 +77,7 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
                 </span>
               </div>
               <Button
+                aria-label="Supprimer ce témoignage"
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -88,8 +89,14 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Fonction de l&apos;auteur</Label>
+              <Label
+                htmlFor={`temoignage-${index}-fonction`}
+                className="text-xs text-muted-foreground"
+              >
+                Fonction de l&apos;auteur
+              </Label>
               <Input
+                id={`temoignage-${index}-fonction`}
                 placeholder="Ex : Chef d'agrès, COS, médecin SAMU..."
                 value={temoignage.auteur_fonction}
                 onChange={(e) => updateTemoignage(index, 'auteur_fonction', e.target.value)}
@@ -98,10 +105,14 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
+              <Label
+                htmlFor={`temoignage-${index}-citation`}
+                className="text-xs text-muted-foreground"
+              >
                 Citation <span className="text-destructive">*</span>
               </Label>
               <Textarea
+                id={`temoignage-${index}-citation`}
                 placeholder="Verbatim du témoignage..."
                 value={temoignage.citation}
                 onChange={(e) => updateTemoignage(index, 'citation', e.target.value)}
@@ -110,8 +121,14 @@ export function TemoignagesEditor({ value, onChange }: TemoignagesEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Contexte (optionnel)</Label>
+              <Label
+                htmlFor={`temoignage-${index}-contexte`}
+                className="text-xs text-muted-foreground"
+              >
+                Contexte (optionnel)
+              </Label>
               <Input
+                id={`temoignage-${index}-contexte`}
                 placeholder="Ex : Lors de la phase de reconnaissance..."
                 value={temoignage.contexte || ''}
                 onChange={(e) => updateTemoignage(index, 'contexte', e.target.value)}

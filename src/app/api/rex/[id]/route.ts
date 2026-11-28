@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { isSdisAdmin, requireUser } from '@/lib/api-auth';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -8,6 +8,8 @@ import { purgeablePaths } from '@/lib/attachment-paths';
 import { canDeleteRex } from '@/lib/rex-permissions';
 import { sanitizeRexHtmlFields } from '@/lib/sanitize-server';
 import { rexAuthorStatusSchema, validateRexByType } from '@/lib/validators/rex';
+import { isSubmission } from '@/lib/rex-submission';
+import { notifyValidatorsOfSubmission } from '@/lib/notifications';
 
 // GET - Get single REX
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -169,6 +171,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json(
         { message: 'Erreur lors de la mise à jour du REX' },
         { status: 500 }
+      );
+    }
+
+    // Brouillon soumis (ou resoumis après un rejet) : les validateurs du SDIS
+    // sont avertis. Corriger un REX déjà en attente ne les relance pas.
+    if (isSubmission(existingRex.status, nextStatus?.data)) {
+      after(() =>
+        notifyValidatorsOfSubmission({
+          rexId: id,
+          title: rex.title,
+          sdisId: existingRex.sdis_id,
+          authorId: existingRex.author_id,
+        })
       );
     }
 

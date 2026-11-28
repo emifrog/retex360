@@ -149,6 +149,21 @@ export const rexSchema = z.discriminatedUnion('type_production', [
   rexRetexSchema,
 ]);
 
+/**
+ * Focus thématique d'un brouillon : seule sa forme est contrôlée.
+ *
+ * Le brouillon appliquait au focus les seuils de la soumission (dix caractères
+ * par rubrique). Choisir un thème puis enregistrer pour y revenir plus tard
+ * faisait donc refuser tout le brouillon.
+ */
+const focusThematiqueDraftSchema = z.object({
+  id: z.string(),
+  theme: z.string(),
+  problematique: z.string().optional().nullable(),
+  actions_menees: z.string().optional().nullable(),
+  axes_amelioration: z.string().optional().nullable(),
+});
+
 // Schema flexible pour les brouillons (validation moins stricte)
 export const rexDraftSchema = rexBaseSchema.extend({
   description: z.string().optional().or(z.literal('')),
@@ -161,7 +176,7 @@ export const rexDraftSchema = rexBaseSchema.extend({
   elements_favorables: z.string().optional().nullable(),
   elements_defavorables: z.string().optional().nullable(),
   documentation_operationnelle: z.string().optional().nullable(),
-  focus_thematiques: z.array(focusThematiqueSchema).optional().nullable(),
+  focus_thematiques: z.array(focusThematiqueDraftSchema).optional().nullable(),
   objectifs: z.string().optional().nullable(),
   donnees_sources: z.string().optional().nullable(),
   methode_argumentation: z.string().optional().nullable(),

@@ -9,10 +9,30 @@ import { cn } from '@/lib/utils';
 import { useRexList } from '@/lib/hooks/use-rex-list';
 
 const statsConfig = [
-  { label: 'Total', key: 'total' as const, icon: FileText, color: 'text-blue-500' },
-  { label: 'Validés', key: 'validated' as const, icon: CheckCircle, color: 'text-green-500' },
-  { label: 'En attente', key: 'pending' as const, icon: Clock, color: 'text-orange-500' },
-  { label: 'Brouillons', key: 'draft' as const, icon: FileEdit, color: 'text-gray-500' },
+  {
+    label: 'Total',
+    key: 'total' as const,
+    icon: FileText,
+    color: 'text-blue-800 dark:text-blue-400',
+  },
+  {
+    label: 'Validés',
+    key: 'validated' as const,
+    icon: CheckCircle,
+    color: 'text-green-800 dark:text-green-400',
+  },
+  {
+    label: 'En attente',
+    key: 'pending' as const,
+    icon: Clock,
+    color: 'text-orange-800 dark:text-orange-400',
+  },
+  {
+    label: 'Brouillons',
+    key: 'draft' as const,
+    icon: FileEdit,
+    color: 'text-gray-800 dark:text-gray-400',
+  },
 ];
 
 export function RexList() {

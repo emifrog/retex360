@@ -117,11 +117,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* SP engagés */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm">
+              <Label htmlFor="chiffres-sp-engages" className="flex items-center gap-2 text-sm">
                 <Users className="w-4 h-4 text-blue-600" />
                 Nombre de SP engagés
               </Label>
               <Input
+                id="chiffres-sp-engages"
                 type="number"
                 min={0}
                 placeholder="Ex: 45"
@@ -137,11 +138,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
             {/* Durée */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm">
+              <Label htmlFor="chiffres-duree" className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-amber-600" />
                 Durée d&apos;intervention
               </Label>
               <Input
+                id="chiffres-duree"
                 type="text"
                 placeholder="Ex: 4h30 ou 04:30"
                 value={value.duree_intervention || ''}
@@ -151,11 +153,12 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
             {/* Véhicules */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm">
+              <Label htmlFor="chiffres-vehicules" className="flex items-center gap-2 text-sm">
                 <Truck className="w-4 h-4 text-green-600" />
                 Nombre de véhicules
               </Label>
               <Input
+                id="chiffres-vehicules"
                 type="number"
                 min={0}
                 placeholder="Ex: 12"
@@ -169,14 +172,17 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
           {/* Bilan humain */}
           <div className="space-y-3">
-            <Label className="flex items-center gap-2 text-sm font-semibold">
+            <div className="flex items-center gap-2 leading-none flex items-center gap-2 text-sm font-semibold">
               <Heart className="w-4 h-4 text-red-600" />
               Bilan humain
-            </Label>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Décédés (DCD)</Label>
+                <Label htmlFor="chiffres-decedes" className="text-xs text-muted-foreground">
+                  Décédés (DCD)
+                </Label>
                 <Input
+                  id="chiffres-decedes"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -191,8 +197,11 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Urgence Absolue (UA)</Label>
+                <Label htmlFor="chiffres-urgence-absolue" className="text-xs text-muted-foreground">
+                  Urgence Absolue (UA)
+                </Label>
                 <Input
+                  id="chiffres-urgence-absolue"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -207,8 +216,14 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Urgence Relative (UR)</Label>
+                <Label
+                  htmlFor="chiffres-urgence-relative"
+                  className="text-xs text-muted-foreground"
+                >
+                  Urgence Relative (UR)
+                </Label>
                 <Input
+                  id="chiffres-urgence-relative"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -223,8 +238,11 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Impliqués</Label>
+                <Label htmlFor="chiffres-impliques" className="text-xs text-muted-foreground">
+                  Impliqués
+                </Label>
                 <Input
+                  id="chiffres-impliques"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -240,12 +258,16 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
           {/* SDIS impliqués */}
           <div className="space-y-3">
-            <Label className="flex items-center gap-2 text-sm font-semibold">
+            <Label
+              htmlFor="chiffres-sdis-engage"
+              className="flex items-center gap-2 text-sm font-semibold"
+            >
               <Building2 className="w-4 h-4 text-purple-600" />
               SDIS impliqués
             </Label>
             <div className="flex gap-2">
               <Input
+                id="chiffres-sdis-engage"
                 type="text"
                 placeholder="Code SDIS (ex: 74, 73, 01)"
                 value={newSdis}
@@ -269,6 +291,7 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                   <Badge key={sdis} variant="secondary" className="gap-1 pr-1">
                     SDIS {sdis}
                     <button
+                      aria-label={`Retirer le SDIS ${sdis}`}
                       type="button"
                       onClick={() => removeSdis(sdis)}
                       className="ml-1 hover:bg-destructive/20 rounded p-0.5"
@@ -283,16 +306,20 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
 
           {/* Chiffres secondaires */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold text-muted-foreground">
+            <div className="flex items-center gap-2 leading-none text-sm font-semibold text-muted-foreground">
               Informations complémentaires
-            </Label>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Label
+                  htmlFor="chiffres-surface"
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
                   <Move className="w-3 h-3" />
                   Surface sinistrée
                 </Label>
                 <Input
+                  id="chiffres-surface"
                   type="text"
                   placeholder="Ex: 500 m²"
                   value={value.surface_sinistree || ''}
@@ -301,11 +328,15 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Label
+                  htmlFor="chiffres-evacues"
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
                   <PersonStanding className="w-3 h-3" />
                   Personnes évacuées
                 </Label>
                 <Input
+                  id="chiffres-evacues"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -320,11 +351,15 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Label
+                  htmlFor="chiffres-lances"
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
                   <Flame className="w-3 h-3" />
                   Lances en action
                 </Label>
                 <Input
+                  id="chiffres-lances"
                   type="number"
                   min={0}
                   placeholder="0"
@@ -336,11 +371,15 @@ export function KeyFiguresEditor({ value, onChange, className }: KeyFiguresEdito
                 />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Label
+                  htmlFor="chiffres-debit"
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
                   <Droplets className="w-3 h-3" />
                   Débit d&apos;eau
                 </Label>
                 <Input
+                  id="chiffres-debit"
                   type="text"
                   placeholder="Ex: 2000 L/min"
                   value={value.debit_eau || ''}

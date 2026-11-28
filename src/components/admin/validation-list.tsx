@@ -27,7 +27,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { SEVERITY_CONFIG } from '@/lib/constants';
+import { SEVERITY_CONFIG, STATUS_CONFIG } from '@/lib/constants';
+import { validationShareNotice } from '@/lib/rex-detail-sections';
+import { VisibilityBadge } from '@/components/rex/visibility-badge';
 import type { Rex, Sdis, Profile } from '@/types';
 
 interface ValidationListProps {
@@ -128,13 +130,11 @@ export function ValidationList({ initialRex }: ValidationListProps) {
                       <Badge variant="outline" className="bg-muted/50">
                         {rex.type}
                       </Badge>
-                      <Badge
-                        variant="outline"
-                        className="bg-orange-500/10 text-orange-500 border-orange-500/30"
-                      >
+                      <Badge variant="outline" className={STATUS_CONFIG.pending.className}>
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         En attente
                       </Badge>
+                      <VisibilityBadge visibility={rex.visibility} />
                     </div>
                     <CardTitle className="text-lg">{rex.title}</CardTitle>
                   </div>
@@ -180,8 +180,14 @@ export function ValidationList({ initialRex }: ValidationListProps) {
                   </div>
                 )}
 
+                {/* Ce que la validation rend visible, et à qui : le validateur
+                    approuvait un partage vers tous les SDIS sans le voir. */}
+                <p className="text-sm text-foreground" role="note">
+                  {validationShareNotice(rex.visibility)}
+                </p>
+
                 {/* Actions */}
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex flex-wrap items-center gap-2 pt-2">
                   <Link href={`/rex/${rex.id}`}>
                     <Button variant="outline" size="sm">
                       <Eye className="w-4 h-4 mr-2" />
@@ -192,7 +198,7 @@ export function ValidationList({ initialRex }: ValidationListProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-red-500 hover:bg-red-500/10"
+                    className="text-red-800 dark:text-red-400 hover:bg-red-500/10"
                     onClick={() => {
                       setSelectedRex(rex);
                       setShowRejectDialog(true);

@@ -47,10 +47,17 @@ export function ImageUpload({
 
       const filesToUpload = Array.from(fileList).slice(0, maxFiles - files.length);
 
+      // Liste tenue ICI, au fil des envois. `files` est la valeur du rendu où
+      // la sélection a eu lieu : elle ne change pas pendant la boucle. Chaque
+      // envoi appelait `onFilesChange([...files, nouveau])` avec cette même
+      // liste de départ — le dernier fichier écrasait les précédents, qui
+      // restaient en base et en stockage sans être rattachés à rien.
+      let current = files;
+
       for (const file of filesToUpload) {
         // Validate type
         if (!ACCEPTED_TYPES.includes(file.type)) {
-          toast.error(`Type non supporté: ${file.name}`);
+          toast.error(`${file.name} : type de fichier non accepté`);
           continue;
         }
 
@@ -76,14 +83,15 @@ export function ImageUpload({
 
           if (!response.ok) {
             const data = await response.json();
-            throw new Error(data.error || "Erreur lors de l'upload");
+            throw new Error(data.error || `${file.name} : l'envoi a échoué`);
           }
 
           const uploadedFile = await response.json();
-          onFilesChange([...files, uploadedFile]);
-          toast.success(`${file.name} uploadé`);
+          current = [...current, uploadedFile];
+          onFilesChange(current);
+          toast.success(`${file.name} envoyé`);
         } catch (error) {
-          toast.error(error instanceof Error ? error.message : "Erreur lors de l'upload");
+          toast.error(error instanceof Error ? error.message : `${file.name} : l'envoi a échoué`);
         }
       }
 
@@ -164,21 +172,27 @@ export function ImageUpload({
         <input
           type="file"
           id="file-upload"
-          className="hidden"
+          // `sr-only` et non `hidden` : un champ en `display: none` ne reçoit
+          // pas le focus, et ajouter une pièce jointe était impossible au
+          // clavier. Le <label> qui suit porte l'indicateur de focus.
+          className="peer sr-only"
           multiple
           accept={ACCEPTED_TYPES.join(',')}
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
           disabled={isUploading}
         />
-        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+        <label
+          htmlFor="file-upload"
+          className="cursor-pointer flex flex-col items-center gap-2 rounded-md peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring"
+        >
           {isUploading ? (
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" aria-label="Envoi en cours" />
           ) : (
-            <Upload className="w-8 h-8 text-muted-foreground" />
+            <Upload className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
           )}
           <div>
-            <span className="text-primary font-medium">Cliquez pour uploader</span>
-            <span className="text-muted-foreground"> ou glissez-déposez</span>
+            <span className="text-primary font-medium">Choisir des fichiers</span>
+            <span className="text-muted-foreground"> ou les glisser ici</span>
           </div>
           <p className="text-xs text-muted-foreground">
             Images (JPG, PNG, GIF, WebP) ou PDF • Max {maxSizeMB} Mo par fichier

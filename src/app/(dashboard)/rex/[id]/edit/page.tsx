@@ -78,7 +78,13 @@ export default async function EditRexPage({ params }: EditRexPageProps) {
         </p>
       </div>
 
-      <RexForm initialData={initialData} rexId={id} mode="edit" />
+      <RexForm
+        initialData={initialData}
+        rexId={id}
+        mode="edit"
+        userId={user.id}
+        currentStatus={rex.status}
+      />
     </div>
   );
 }

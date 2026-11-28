@@ -19,10 +19,24 @@ import { InterventionTimeline } from './intervention-timeline';
 import { PrescriptionsList } from './prescriptions-list';
 import { TemoignagesList } from './temoignages-list';
 import { RessourcesList } from './ressources-list';
-import { Calendar, Eye, Star, Share2, Pencil, CheckCircle, Clock, Building2 } from 'lucide-react';
+import { RichText } from './rich-text';
+import { FocusThematiquesList } from './focus-thematiques-list';
+import { VisibilityBadge } from './visibility-badge';
+import {
+  Calendar,
+  Eye,
+  Star,
+  Share2,
+  Pencil,
+  CheckCircle,
+  Clock,
+  Building2,
+  MapPin,
+} from 'lucide-react';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
-import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
+import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG, STATUS_CONFIG } from '@/lib/constants';
+import { blocksToDisplay, interventionPlace, interventionTime } from '@/lib/rex-detail-sections';
 import { toast } from 'sonner';
 import type { Rex, Sdis, Profile, ReadableProfile } from '@/types';
 import { canDeleteRex, rejectionReasonFor } from '@/lib/rex-permissions';
@@ -38,10 +52,8 @@ interface Attachment {
 }
 
 /**
- * CONTRAT : les champs HTML riches de `rex` — `description`, `context`,
- * `means_deployed`, `difficulties`, `lessons_learned`, `description_site` —
- * doivent arriver DÉJÀ ASSAINIS. Ils sont injectés tels quels via
- * `dangerouslySetInnerHTML`.
+ * CONTRAT : les champs HTML riches de `rex` (`REX_HTML_FIELDS`) doivent
+ * arriver DÉJÀ ASSAINIS. Ils sont injectés tels quels par `RichText`.
  *
  * L'assainissement se fait côté serveur, dans la page qui monte ce composant
  * (`sanitizeRexHtmlFields`, appuyé sur JSDOM). Il se faisait auparavant ici même,
@@ -67,11 +79,13 @@ interface RexDetailProps {
   canWrite?: boolean;
 }
 
+// Libellé long et icône propres à la fiche ; les couleurs viennent de
+// `STATUS_CONFIG`, seule définition des teintes de statut.
 const statusConfig = {
-  draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-500' },
-  pending: { label: 'En attente de validation', icon: Clock, color: 'text-orange-500' },
-  validated: { label: 'Validé', icon: CheckCircle, color: 'text-green-500' },
-  archived: { label: 'Archivé', icon: Clock, color: 'text-gray-400' },
+  draft: { label: 'Brouillon', icon: Clock },
+  pending: { label: 'En attente de validation', icon: Clock },
+  validated: { label: 'Validé', icon: CheckCircle },
+  archived: { label: 'Archivé', icon: Clock },
 };
 
 export const RexDetail = memo(function RexDetail({
@@ -96,6 +110,9 @@ export const RexDetail = memo(function RexDetail({
   // REX validé.
   const canDelete = canDeleteRex(currentUser, rex);
   const rejectionReason = rejectionReasonFor(currentUser, rex);
+  const place = interventionPlace(rex);
+  const time = interventionTime(rex.intervention_heure);
+  const blocks = blocksToDisplay(rex);
 
   const authorInitials =
     rex.author?.full_name
@@ -200,18 +217,12 @@ export const RexDetail = memo(function RexDetail({
                 </Badge>
                 <Badge
                   variant="outline"
-                  className={cn(
-                    'flex items-center gap-1',
-                    rex.status === 'validated'
-                      ? 'bg-green-500/10 text-green-500 border-green-500/30'
-                      : rex.status === 'pending'
-                        ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
-                        : 'bg-muted/50'
-                  )}
+                  className={cn('flex items-center gap-1', STATUS_CONFIG[rex.status].className)}
                 >
                   <StatusIcon className="w-3 h-3" />
                   {status.label}
                 </Badge>
+                <VisibilityBadge visibility={rex.visibility} />
               </div>
 
               {/* Numero REX */}
@@ -239,7 +250,14 @@ export const RexDetail = memo(function RexDetail({
                     month: 'long',
                     year: 'numeric',
                   })}
+                  {time && ` à ${time}`}
                 </span>
+                {place && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 shrink-0" />
+                    {place}
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5">
                   <Eye className="w-4 h-4" />
                   {rex.views_count} vues
@@ -375,126 +393,69 @@ export const RexDetail = memo(function RexDetail({
         />
       )}
 
-      {/* Content Sections */}
-      {rex.description && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg text-primary">Synthèse</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.description }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {rex.context && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg text-primary">Contexte opérationnel</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.context }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {rex.means_deployed && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg text-primary">Moyens engagés</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.means_deployed }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Timeline chronologique */}
-      {rex.chronologie && Array.isArray(rex.chronologie) && rex.chronologie.length > 0 && (
-        <InterventionTimeline
-          events={rex.chronologie as unknown as import('@/types').TimelineEvent[]}
-          variant="vertical"
-        />
-      )}
-
-      {rex.difficulties && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg text-primary">Difficultés rencontrées</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.difficulties }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {rex.lessons_learned && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg text-primary">Enseignements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.lessons_learned }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Prescriptions */}
-      {rex.prescriptions && Array.isArray(rex.prescriptions) && rex.prescriptions.length > 0 && (
-        <PrescriptionsList
-          prescriptions={rex.prescriptions as unknown as import('@/types').Prescription[]}
-        />
-      )}
-
-      {/* Témoignages */}
-      {rex.temoignages && Array.isArray(rex.temoignages) && rex.temoignages.length > 0 && (
-        <TemoignagesList
-          temoignages={rex.temoignages as unknown as import('@/types').Temoignage[]}
-        />
-      )}
-
-      {/* Description de l'ouvrage/site */}
-      {rex.description_site && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              Description de l&apos;ouvrage / site
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: rex.description_site }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Ressources complémentaires */}
-      {rex.ressources_complementaires &&
-        Array.isArray(rex.ressources_complementaires) &&
-        rex.ressources_complementaires.length > 0 && (
-          <RessourcesList
-            ressources={
-              rex.ressources_complementaires as unknown as import('@/types').RessourceComplementaire[]
-            }
-          />
-        )}
+      {/* Rubriques du dossier, dans l'ordre de `REX_DETAIL_LAYOUT`.
+          La liste était écrite ici à la main et n'en rendait que six sur
+          quatorze : voir `rex-detail-sections.ts`. */}
+      {blocks.map((block) => {
+        switch (block.kind) {
+          case 'html':
+            return (
+              <Card
+                key={block.field}
+                className={cn(
+                  'border-border/50 bg-card/80',
+                  block.tone === 'favorable' && 'border-l-4 border-l-green-600',
+                  block.tone === 'defavorable' && 'border-l-4 border-l-red-600'
+                )}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg text-primary">{block.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RichText html={rex[block.field] ?? ''} />
+                </CardContent>
+              </Card>
+            );
+          case 'chronologie':
+            return (
+              <InterventionTimeline
+                key="chronologie"
+                events={rex.chronologie as unknown as import('@/types').TimelineEvent[]}
+                variant="vertical"
+              />
+            );
+          case 'focus':
+            return (
+              <FocusThematiquesList
+                key="focus"
+                focus={rex.focus_thematiques as unknown as import('@/types').FocusThematique[]}
+              />
+            );
+          case 'prescriptions':
+            return (
+              <PrescriptionsList
+                key="prescriptions"
+                prescriptions={rex.prescriptions as unknown as import('@/types').Prescription[]}
+              />
+            );
+          case 'temoignages':
+            return (
+              <TemoignagesList
+                key="temoignages"
+                temoignages={rex.temoignages as unknown as import('@/types').Temoignage[]}
+              />
+            );
+          case 'ressources':
+            return (
+              <RessourcesList
+                key="ressources"
+                ressources={
+                  rex.ressources_complementaires as unknown as import('@/types').RessourceComplementaire[]
+                }
+              />
+            );
+        }
+      })}
 
       {/* Attachments */}
       {rex.attachments && rex.attachments.length > 0 && (
@@ -506,9 +467,9 @@ export const RexDetail = memo(function RexDetail({
         <Card className="bg-green-500/5 border-green-500/20">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
+              <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />
               <div>
-                <p className="text-sm font-medium text-green-500">
+                <p className="text-sm font-medium text-green-800 dark:text-green-400">
                   Validé par {rex.validator.full_name}
                 </p>
                 {rex.validated_at && (
@@ -529,7 +490,10 @@ export const RexDetail = memo(function RexDetail({
       <ValidationActions
         rexId={rex.id}
         currentStatus={rex.status}
-        isAdmin={currentUser?.role === 'admin' || currentUser?.role === 'super_admin'}
+        visibility={rex.visibility}
+        // Le validateur aussi : la route l'autorise, mais la fiche ne montrait
+        // ces boutons qu'aux admins. Il devait repasser par la file d'attente.
+        canValidate={['validator', 'admin', 'super_admin'].includes(currentUser?.role ?? '')}
         canDelete={canDelete}
         canWrite={canWrite}
       />
@@ -539,7 +503,12 @@ export const RexDetail = memo(function RexDetail({
       {/* Comments */}
       <Card className="border-border/50 bg-card/80">
         <CardContent className="pt-6">
-          <CommentList rexId={rex.id} currentUser={currentUser} canWrite={canWrite} />
+          <CommentList
+            rexId={rex.id}
+            rexSdisId={rex.sdis_id}
+            currentUser={currentUser}
+            canWrite={canWrite}
+          />
         </CardContent>
       </Card>
     </div>

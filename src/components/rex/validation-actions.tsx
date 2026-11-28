@@ -18,11 +18,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CheckCircle, XCircle, Loader2, Shield, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { validationShareNotice } from '@/lib/rex-detail-sections';
 
 interface ValidationActionsProps {
   rexId: string;
   currentStatus: string;
-  isAdmin: boolean;
+  /** Visibilité demandée par l'auteur : rappelée au validateur avant qu'il approuve. */
+  visibility?: string | null;
+  /** Validateur, admin ou super-admin : les rôles que la route de validation accepte. */
+  canValidate: boolean;
   /** Calculé par `canDeleteRex` — mêmes règles que la policy de la base. */
   canDelete: boolean;
   canWrite?: boolean;
@@ -31,7 +35,8 @@ interface ValidationActionsProps {
 export function ValidationActions({
   rexId,
   currentStatus,
-  isAdmin,
+  visibility,
+  canValidate,
   canDelete,
   canWrite = true,
 }: ValidationActionsProps) {
@@ -115,7 +120,7 @@ export function ValidationActions({
 
   // Only show for pending REX to admins, or for authors on their drafts.
   // Masqué en mode lecture seule (abonnement suspendu/expiré).
-  const showValidationActions = canWrite && isAdmin && currentStatus === 'pending';
+  const showValidationActions = canWrite && canValidate && currentStatus === 'pending';
   const showDeleteAction = canWrite && canDelete;
 
   if (!showValidationActions && !showDeleteAction) {
@@ -134,6 +139,11 @@ export function ValidationActions({
         <CardContent className="space-y-3">
           {showValidationActions && (
             <>
+              {/* Ce que la validation rend visible, et à qui. Le validateur
+                  approuvait un partage vers tous les SDIS sans le voir. */}
+              <p className="text-sm text-foreground" role="note">
+                {validationShareNotice(visibility)}
+              </p>
               <Button
                 className="w-full bg-green-600 hover:bg-green-700"
                 onClick={handleValidate}
@@ -148,7 +158,7 @@ export function ValidationActions({
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-orange-500/30 text-orange-500 hover:bg-orange-500/10"
+                className="w-full border-orange-500/30 text-orange-800 dark:text-orange-400 hover:bg-orange-500/10"
                 onClick={() => setShowRejectDialog(true)}
               >
                 <XCircle className="w-4 h-4 mr-2" />
