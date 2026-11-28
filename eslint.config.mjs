@@ -47,6 +47,9 @@ const eslintConfig = defineConfig([
     "jest.config.js",
     // Même nature que jest.config.js : config CommonJS chargée par Jest.
     "jest.config.rls.js",
+    // Idem : script CommonJS lancé par `node` après la compilation
+    // (`postbuild`). Sa logique est couverte par `built-css-check.test.ts`.
+    "scripts/**",
     // Rapport de couverture généré (déjà gitignoré).
     "coverage/**",
   ]),
