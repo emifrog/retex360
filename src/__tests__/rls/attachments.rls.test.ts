@@ -200,8 +200,10 @@ describe('RLS — table rex_attachments (migration 020)', () => {
     const attachmentId = await asUser(db, USER_A, async () => {
       const { rows } = await db.query<{ id: string }>(
         `INSERT INTO rex_attachments (rex_id, uploaded_by, file_name, storage_path)
-         VALUES (NULL, $1, 'flow.webp', 'rex-attachments/flow.webp') RETURNING id`,
-        [USER_A.id]
+         VALUES (NULL, $1, 'flow.webp', $2) RETURNING id`,
+        // Le chemin réel écrit par la route d'upload : dossier du déposant.
+        // La migration 026 l'exige.
+        [USER_A.id, `rex-attachments/${USER_A.id}/flow.webp`]
       );
       return rows[0].id;
     });

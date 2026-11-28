@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { SEVERITY_CONFIG, PRODUCTION_TYPE_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
 import type { Rex, Sdis, Profile, ReadableProfile } from '@/types';
+import { canDeleteRex, rejectionReasonFor } from '@/lib/rex-permissions';
 
 interface Attachment {
   id: string;
@@ -90,6 +91,11 @@ export const RexDetail = memo(function RexDetail({
 
   const isAuthor = currentUser?.id === rex.author_id;
   const canEdit = isAuthor || currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+  // Mêmes règles que la base (migration 026) : ne pas proposer un bouton
+  // « Supprimer » que la policy refusera — c'était le cas pour l'auteur d'un
+  // REX validé.
+  const canDelete = canDeleteRex(currentUser, rex);
+  const rejectionReason = rejectionReasonFor(currentUser, rex);
 
   const authorInitials =
     rex.author?.full_name
@@ -135,6 +141,24 @@ export const RexDetail = memo(function RexDetail({
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
       <Breadcrumb items={[{ label: 'REX', href: '/rex' }, { label: rex.title || 'Détail' }]} />
+
+      {/* Motif de rejet — montré au seul auteur, tant que le REX est revenu en
+          brouillon. Il était enregistré mais lu par aucun écran : l'auteur ne le
+          voyait que tronqué, dans une notification. */}
+      {rejectionReason && (
+        <div
+          role="status"
+          className="rounded-lg border border-orange-500/40 bg-orange-500/10 p-4 text-sm"
+        >
+          <p className="font-semibold text-foreground">
+            Ce REX vous a été renvoyé par un validateur.
+          </p>
+          <p className="mt-1 text-foreground whitespace-pre-wrap">Motif : {rejectionReason}</p>
+          <p className="mt-2 text-muted-foreground">
+            Modifiez-le, puis soumettez-le de nouveau pour validation.
+          </p>
+        </div>
+      )}
 
       {/* Header Card */}
       <Card className="border-border/50 bg-card/80 overflow-hidden">
@@ -506,7 +530,7 @@ export const RexDetail = memo(function RexDetail({
         rexId={rex.id}
         currentStatus={rex.status}
         isAdmin={currentUser?.role === 'admin' || currentUser?.role === 'super_admin'}
-        isAuthor={isAuthor}
+        canDelete={canDelete}
         canWrite={canWrite}
       />
 

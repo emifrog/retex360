@@ -23,7 +23,8 @@ interface ValidationActionsProps {
   rexId: string;
   currentStatus: string;
   isAdmin: boolean;
-  isAuthor: boolean;
+  /** Calculé par `canDeleteRex` — mêmes règles que la policy de la base. */
+  canDelete: boolean;
   canWrite?: boolean;
 }
 
@@ -31,7 +32,7 @@ export function ValidationActions({
   rexId,
   currentStatus,
   isAdmin,
-  isAuthor,
+  canDelete,
   canWrite = true,
 }: ValidationActionsProps) {
   const router = useRouter();
@@ -115,7 +116,7 @@ export function ValidationActions({
   // Only show for pending REX to admins, or for authors on their drafts.
   // Masqué en mode lecture seule (abonnement suspendu/expiré).
   const showValidationActions = canWrite && isAdmin && currentStatus === 'pending';
-  const showDeleteAction = canWrite && (isAuthor || isAdmin);
+  const showDeleteAction = canWrite && canDelete;
 
   if (!showValidationActions && !showDeleteAction) {
     return null;

@@ -4,7 +4,7 @@
  * `api-auth` importe `next/server`, qui a besoin des globales fetch (Request,
  * Response) absentes de l'environnement jsdom par défaut du projet.
  */
-import { isSdisAdmin } from '@/lib/api-auth';
+import { canChangeRole, isSdisAdmin } from '@/lib/api-auth';
 import { toOne } from '@/lib/supabase/relations';
 
 const SDIS_A = '11111111-1111-1111-1111-111111111111';
@@ -70,5 +70,50 @@ describe('toOne', () => {
     const admin = { role: 'admin', sdis_id: SDIS_A };
     expect(isSdisAdmin(admin, asObject?.sdis_id)).toBe(true);
     expect(isSdisAdmin(admin, asArray?.sdis_id)).toBe(true);
+  });
+});
+
+/**
+ * Qui peut changer le rôle de qui.
+ *
+ * La route vérifiait le rôle DEMANDÉ et le SDIS de la cible, jamais le rôle
+ * ACTUEL de la cible : un admin de SDIS pouvait rétrograder un super_admin
+ * rattaché à son SDIS.
+ */
+describe('canChangeRole', () => {
+  const admin = { id: 'admin-a', role: 'admin', sdis_id: SDIS_A };
+  const superAdmin = { id: 'super', role: 'super_admin', sdis_id: SDIS_A };
+  const agent = { id: 'agent-a', role: 'user', sdis_id: SDIS_A };
+
+  it('un admin promeut un agent de son SDIS', () => {
+    expect(canChangeRole(admin, agent, 'validator')).toEqual({ ok: true });
+  });
+
+  it("un admin ne touche pas à un agent d'un autre SDIS", () => {
+    const result = canChangeRole(admin, { ...agent, sdis_id: SDIS_B }, 'validator');
+    expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+
+  it('un admin ne peut pas nommer un super_admin', () => {
+    expect(canChangeRole(admin, agent, 'super_admin')).toMatchObject({ ok: false, status: 403 });
+  });
+
+  it('un admin ne peut pas rétrograder un super_admin, même rattaché à son SDIS', () => {
+    const target = { id: 'super-2', role: 'super_admin', sdis_id: SDIS_A };
+    expect(canChangeRole(admin, target, 'user')).toMatchObject({ ok: false, status: 403 });
+  });
+
+  it('un super_admin modifie un autre super_admin, dans tout SDIS', () => {
+    const target = { id: 'super-2', role: 'super_admin', sdis_id: SDIS_B };
+    expect(canChangeRole(superAdmin, target, 'admin')).toEqual({ ok: true });
+  });
+
+  it('personne ne modifie son propre rôle', () => {
+    expect(canChangeRole(superAdmin, superAdmin, 'user')).toMatchObject({ ok: false, status: 400 });
+  });
+
+  it("un rôle sans droit d'administration ne change rien", () => {
+    const validator = { id: 'val-a', role: 'validator', sdis_id: SDIS_A };
+    expect(canChangeRole(validator, agent, 'validator')).toMatchObject({ ok: false, status: 403 });
   });
 });

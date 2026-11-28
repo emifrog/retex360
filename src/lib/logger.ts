@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs';
-import { randomUUID } from 'crypto';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -18,7 +17,16 @@ interface LogEntry {
  * Call once per request and pass it through.
  */
 export function createCorrelationId(): string {
-  return randomUUID().slice(0, 8);
+  // `globalThis.crypto` et non le module `crypto` de Node : ce fichier est
+  // importé par des composants clients, et l'import Node y faisait embarquer
+  // un substitut complet de `crypto` pour navigateur (416 Ko) sur toutes les
+  // pages connectées. L'API Web existe dans le navigateur, sous Node et sur le
+  // runtime edge.
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid.replace(/-/g, '').slice(0, 8);
+  // Repli sans exigence de sécurité : l'identifiant ne sert qu'à relier des
+  // lignes de journal entre elles.
+  return Math.random().toString(36).slice(2, 10).padEnd(8, '0');
 }
 
 function formatLog(entry: LogEntry): string {

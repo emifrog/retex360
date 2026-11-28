@@ -63,10 +63,9 @@ function s3(): Promise<S3Bits> {
   return s3BitsPromise;
 }
 
-/** Derive the WebP thumbnail object path from an original attachment path. */
-export function thumbnailPathFor(storagePath: string): string {
-  return storagePath.replace(/\.[^.]+$/, '_thumb.webp');
-}
+// Défini dans un module sans dépendance (testable sans client de stockage) ;
+// ré-exporté ici pour les appelants existants.
+export { thumbnailPathFor } from '@/lib/attachment-paths';
 
 /** Upload an attachment object. Returns true on success. */
 export async function putAttachmentObject(

@@ -6,6 +6,7 @@ import { PasswordForm } from '@/components/settings/password-form';
 import { DeleteAccountForm } from '@/components/settings/delete-account-form';
 import { DataExportButton } from '@/components/settings/data-export-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { logger } from '@/lib/logger';
 
 export const metadata = {
   title: 'Paramètres | RETEX360',
@@ -22,13 +23,15 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Fetch user profile with SDIS
-  const { data: profile } = await supabase
+  // Profil avec son SDIS. `email` n'est PAS sélectionné : la colonne n'est plus
+  // lisible par le client utilisateur (migration 024), et une seule colonne
+  // interdite fait rejeter la requête entière — la page s'affichait alors avec
+  // un nom, un grade et un SDIS vides. L'adresse vient de la session.
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select(
       `
       id,
-      email,
       full_name,
       grade,
       avatar_url,
@@ -38,6 +41,10 @@ export default async function SettingsPage() {
     )
     .eq('id', user.id)
     .single();
+
+  if (profileError) {
+    logger.error('Settings — profile fetch failed:', profileError);
+  }
 
   // Fetch SDIS list for potential change
   const { data: sdisList } = await supabase.from('sdis').select('id, code, name').order('code');
@@ -72,7 +79,7 @@ export default async function SettingsPage() {
           <ProfileForm
             profile={{
               id: profile?.id || user.id,
-              email: profile?.email || user.email || '',
+              email: user.email || '',
               full_name: profile?.full_name || '',
               grade: profile?.grade || '',
               avatar_url: profile?.avatar_url || '',

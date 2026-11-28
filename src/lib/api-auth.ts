@@ -51,6 +51,49 @@ export function isSdisAdmin(
   return Boolean(sdisId) && profile.sdis_id === sdisId;
 }
 
+export interface RoleSubject {
+  id: string;
+  role: string;
+  sdis_id?: string | null;
+}
+
+export type RoleChangeDecision = { ok: true } | { ok: false; status: 400 | 403; error: string };
+
+/**
+ * Qui peut changer le rôle de qui.
+ *
+ * Extrait de la route pour être testé seul. La route vérifiait le rôle DEMANDÉ
+ * et le SDIS de la cible, jamais le rôle ACTUEL de la cible : un admin de SDIS
+ * pouvait donc rétrograder un super_admin rattaché à son SDIS — un rôle
+ * inférieur retirant ses droits à un rôle supérieur.
+ */
+export function canChangeRole(
+  actor: RoleSubject,
+  target: RoleSubject,
+  newRole: Role
+): RoleChangeDecision {
+  const isSuperAdmin = actor.role === 'super_admin';
+
+  if (!isSuperAdmin && actor.role !== 'admin') {
+    return { ok: false, status: 403, error: 'Non autorisé' };
+  }
+  // Un admin n'administre que son SDIS.
+  if (!isSuperAdmin && target.sdis_id !== actor.sdis_id) {
+    return { ok: false, status: 403, error: 'Non autorisé pour cet utilisateur' };
+  }
+  // Ni nommer ni défaire un super_admin sans l'être soi-même.
+  if (!isSuperAdmin && target.role === 'super_admin') {
+    return { ok: false, status: 403, error: 'Seul un super admin peut modifier un super admin' };
+  }
+  if (!isSuperAdmin && newRole === 'super_admin') {
+    return { ok: false, status: 403, error: 'Seul un super admin peut créer un super admin' };
+  }
+  if (target.id === actor.id) {
+    return { ok: false, status: 400, error: 'Vous ne pouvez pas modifier votre propre rôle' };
+  }
+  return { ok: true };
+}
+
 export async function requireRole(
   supabase: SupabaseClient,
   roles: Role[]

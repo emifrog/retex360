@@ -4,7 +4,8 @@ import { isSdisAdmin, requireUser } from '@/lib/api-auth';
 import { rateLimiters, limitByUser } from '@/lib/rate-limit';
 import { toOne } from '@/lib/supabase/relations';
 import { logger } from '@/lib/logger';
-import { removeAttachmentObjects, thumbnailPathFor } from '@/lib/storage';
+import { removeAttachmentObjects } from '@/lib/storage';
+import { purgeablePaths } from '@/lib/attachment-paths';
 
 export async function DELETE(
   request: NextRequest,
@@ -71,10 +72,18 @@ export async function DELETE(
     // Storage cleanup once the database has confirmed the deletion. Uses the
     // service role so an admin can remove a file uploaded by another user (the
     // own-folder storage policy would otherwise block it).
-    await removeAttachmentObjects([
-      attachment.storage_path,
-      thumbnailPathFor(attachment.storage_path),
-    ]);
+    //
+    // Uniquement si le chemin est dans le dossier du déposant de la ligne : une
+    // ligne pointant vers le fichier d'un autre (ce que la migration 026
+    // interdit désormais d'insérer) ne doit rien effacer.
+    const paths = purgeablePaths([attachment]);
+    if (paths.length === 0) {
+      logger.warn('Attachment row deleted but its object was not purged (foreign path)', {
+        attachmentId: id,
+        userId: user.id,
+      });
+    }
+    await removeAttachmentObjects(paths);
 
     return NextResponse.json({ success: true });
   } catch (error) {
